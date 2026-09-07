@@ -28,3 +28,22 @@ export type DiaperEntry = {
   at: number; // epoch ms
   note?: string;
 };
+
+export type Appointment = {
+  id: string;
+  title: string;
+  scheduledAt: number; // epoch ms
+  location?: string;
+  notes?: string;
+};
+
+// presence of birthDate is what flips the app from Grávida to Pós-parto mode
+export type BabyProfile = {
+  name?: string;
+  dueDate?: number; // epoch ms
+  birthDate?: number; // epoch ms
+  weightKg?: number;
+  heightCm?: number;
+};
+
+export type AppMode = 'gravida' | 'posparto';

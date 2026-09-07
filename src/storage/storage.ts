@@ -11,6 +11,8 @@ export const STORAGE_KEYS = {
   breastfeeding: '@ninho/breastfeeding',
   bottle: '@ninho/bottle',
   diapers: '@ninho/diapers',
+  appointments: '@ninho/appointments',
+  babyProfile: '@ninho/baby-profile',
 } as const;
 
 export async function loadList<T>(key: string): Promise<T[]> {
@@ -32,6 +34,20 @@ export async function addToList<T>(key: string, item: T): Promise<T[]> {
   const next = [item, ...current];
   await saveList(key, next);
   return next;
+}
+
+export async function loadObject<T>(key: string): Promise<T | null> {
+  const raw = await AsyncStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveObject<T>(key: string, value: T): Promise<void> {
+  await AsyncStorage.setItem(key, JSON.stringify(value));
 }
 
 export function makeId(): string {
