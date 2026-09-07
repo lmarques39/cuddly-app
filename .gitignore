@@ -31,7 +31,11 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# personal Claude Code overrides (permissions, local paths) — .claude/settings.json IS committed
+.claude/settings.local.json
 
 # typescript
 *.tsbuildinfo
