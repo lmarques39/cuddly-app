@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Starting point matching the data model in cuddly-app-directions.md
+// (User/Family/Member/BabyProfile/Activity/...). Every family document is
+// scoped to its members; nothing is readable/writable by anyone else.
+// Review before this ever holds real user data — this has not been audited.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isFamilyMember(familyId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid));
+    }
+
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /families/{familyId} {
+      allow read, update, delete: if isFamilyMember(familyId);
+      allow create: if isSignedIn();
+
+      match /members/{memberId} {
+        allow read: if isFamilyMember(familyId);
+        allow write: if isFamilyMember(familyId) && request.auth.uid == memberId;
+      }
+
+      // BabyProfile, Activity (contractions/breastfeeding/pumping/diapers),
+      // FoodIntroduction, Appointment — all nested under their family.
+      match /{collection}/{documentId} {
+        allow read, write: if isFamilyMember(familyId);
+      }
+    }
+  }
+}
