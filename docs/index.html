@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cuddly — acompanhamento calmo de gravidez e pós-parto</title>
+<meta name="description" content="Cuddly é uma app open-source de React Native para registar contrações, amamentação, biberão, fraldas e consultas — pensada para ser usada com uma mão, a meio da noite." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Karla:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #F1ECE3;
+    --surface: #FBF8F3;
+    --surface-sunken: #E7DFD1;
+    --ink: #2A2620;
+    --ink-secondary: #6B6558;
+    --ink-muted: #948C7C;
+    --border: rgba(42,38,32,0.14);
+    --primary: #6B4E9C;
+    --primary-ink: #FBF8F3;
+    --accent: #4F8A3F;
+    --tertiary: #D9724A;
+    --font-display: 'Fredoka', system-ui, sans-serif;
+    --font-body: 'Karla', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); line-height: 1.5; }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0 0 12px; color: var(--ink); }
+  p { margin: 0 0 12px; color: var(--ink-secondary); }
+  a { color: var(--primary); }
+  img { max-width: 100%; display: block; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  header.site {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  header.site .wrap { display: flex; align-items: center; justify-content: space-between; }
+  .wordmark { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .wordmark span { color: var(--primary); }
+  nav.site a { margin-left: 20px; font-family: var(--font-body); font-weight: 500; text-decoration: none; color: var(--ink-secondary); font-size: 14px; }
+  nav.site a:hover { color: var(--ink); }
+
+  .hero { padding: 72px 0 56px; text-align: center; }
+  .hero h1 { font-size: clamp(32px, 5vw, 48px); max-width: 720px; margin: 0 auto 16px; }
+  .hero .lede { font-size: 18px; max-width: 560px; margin: 0 auto 32px; }
+  .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 13px 26px; border-radius: 999px; font-family: var(--font-body); font-weight: 700; font-size: 15px; text-decoration: none; border: 1.5px solid transparent; }
+  .btn-primary { background: var(--primary); color: var(--primary-ink); }
+  .btn-secondary { background: transparent; color: var(--ink); border-color: var(--border); }
+  .status-pill { display: inline-block; margin-top: 20px; padding: 6px 14px; border-radius: 999px; background: var(--surface-sunken); color: var(--ink-secondary); font-size: 12.5px; font-weight: 500; }
+
+  section { padding: 56px 0; }
+  section.alt { background: var(--surface); }
+  section h2 { font-size: 26px; text-align: center; margin-bottom: 8px; }
+  section .section-lede { text-align: center; max-width: 560px; margin: 0 auto 36px; }
+
+  .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 800px; margin: 0 auto; }
+  @media (max-width: 640px) { .why-grid { grid-template-columns: 1fr; } }
+  .why-grid .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .why-grid .card h3 { font-size: 17px; }
+
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .feature-card { border-radius: 16px; padding: 20px; color: #FBF8F3; }
+  .feature-card h3 { color: inherit; font-size: 16px; margin-bottom: 4px; }
+  .feature-card p { color: rgba(251,248,243,0.85); font-size: 13.5px; margin: 0; }
+  .feature-card.soon { background: var(--surface-sunken); color: var(--ink-secondary); }
+  .feature-card.soon h3 { color: var(--ink); }
+  .feature-card.soon p { color: var(--ink-muted); }
+
+  .gallery { display: flex; gap: 18px; overflow-x: auto; padding: 8px 0 16px; scroll-snap-type: x mandatory; }
+  .gallery figure { flex: 0 0 auto; width: 200px; margin: 0; scroll-snap-align: start; }
+  .gallery img { border-radius: 20px; border: 1px solid var(--border); }
+  .gallery figcaption { text-align: center; font-size: 12.5px; color: var(--ink-muted); margin-top: 8px; }
+  .gallery-note { text-align: center; font-size: 13px; color: var(--ink-muted); margin-top: 4px; }
+
+  .safety-list { max-width: 640px; margin: 0 auto; list-style: none; padding: 0; }
+  .safety-list li { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .safety-list li:last-child { border-bottom: none; }
+  .safety-list strong { display: block; color: var(--ink); margin-bottom: 2px; }
+
+  .oss-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .oss-row .badge { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
+
+  .download-card { max-width: 480px; margin: 0 auto; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+  .download-card .btn { margin-top: 16px; }
+
+  footer.site { padding: 40px 0; border-top: 1px solid var(--border); }
+  footer.site .wrap { display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
+  footer.site p { font-size: 12.5px; color: var(--ink-muted); max-width: 560px; }
+  footer.site .links a { margin: 0 8px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <div class="wordmark">Cuddly<span>.</span></div>
+    <nav class="site">
+      <a href="#funcionalidades">Funcionalidades</a>
+      <a href="#previa">Prévia</a>
+      <a href="#privacidade">Privacidade</a>
+      <a href="https://github.com/lmarques39/cuddly-app">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Uma app calma para gravidez e pós-parto.</h1>
+    <p class="lede">Cuddly ajuda a registar contrações, amamentação, biberão, fraldas e consultas médicas — pensada para ser usada com uma mão, a meio da noite. Open-source, feita como projeto académico.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/lmarques39/cuddly-app">Ver no GitHub</a>
+      <a class="btn btn-secondary" href="#previa">Como funciona</a>
+    </div>
+    <div class="status-pill">🚧 Em desenvolvimento activo — MVP ainda não lançado</div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Porquê o Cuddly</h2>
+    <p class="section-lede">Grande parte das apps de gravidez e pós-parto tenta fazer tudo ao mesmo tempo — estatísticas, redes sociais, conteúdo patrocinado. Cuddly fica só com o essencial.</p>
+    <div class="why-grid">
+      <div class="card">
+        <h3>Um registo, não um feed</h3>
+        <p>Sem scroll infinito nem notificações desnecessárias. Abres, registas, fechas.</p>
+      </div>
+      <div class="card">
+        <h3>Desenhada para as 3 da manhã</h3>
+        <p>Botões grandes, poucos toques, tudo utilizável com uma mão só e meio a dormir.</p>
+      </div>
+      <div class="card">
+        <h3>Adapta-se à fase</h3>
+        <p>Modo Grávida antes do parto, modo Pós-parto depois — a app muda consigo, não o contrário.</p>
+      </div>
+      <div class="card">
+        <h3>Os teus dados são teus</h3>
+        <p>Sem venda de dados a terceiros, sem publicidade. Ver a secção de privacidade abaixo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="funcionalidades">
+  <div class="wrap">
+    <h2>O que dá para registar</h2>
+    <p class="section-lede">Quatro áreas já implementadas no MVP; as restantes estão planeadas para versões seguintes.</p>
+    <div class="feature-grid">
+      <div class="feature-card" style="background:#D9724A;">
+        <h3>Contrações</h3>
+        <p>Cronómetro e deteção do padrão 5-1-1.</p>
+      </div>
+      <div class="feature-card" style="background:#6B4E9C;">
+        <h3>Amamentação</h3>
+        <p>Cronómetro por lado, sugestão do próximo.</p>
+      </div>
+      <div class="feature-card" style="background:#C98A1E;">
+        <h3>Biberão</h3>
+        <p>Quantidade e tipo de leite.</p>
+      </div>
+      <div class="feature-card" style="background:#4F8A3F;">
+        <h3>Fraldas</h3>
+        <p>Registo rápido, tempo desde a última.</p>
+      </div>
+      <div class="feature-card soon">
+        <h3>Sono &amp; pumping</h3>
+        <p>Em breve.</p>
+      </div>
+      <div class="feature-card soon">
+        <h3>Introdução alimentar</h3>
+        <p>Em breve.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="previa">
+  <div class="wrap">
+    <h2>Prévia</h2>
+    <p class="section-lede">Mockups do design actual da app (não screenshots finais — a implementação está em curso).</p>
+    <div class="gallery">
+      <figure><img src="assets/mockups/01-login.png" alt="Ecrã de login do Cuddly" width="200" /><figcaption>Login</figcaption></figure>
+      <figure><img src="assets/mockups/04-inicio-gravida.png" alt="Início em modo Grávida" width="200" /><figcaption>Início · Grávida</figcaption></figure>
+      <figure><img src="assets/mockups/06-inicio-posparto.png" alt="Início em modo Pós-parto" width="200" /><figcaption>Início · Pós-parto</figcaption></figure>
+      <figure><img src="assets/mockups/08-contracoes.png" alt="Ecrã de contrações" width="200" /><figcaption>Contrações</figcaption></figure>
+      <figure><img src="assets/mockups/12-historico-linha-do-tempo.png" alt="Histórico em linha do tempo" width="200" /><figcaption>Histórico</figcaption></figure>
+      <figure><img src="assets/mockups/14-perfil.png" alt="Ecrã de perfil" width="200" /><figcaption>Perfil</figcaption></figure>
+    </div>
+    <p class="gallery-note">Todos os dados mostrados são fictícios.</p>
+  </div>
+</section>
+
+<section id="privacidade">
+  <div class="wrap">
+    <h2>Privacidade &amp; segurança</h2>
+    <ul class="safety-list">
+      <li><strong>Dados mínimos.</strong> Só guardamos o que é preciso para cada registo — nada de identificadores desnecessários.</li>
+      <li><strong>Não substitui aconselhamento médico.</strong> Cuddly é uma ferramenta informativa de registo, não faz diagnósticos nem recomendações clínicas.</li>
+      <li><strong>Dados sintéticos em demos.</strong> Qualquer captura de ecrã ou demonstração pública usa dados fictícios, nunca dados reais de família.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Um projeto académico open-source</h2>
+    <p class="section-lede">Cuddly é o projeto final de UC00507 (Conceber páginas web dinâmicas), IEFP — construído por Luís, Sara, Eliseu e Beatriz.</p>
+    <div class="oss-row">
+      <span class="badge">React Native + TypeScript</span>
+      <span class="badge">Android &amp; iOS</span>
+      <span class="badge">Licença MIT</span>
+      <span class="badge">Contribuições bem-vindas</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="download-card">
+      <h2>Download</h2>
+      <p>A build Android (APK) fica disponível aqui assim que o MVP estiver pronto para testar fora do Expo Go.</p>
+      <a class="btn btn-primary" href="https://github.com/lmarques39/cuddly-app/releases">Ver releases no GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="links">
+      <a href="https://github.com/lmarques39/cuddly-app">GitHub</a>
+      <a href="https://github.com/lmarques39/cuddly-app/blob/main/LICENSE">Licença (MIT)</a>
+      <a href="https://github.com/lmarques39/cuddly-app/blob/main/CONTRIBUTING.md">Contribuir</a>
+    </div>
+    <p>Cuddly é uma ferramenta informativa e não substitui aconselhamento médico profissional. Projeto académico, IEFP UC00507.</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -17,6 +17,10 @@ export const colors = {
   primaryInk: '#FBF8F3',
   accent: '#4F8A3F',
   tertiary: '#D9724A',
+  cream: '#FCEECB', creamInk: '#2A2620',
+  action: '#5EBE7A', actionInk: '#FFFFFF',
+  coral: '#E8677A', coralBg: '#FBDEE2',
+  cardBorder: 'rgba(42,38,32,0.30)',
 
   // one colour per tracking domain, consistent with the wireframes/gantt
   domain: {
@@ -27,6 +31,7 @@ export const colors = {
     diapers: { bg: '#4F8A3F', ink: '#FBF8F3' },
     sleep: { bg: '#B0416E', ink: '#FBF8F3' },
   },
+
 } as const;
 
 export const spacing = {

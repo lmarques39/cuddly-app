@@ -37,6 +37,8 @@ export type Appointment = {
   notes?: string;
 };
 
+export type BabySex = 'menina' | 'menino' | 'prefiro_nao_dizer';
+
 // presence of birthDate is what flips the app from Grávida to Pós-parto mode
 export type BabyProfile = {
   name?: string;
@@ -44,6 +46,7 @@ export type BabyProfile = {
   birthDate?: number; // epoch ms
   weightKg?: number;
   heightCm?: number;
+  sex?: BabySex;
 };
 
 export type AppMode = 'gravida' | 'posparto';
