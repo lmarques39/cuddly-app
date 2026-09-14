@@ -1,14 +1,12 @@
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { dateKey, MonthCalendar } from '../../components/MonthCalendar';
-import { addToList, loadList, makeId, STORAGE_KEYS } from '../../storage/storage';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
-import { Appointment } from '../../types/records';
 import { useNow } from '../../utils/useNow';
+import { useAppointments } from './useAppointments';
 
 const QUICK_TIMES = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
 
@@ -33,17 +31,12 @@ function formatAppointment(epochMs: number): string {
 }
 
 export function AppointmentsScreen() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const { appointments, save: saveAppointment } = useAppointments();
   const [title, setTitle] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [time, setTime] = useState('09:00');
   const [customTime, setCustomTime] = useState(false);
 
-  const refresh = useCallback(() => {
-    loadList<Appointment>(STORAGE_KEYS.appointments).then(setAppointments);
-  }, []);
-
-  useFocusEffect(refresh);
   const now = useNow(60000);
   const todayKey = dateKey(now);
   const formDateKey = selectedKey ?? todayKey;
@@ -67,9 +60,7 @@ export function AppointmentsScreen() {
 
   const save = async () => {
     if (!canSave || scheduledAt == null) return;
-    const entry: Appointment = { id: makeId(), title: title.trim(), scheduledAt };
-    const next = await addToList(STORAGE_KEYS.appointments, entry);
-    setAppointments(next);
+    await saveAppointment({ title: title.trim(), scheduledAt });
     setTitle('');
     setTime('09:00');
     setCustomTime(false);
