@@ -15,6 +15,7 @@ import { createFamilyForUser } from './src/features/family/createFamily';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { auth } from './src/services/firebase';
+import { clearAllLocalData } from './src/storage/storage';
 import { colors } from './src/theme/tokens';
 
 // Google sign-in still needs expo-auth-session wired to a Google Cloud OAuth
@@ -95,6 +96,12 @@ export default function App() {
     setAuthError(null);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
+      // AsyncStorage is per-device, not per-account — wipe whatever the
+      // previous signed-in account on this device left behind, so a brand
+      // new account actually starts blank instead of inheriting old
+      // trackers/baby profile. Best-effort: the account already exists at
+      // this point, so a storage hiccup here shouldn't block sign-up.
+      await clearAllLocalData().catch(() => {});
       setAuthStep('registerParent');
     } catch (err) {
       setAuthError(describeAuthError(err));

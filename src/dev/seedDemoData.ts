@@ -115,14 +115,3 @@ export async function seedDemoData(): Promise<void> {
     saveList(STORAGE_KEYS.appointments, appointments),
   ]);
 }
-
-export async function clearAllLocalData(): Promise<void> {
-  await Promise.all([
-    saveObject(STORAGE_KEYS.babyProfile, null),
-    saveList(STORAGE_KEYS.contractions, []),
-    saveList(STORAGE_KEYS.breastfeeding, []),
-    saveList(STORAGE_KEYS.bottle, []),
-    saveList(STORAGE_KEYS.diapers, []),
-    saveList(STORAGE_KEYS.appointments, []),
-  ]);
-}

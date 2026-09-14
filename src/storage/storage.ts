@@ -54,6 +54,24 @@ export function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/**
+ * Wipes every local record. AsyncStorage is per-device, not per-account —
+ * nothing here is scoped to the signed-in Firebase user — so this must run
+ * whenever a *new* account is created on a device that already has another
+ * account's local data, or the new account would see the previous one's
+ * trackers. Also reachable manually from Perfil (dev tools) for testing.
+ */
+export async function clearAllLocalData(): Promise<void> {
+  await Promise.all([
+    saveObject(STORAGE_KEYS.babyProfile, null),
+    saveList(STORAGE_KEYS.contractions, []),
+    saveList(STORAGE_KEYS.breastfeeding, []),
+    saveList(STORAGE_KEYS.bottle, []),
+    saveList(STORAGE_KEYS.diapers, []),
+    saveList(STORAGE_KEYS.appointments, []),
+  ]);
+}
+
 export function isToday(epochMs: number): boolean {
   const d = new Date(epochMs);
   const now = new Date();
