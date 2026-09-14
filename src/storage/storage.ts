@@ -7,12 +7,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 
 export const STORAGE_KEYS = {
-  contractions: '@ninho/contractions',
-  breastfeeding: '@ninho/breastfeeding',
-  bottle: '@ninho/bottle',
-  diapers: '@ninho/diapers',
-  appointments: '@ninho/appointments',
-  babyProfile: '@ninho/baby-profile',
+  contractions: '@cuddly/contractions',
+  breastfeeding: '@cuddly/breastfeeding',
+  bottle: '@cuddly/bottle',
+  diapers: '@cuddly/diapers',
+  appointments: '@cuddly/appointments',
+  babyProfile: '@cuddly/baby-profile',
 } as const;
 
 export async function loadList<T>(key: string): Promise<T[]> {
