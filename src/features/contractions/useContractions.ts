@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { addToList, loadList, makeId, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { ContractionEntry } from '../../types/records';
 
 const FIVE_ONE_ONE_WINDOW_MS = 60 * 60 * 1000; // pattern must hold for the last hour
@@ -13,9 +14,20 @@ export function useContractions() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    // Cold-start cache: show what's already on-device instantly, before the
+    // Firestore subscription below (which needs network) has a chance to arrive.
     loadList<ContractionEntry>(STORAGE_KEYS.contractions).then((list) => {
       setEntries(list);
       setLoaded(true);
+    });
+
+    // Firestore becomes the source of truth once connected — every update
+    // here also refreshes the local cache above, so the next cold start is fresh.
+    return subscribeToCollection<ContractionEntry>('contractions', (items) => {
+      const sorted = [...items].sort((a, b) => b.startedAt - a.startedAt);
+      setEntries(sorted);
+      setLoaded(true);
+      saveList(STORAGE_KEYS.contractions, sorted);
     });
   }, []);
 
@@ -28,6 +40,7 @@ export function useContractions() {
       if (current == null) return current;
       const entry: ContractionEntry = { id: makeId(), startedAt: current, endedAt: Date.now() };
       addToList(STORAGE_KEYS.contractions, entry).then(setEntries);
+      syncEntry('contractions', entry.id, entry);
       return null;
     });
   }, []);
