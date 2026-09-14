@@ -1,13 +1,17 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { useBabyProfile } from '../features/profile/useBabyProfile';
+import { RootTabParamList } from '../navigation/types';
 import { loadList, STORAGE_KEYS } from '../storage/storage';
 import { colors, spacing, type } from '../theme/tokens';
 import { Appointment, BottleEntry, BreastfeedingEntry, ContractionEntry, DiaperEntry } from '../types/records';
 import { formatSince } from '../utils/time';
+
+type Nav = BottomTabNavigationProp<RootTabParamList, 'Início'>;
 
 type LatestEntry = { label: string; at: number };
 
@@ -30,7 +34,23 @@ function babyAge(birthDate: number): string {
   return `${months} ${months === 1 ? 'mês' : 'meses'}`;
 }
 
+function NextAppointmentCard({ appointment, onPress }: { appointment: Appointment | null; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress}>
+      <Card style={styles.appointmentCard}>
+        <View style={styles.appointmentHead}>
+          <Text style={type.caption}>Próxima consulta</Text>
+          <Text style={styles.chevron}>›</Text>
+        </View>
+        <Text style={type.body}>{appointment ? appointment.title : 'Sem consultas agendadas.'}</Text>
+        {appointment && <Text style={type.caption}>{formatAppointmentDate(appointment.scheduledAt)}</Text>}
+      </Card>
+    </Pressable>
+  );
+}
+
 export function HomeScreen() {
+  const navigation = useNavigation<Nav>();
   const { profile, mode, refresh: refreshProfile } = useBabyProfile();
   const [latest, setLatest] = useState<LatestEntry[]>([]);
   const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
@@ -78,11 +98,10 @@ export function HomeScreen() {
                 <Text style={type.caption}>Define a data prevista do parto em Perfil › Perfil do bebé.</Text>
               )}
             </Card>
-            <Card style={styles.appointmentCard}>
-              <Text style={type.caption}>Próxima consulta</Text>
-              <Text style={type.body}>{nextAppointment ? nextAppointment.title : 'Sem consultas agendadas.'}</Text>
-              {nextAppointment && <Text style={type.caption}>{formatAppointmentDate(nextAppointment.scheduledAt)}</Text>}
-            </Card>
+            <NextAppointmentCard
+              appointment={nextAppointment}
+              onPress={() => navigation.navigate('Registar', { screen: 'MarcarConsulta' })}
+            />
           </>
         ) : (
           <>
@@ -98,11 +117,10 @@ export function HomeScreen() {
               )}
             </Card>
 
-            <Card style={styles.appointmentCard}>
-              <Text style={type.caption}>Próxima consulta</Text>
-              <Text style={type.body}>{nextAppointment ? nextAppointment.title : 'Sem consultas agendadas.'}</Text>
-              {nextAppointment && <Text style={type.caption}>{formatAppointmentDate(nextAppointment.scheduledAt)}</Text>}
-            </Card>
+            <NextAppointmentCard
+              appointment={nextAppointment}
+              onPress={() => navigation.navigate('Registar', { screen: 'MarcarConsulta' })}
+            />
 
             <Text style={[type.caption, { marginTop: spacing.sm }]}>Últimos registos</Text>
             <Card style={{ gap: spacing.sm }}>
@@ -125,4 +143,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   appointmentCard: { gap: spacing.xs },
+  appointmentHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  chevron: { fontSize: 16, color: colors.inkMuted },
 });
