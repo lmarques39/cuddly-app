@@ -15,6 +15,7 @@ export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const passwordTooShort = password.length > 0 && password.length < 6;
   const passwordsMatch = password.length > 0 && password === confirmPassword;
   const canSubmit = email.trim().length > 0 && password.length >= 6 && passwordsMatch;
 
@@ -62,6 +63,7 @@ export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
               secureTextEntry
               style={styles.input}
             />
+            {passwordTooShort && <Text style={styles.mismatchText}>Precisa de ter pelo menos 6 caracteres.</Text>}
           </View>
 
           <View>
