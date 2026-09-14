@@ -8,7 +8,7 @@ import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { useBreastfeeding } from './useBreastfeeding';
 
-const SIDE_LABEL = { left: 'Esquerdo', right: 'Direito' } as const;
+const SIDE_LABEL = { left: 'Esquerda', right: 'Direita' } as const;
 
 export function BreastfeedingScreen() {
   const { todayEntries, todayDurationMs, running, start, stop, suggestedSide } = useBreastfeeding();
