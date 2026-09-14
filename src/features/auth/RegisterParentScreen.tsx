@@ -60,7 +60,7 @@ export function RegisterParentScreen({ email, onContinue, error }: Props) {
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Luís"
+            placeholder="Nome"
             placeholderTextColor={colors.inkMuted}
             style={[styles.input, { fontFamily: fontFamily.bodyBold, fontSize: 16 }]}
           />
