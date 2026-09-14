@@ -7,6 +7,7 @@ import { Card } from '../../components/Card';
 import { addToList, loadList, makeId, STORAGE_KEYS } from '../../storage/storage';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { Appointment } from '../../types/records';
+import { useNow } from '../../utils/useNow';
 
 function parseDateTimeInput(value: string): number | undefined {
   const ms = new Date(value.trim().replace(' ', 'T')).getTime();
@@ -27,9 +28,10 @@ export function AppointmentsScreen() {
   }, []);
 
   useFocusEffect(refresh);
+  const now = useNow(60000);
 
-  const upcoming = appointments.filter((a) => a.scheduledAt >= Date.now()).sort((a, b) => a.scheduledAt - b.scheduledAt);
-  const past = appointments.filter((a) => a.scheduledAt < Date.now()).sort((a, b) => b.scheduledAt - a.scheduledAt);
+  const upcoming = appointments.filter((a) => a.scheduledAt >= now).sort((a, b) => a.scheduledAt - b.scheduledAt);
+  const past = appointments.filter((a) => a.scheduledAt < now).sort((a, b) => b.scheduledAt - a.scheduledAt);
 
   const canSave = title.trim().length > 0 && parseDateTimeInput(when) != null;
 

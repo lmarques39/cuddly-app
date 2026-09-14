@@ -5,6 +5,7 @@ import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { formatClock, formatDuration } from '../../utils/time';
+import { useNow } from '../../utils/useNow';
 import { useBreastfeeding } from './useBreastfeeding';
 
 const SIDE_LABEL = { left: 'Esquerdo', right: 'Direito' } as const;
@@ -12,17 +13,15 @@ const SIDE_LABEL = { left: 'Esquerdo', right: 'Direito' } as const;
 export function BreastfeedingScreen() {
   const { todayEntries, todayDurationMs, running, start, stop, suggestedSide } = useBreastfeeding();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right'>(suggestedSide);
-  const [, forceTick] = useState(0);
+  const now = useNow(1000, running != null);
 
+  // Keeps the side toggle following the app's suggestion (e.g. it flips
+  // after a feed ends) until the person taps the other side themselves.
+  // Not touched in this pass — react-hooks/set-state-in-effect flags it,
+  // but reworking it risks changing that behavior; left as follow-up.
   useEffect(() => setSelectedSide(suggestedSide), [suggestedSide]);
 
-  useEffect(() => {
-    if (running == null) return;
-    const id = setInterval(() => forceTick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, [running]);
-
-  const elapsed = running != null ? Date.now() - running.startedAt : 0;
+  const elapsed = running != null ? now - running.startedAt : 0;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>

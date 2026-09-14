@@ -1,25 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { colors, fontFamily, spacing, type } from '../../theme/tokens';
 import { formatClock, formatDuration } from '../../utils/time';
+import { useNow } from '../../utils/useNow';
 import { useContractions } from './useContractions';
 
 export function ContractionsScreen() {
   const { entries, runningSince, start, stop, fiveOneOne } = useContractions();
-  const [, forceTick] = useState(0);
+  const now = useNow(1000, runningSince != null);
 
-  useEffect(() => {
-    if (runningSince == null) return;
-    const id = setInterval(() => forceTick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, [runningSince]);
-
-  const elapsed = runningSince != null ? Date.now() - runningSince : 0;
-  const lastInterval =
-    entries.length > 0 ? Date.now() - entries[0].endedAt : null;
+  const elapsed = runningSince != null ? now - runningSince : 0;
+  const lastInterval = entries.length > 0 ? now - entries[0].endedAt : null;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
