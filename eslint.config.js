@@ -20,4 +20,13 @@ module.exports = defineConfig([
       "react-hooks/set-state-in-effect": "warn",
     },
   },
+  {
+    // Plain JS, not type-checked, so no-undef stays on (unlike .ts files,
+    // where it's redundant with tsc) — it just doesn't know the Jest global.
+    // __mocks__/firebase/*.js are the same: plain JS, use the jest global.
+    files: ["jest.setup.js", "__mocks__/**/*.js"],
+    languageOptions: {
+      globals: { jest: "readonly" },
+    },
+  },
 ]);

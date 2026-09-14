@@ -106,16 +106,26 @@ export function watchConnectivity(): () => void {
 
 /**
  * Subscribes to every document in families/{familyId}/{collectionName},
- * calling onChange with the full list on every update. Returns the
- * unsubscribe function — callers are responsible for caching to AsyncStorage
- * if they want a cold-start cache (each hook decides this for itself).
+ * calling onChange with the full list on every update. Resolves the current
+ * user's familyId internally (async) so callers don't need to know or pass
+ * it. Returns an unsubscribe function usable immediately, even before the
+ * familyId lookup and the Firestore subscription itself have resolved.
+ * Callers are responsible for caching to AsyncStorage if they want a
+ * cold-start cache (each hook decides this for itself).
  */
-export function subscribeToCollection<T>(
-  familyId: string,
-  collectionName: string,
-  onChange: (items: T[]) => void,
-): () => void {
-  return onSnapshot(collection(db, 'families', familyId, collectionName), (snap) => {
-    onChange(snap.docs.map((d) => d.data() as T));
+export function subscribeToCollection<T>(collectionName: string, onChange: (items: T[]) => void): () => void {
+  let cancelled = false;
+  let unsubscribeSnapshot: (() => void) | null = null;
+
+  getFamilyId().then((familyId) => {
+    if (cancelled || !familyId) return;
+    unsubscribeSnapshot = onSnapshot(collection(db, 'families', familyId, collectionName), (snap) => {
+      onChange(snap.docs.map((d) => d.data() as T));
+    });
   });
+
+  return () => {
+    cancelled = true;
+    unsubscribeSnapshot?.();
+  };
 }
