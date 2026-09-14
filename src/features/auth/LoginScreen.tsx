@@ -8,10 +8,11 @@ type Props = {
   onLogin: (email: string, password: string) => void;
   onContinueWithGoogle: () => void;
   onCreateAccount: () => void;
+  onForgotPassword: () => void;
   error?: string | null;
 };
 
-export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, error }: Props) {
+export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, onForgotPassword, error }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -47,7 +48,9 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, er
           <View>
             <View style={styles.row}>
               <Text style={type.caption}>Password</Text>
-              <Text style={[type.caption, styles.link]}>Esqueci-me</Text>
+              <Pressable onPress={onForgotPassword} hitSlop={8}>
+                <Text style={[type.caption, styles.link]}>Esqueci-me</Text>
+              </Pressable>
             </View>
             <TextInput
               value={password}

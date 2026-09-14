@@ -3,13 +3,20 @@ import { Fredoka_500Medium, Fredoka_600SemiBold } from '@expo-google-fonts/fredo
 import { useFonts } from 'expo-font';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, User } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  User,
+} from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BabyInfo, RegisterBabyScreen } from './src/features/auth/RegisterBabyScreen';
 import { CreateAccountScreen } from './src/features/auth/CreateAccountScreen';
 import { LoginScreen } from './src/features/auth/LoginScreen';
+import { RecoverPasswordScreen } from './src/features/auth/RecoverPasswordScreen';
 import { ParentInfo, RegisterParentScreen } from './src/features/auth/RegisterParentScreen';
 import { createFamilyForUser } from './src/features/family/createFamily';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
@@ -22,7 +29,7 @@ import { colors } from './src/theme/tokens';
 // Google sign-in still needs expo-auth-session wired to a Google Cloud OAuth
 // client (separate console step) — not done yet, "Continuar com Google" is
 // a no-op for now.
-type AuthStep = 'login' | 'createAccount' | 'registerParent' | 'registerBaby' | 'app';
+type AuthStep = 'login' | 'createAccount' | 'recoverPassword' | 'registerParent' | 'registerBaby' | 'app';
 
 // react-native-web's Alert.alert() is a no-op (no popup, no console log) —
 // errors must be shown inline instead, and Firebase's raw error codes need
@@ -118,6 +125,16 @@ export default function App() {
     }
   };
 
+  const handleSendResetEmail = async (email: string) => {
+    setAuthError(null);
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (err) {
+      setAuthError(describeAuthError(err));
+      throw err; // let RecoverPasswordScreen know not to show its "sent" confirmation
+    }
+  };
+
   const handleParentContinue = async (parent: ParentInfo) => {
     setAuthError(null);
     if (user) {
@@ -164,12 +181,26 @@ export default function App() {
             setAuthError(null);
             setAuthStep('createAccount');
           }}
+          onForgotPassword={() => {
+            setAuthError(null);
+            setAuthStep('recoverPassword');
+          }}
           error={authError}
         />
       )}
       {authStep === 'createAccount' && (
         <CreateAccountScreen
           onCreateAccount={handleCreateAccount}
+          onBack={() => {
+            setAuthError(null);
+            setAuthStep('login');
+          }}
+          error={authError}
+        />
+      )}
+      {authStep === 'recoverPassword' && (
+        <RecoverPasswordScreen
+          onSend={handleSendResetEmail}
           onBack={() => {
             setAuthError(null);
             setAuthStep('login');
