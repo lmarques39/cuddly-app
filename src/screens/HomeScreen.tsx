@@ -17,6 +17,10 @@ function pregnancyWeek(dueDate: number): number {
   return Math.min(42, Math.max(1, 40 - weeksRemaining));
 }
 
+function formatAppointmentDate(epochMs: number): string {
+  return new Date(epochMs).toLocaleString('pt-PT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
 function babyAge(birthDate: number): string {
   const days = Math.floor((Date.now() - birthDate) / (24 * 60 * 60 * 1000));
   if (days < 14) return `${days} dia${days === 1 ? '' : 's'}`;
@@ -74,9 +78,10 @@ export function HomeScreen() {
                 <Text style={type.caption}>Define a data prevista do parto em Perfil › Perfil do bebé.</Text>
               )}
             </Card>
-            <Card style={{ gap: spacing.xs }}>
+            <Card style={styles.appointmentCard}>
               <Text style={type.caption}>Próxima consulta</Text>
               <Text style={type.body}>{nextAppointment ? nextAppointment.title : 'Sem consultas agendadas.'}</Text>
+              {nextAppointment && <Text style={type.caption}>{formatAppointmentDate(nextAppointment.scheduledAt)}</Text>}
             </Card>
           </>
         ) : (
@@ -91,6 +96,12 @@ export function HomeScreen() {
                   {profile?.heightCm ? `${profile.heightCm}cm` : ''}
                 </Text>
               )}
+            </Card>
+
+            <Card style={styles.appointmentCard}>
+              <Text style={type.caption}>Próxima consulta</Text>
+              <Text style={type.body}>{nextAppointment ? nextAppointment.title : 'Sem consultas agendadas.'}</Text>
+              {nextAppointment && <Text style={type.caption}>{formatAppointmentDate(nextAppointment.scheduledAt)}</Text>}
             </Card>
 
             <Text style={[type.caption, { marginTop: spacing.sm }]}>Últimos registos</Text>
@@ -113,4 +124,5 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
+  appointmentCard: { gap: spacing.xs },
 });
