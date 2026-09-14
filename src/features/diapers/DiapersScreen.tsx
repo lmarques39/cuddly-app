@@ -26,6 +26,9 @@ export function DiapersScreen() {
   const lastEntry = entries[0];
 
   const register = async (diaperType: DiaperType) => {
+    // Runs on tap (see onPress below), not during render — react-hooks/purity
+    // can't tell the two apart here, but there's nothing to fix.
+    // eslint-disable-next-line react-hooks/purity
     const entry: DiaperEntry = { id: makeId(), type: diaperType, at: Date.now() };
     const next = await addToList(STORAGE_KEYS.diapers, entry);
     setEntries(next);

@@ -8,15 +8,15 @@ module.exports = defineConfig([
     ignores: ["dist/*"],
   },
   {
-    // eslint-config-expo ships the React Compiler-oriented hooks rules as
-    // errors. This app doesn't opt into the compiler yet, and several
-    // existing screens legitimately read Date.now() for live elapsed-time
-    // display (Contrações/Amamentação timers) or to timestamp a record on
-    // tap (Fraldas) — rewriting those is real work, not a lint-setup task.
-    // Downgraded to warn so they're visible without blocking CI; tracked
-    // as follow-up cleanup.
+    // react-hooks/purity: fixed at the source (src/utils/useNow.ts) instead
+    // of downgraded — see its call sites in Contrações/Amamentação/
+    // Consultas/Histórico. Left at the config's default (error).
+    //
+    // react-hooks/set-state-in-effect: 2 remaining cases (Amamentação's
+    // suggested-side sync, BabyProfileScreen's form-from-async-profile
+    // load) genuinely change UX behavior to fix properly — downgraded to
+    // warn so they're visible without blocking CI; tracked as follow-up.
     rules: {
-      "react-hooks/purity": "warn",
       "react-hooks/set-state-in-effect": "warn",
     },
   },

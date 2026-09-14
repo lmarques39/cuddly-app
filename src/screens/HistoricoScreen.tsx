@@ -7,6 +7,7 @@ import { loadList, STORAGE_KEYS } from '../storage/storage';
 import { colors, fontFamily, radii, spacing, type } from '../theme/tokens';
 import { BottleEntry, BreastfeedingEntry, ContractionEntry, DiaperEntry } from '../types/records';
 import { formatClock, formatDuration } from '../utils/time';
+import { useNow } from '../utils/useNow';
 
 type Kind = 'contraction' | 'breastfeeding' | 'bottle' | 'diaper';
 type TimelineItem = { id: string; kind: Kind; label: string; detail: string; at: number };
@@ -78,7 +79,8 @@ export function HistoricoScreen() {
 
   const filtered = useMemo(() => (filter === 'todos' ? items : items.filter((i) => i.kind === filter)), [items, filter]);
 
-  const last7Days = useMemo(() => items.filter((i) => Date.now() - i.at <= SEVEN_DAYS_MS), [items]);
+  const now = useNow(60000);
+  const last7Days = useMemo(() => items.filter((i) => now - i.at <= SEVEN_DAYS_MS), [items, now]);
   const totals = useMemo(() => {
     const counts: Record<Kind, number> = { contraction: 0, breastfeeding: 0, bottle: 0, diaper: 0 };
     last7Days.forEach((i) => {
