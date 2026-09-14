@@ -1,6 +1,6 @@
 # Cuddly
 
-App React Native/Expo para gravidez e pós-parto: contrações, amamentação, biberão, fraldas e consultas médicas — pensada para ser usada com uma mão, a meio da noite. (O código ainda usa o nome interno "Ninho" nalguns sítios — renomeação em curso.)
+App React Native/Expo para gravidez e pós-parto: contrações, amamentação, biberão, fraldas e consultas médicas — pensada para ser usada com uma mão, a meio da noite.
 
 Proposta de projeto (plano de funcionalidades, moodboard, wireframes, calendário e orçamento): **[ver artefacto publicado](https://claude.ai/code/artifact/d48536bb-7e6f-44a8-8c6f-dd67d6c7458f)**. Wireframes de navegação/ecrãs: **[canvas publicado](https://claude.ai/code/artifact/65b38b77-ed41-465d-a66d-d7954bd5de70)**.
 

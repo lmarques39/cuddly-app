@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Ninho",
-    "slug": "ninho-app",
-    "scheme": "ninho",
+    "name": "Cuddly",
+    "slug": "cuddly-app",
+    "scheme": "cuddly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

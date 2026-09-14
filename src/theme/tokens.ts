@@ -1,5 +1,5 @@
 /**
- * Design tokens matched to the Ninho moodboard (see project proposal artifact).
+ * Design tokens matched to the Cuddly moodboard (see project proposal artifact).
  * Kept as plain objects so any screen can `import { colors, spacing } from '@/theme/tokens'`.
  */
 
