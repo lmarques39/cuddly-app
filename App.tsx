@@ -161,7 +161,9 @@ export default function App() {
           error={authError}
         />
       )}
-      {authStep === 'registerParent' && <RegisterParentScreen onContinue={handleParentContinue} error={authError} />}
+      {authStep === 'registerParent' && (
+        <RegisterParentScreen email={user?.email ?? ''} onContinue={handleParentContinue} error={authError} />
+      )}
       {authStep === 'registerBaby' && <RegisterBabyScreen onFinish={handleBabyFinish} />}
       {authStep === 'app' && (
         <NavigationContainer>

@@ -14,6 +14,9 @@ export type ParentInfo = {
 };
 
 type Props = {
+  // Already captured on the previous screen (account creation) — shown
+  // read-only here instead of asked again.
+  email: string;
   onContinue: (parent: ParentInfo) => void;
   error?: string | null;
 };
@@ -24,13 +27,12 @@ const ROLE_LABEL: Record<ParentRole, string> = {
   cuidador: 'Cuidador(a)',
 };
 
-export function RegisterParentScreen({ onContinue, error }: Props) {
+export function RegisterParentScreen({ email, onContinue, error }: Props) {
   const [name, setName] = useState('');
   const [role, setRole] = useState<ParentRole>('mae');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  const canContinue = name.trim().length > 0 && email.trim().length > 0;
+  const canContinue = name.trim().length > 0;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -64,6 +66,11 @@ export function RegisterParentScreen({ onContinue, error }: Props) {
           />
         </View>
 
+        <View style={styles.emailRow}>
+          <Text style={type.caption}>Conta</Text>
+          <Text style={[type.body, { fontFamily: fontFamily.bodyMedium }]}>{email}</Text>
+        </View>
+
         <View>
           <Text style={type.caption}>O teu papel</Text>
           <View style={styles.roleRow}>
@@ -88,19 +95,6 @@ export function RegisterParentScreen({ onContinue, error }: Props) {
         </View>
 
         <View>
-          <Text style={type.caption}>Email</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="tu@email.com"
-            placeholderTextColor={colors.inkMuted}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
-          />
-        </View>
-
-        <View>
           <Text style={type.caption}>Telemóvel (opcional)</Text>
           <TextInput
             value={phone}
@@ -118,7 +112,7 @@ export function RegisterParentScreen({ onContinue, error }: Props) {
           label="Continuar"
           background={canContinue ? colors.action : colors.surfaceSunken}
           foreground={canContinue ? colors.actionInk : colors.inkMuted}
-          onPress={() => canContinue && onContinue({ name: name.trim(), role, email: email.trim(), phone: phone.trim() })}
+          onPress={() => canContinue && onContinue({ name: name.trim(), role, email, phone: phone.trim() })}
           full
         />
         <Text style={[type.caption, { textAlign: 'center', color: colors.inkMuted, marginTop: spacing.sm }]}>
@@ -134,6 +128,15 @@ const styles = StyleSheet.create({
   content: { flex: 1, gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   progressRow: { flexDirection: 'row', gap: spacing.sm },
   progressSegment: { flex: 1, height: 4, borderRadius: 2 },
+  emailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   input: {
     marginTop: spacing.xs,
     borderWidth: 1.5,
