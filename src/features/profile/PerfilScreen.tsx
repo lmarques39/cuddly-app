@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../components/Card';
+import { clearAllLocalData, seedDemoData } from '../../dev/seedDemoData';
 import { PerfilStackParamList } from '../../navigation/types';
 import { auth } from '../../services/firebase';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
@@ -48,6 +49,18 @@ export function PerfilScreen() {
       <Pressable onPress={() => signOut(auth)} style={styles.logoutButton}>
         <Text style={styles.logoutLabel}>Terminar sessão</Text>
       </Pressable>
+
+      {__DEV__ && (
+        <View style={{ gap: spacing.sm }}>
+          <Text style={type.caption}>Apenas em desenvolvimento</Text>
+          <Pressable onPress={() => seedDemoData()} style={styles.devButton}>
+            <Text style={styles.devLabel}>Carregar dados de demonstração</Text>
+          </Pressable>
+          <Pressable onPress={() => clearAllLocalData()} style={styles.devButton}>
+            <Text style={styles.devLabel}>Limpar dados locais</Text>
+          </Pressable>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -64,4 +77,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoutLabel: { fontFamily: fontFamily.bodyBold, fontSize: 14.5, color: colors.coral },
+  devButton: {
+    minHeight: 48,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surfaceSunken,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  devLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 13.5, color: colors.inkSecondary },
 });
