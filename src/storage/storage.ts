@@ -2,8 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * MVP persistence: one JSON array per record type in AsyncStorage.
- * Deliberately simple for the Sept 18 delivery — swap for SQLite/sync
- * once multi-caregiver support (v1.1) is in scope.
+ * Deliberately dependency-free (no Firebase import here) so it stays easy
+ * to unit-test without a Firestore mock — see sync.ts for the Firestore
+ * mirroring built on top of these primitives.
  */
 
 export const STORAGE_KEYS = {
