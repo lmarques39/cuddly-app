@@ -1,7 +1,9 @@
 import NetInfo from '@react-native-community/netinfo';
-import { collection, doc, deleteDoc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { loadList, makeId, saveList } from './storage';
+
+const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments'];
 
 /**
  * Firestore sync: entry-per-document under families/{familyId}/{collectionName}/{entryId},
@@ -128,6 +130,25 @@ export function subscribeToCollection<T>(collectionName: string, onChange: (item
     cancelled = true;
     unsubscribeSnapshot?.();
   };
+}
+
+/**
+ * Deletes every tracker entry and the baby profile from this account's
+ * family in Firestore. Pair with storage.ts's clearAllLocalData() — that one
+ * only clears AsyncStorage, and on its own would get silently undone the
+ * moment the live subscriptions reconnect and re-populate from whatever's
+ * still in Firestore. Used by Perfil's "Limpar dados locais" dev tool.
+ */
+export async function clearFamilyData(): Promise<void> {
+  const familyId = await getFamilyId();
+  if (!familyId) return;
+
+  for (const collectionName of TRACKER_COLLECTIONS) {
+    const snap = await getDocs(collection(db, 'families', familyId, collectionName));
+    await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+  }
+
+  await deleteDoc(doc(db, 'families', familyId, 'profile', 'baby'));
 }
 
 /**

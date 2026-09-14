@@ -1,4 +1,5 @@
 import { STORAGE_KEYS, makeId, saveList, saveObject } from '../storage/storage';
+import { syncEntry } from '../storage/sync';
 import {
   Appointment,
   BabyProfile,
@@ -113,5 +114,19 @@ export async function seedDemoData(): Promise<void> {
     saveList(STORAGE_KEYS.bottle, bottle),
     saveList(STORAGE_KEYS.diapers, diapers),
     saveList(STORAGE_KEYS.appointments, appointments),
+  ]);
+
+  // Also push to Firestore, not just AsyncStorage: every screen now
+  // subscribes live (see the tracker hooks), so if this demo data only
+  // existed locally, that subscription would fire with an empty snapshot
+  // and immediately overwrite what we just seeded — both on screen and in
+  // the local cache — the moment it connects.
+  await Promise.all([
+    syncEntry('profile', 'baby', babyProfile),
+    ...contractions.map((e) => syncEntry('contractions', e.id, e)),
+    ...breastfeeding.map((e) => syncEntry('breastfeeding', e.id, e)),
+    ...bottle.map((e) => syncEntry('bottle', e.id, e)),
+    ...diapers.map((e) => syncEntry('diapers', e.id, e)),
+    ...appointments.map((e) => syncEntry('appointments', e.id, e)),
   ]);
 }

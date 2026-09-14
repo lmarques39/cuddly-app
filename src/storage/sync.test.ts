@@ -1,11 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getDoc, setDoc } from 'firebase/firestore';
+import { deleteDoc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { auth } from '../services/firebase';
 import { loadList } from './storage';
-import { flushOutbox, syncEntry } from './sync';
+import { clearFamilyData, flushOutbox, syncEntry } from './sync';
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
+const mockGetDocs = getDocs as jest.Mock;
+const mockDeleteDoc = deleteDoc as jest.Mock;
 
 const OUTBOX_KEY = '@cuddly/outbox';
 
@@ -70,5 +72,17 @@ describe('flushOutbox', () => {
     await flushOutbox();
 
     expect(await loadList(OUTBOX_KEY)).toHaveLength(1);
+  });
+});
+
+describe('clearFamilyData', () => {
+  it('deletes every doc across all tracker collections plus the baby profile', async () => {
+    mockGetDocs.mockResolvedValue({ docs: [{ ref: 'ref-a' }, { ref: 'ref-b' }] });
+    mockDeleteDoc.mockResolvedValue(undefined);
+
+    await clearFamilyData();
+
+    // 5 tracker collections x 2 docs each (from the mock above) + 1 profile doc
+    expect(mockDeleteDoc).toHaveBeenCalledTimes(11);
   });
 });

@@ -6,8 +6,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../components/Card';
 import { seedDemoData } from '../../dev/seedDemoData';
-import { clearAllLocalData } from '../../storage/storage';
 import { PerfilStackParamList } from '../../navigation/types';
+import { clearAllLocalData } from '../../storage/storage';
+import { clearFamilyData } from '../../storage/sync';
 import { auth } from '../../services/firebase';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 
@@ -57,7 +58,13 @@ export function PerfilScreen() {
           <Pressable onPress={() => seedDemoData()} style={styles.devButton}>
             <Text style={styles.devLabel}>Carregar dados de demonstração</Text>
           </Pressable>
-          <Pressable onPress={() => clearAllLocalData()} style={styles.devButton}>
+          <Pressable
+            onPress={() => {
+              clearAllLocalData();
+              clearFamilyData();
+            }}
+            style={styles.devButton}
+          >
             <Text style={styles.devLabel}>Limpar dados locais</Text>
           </Pressable>
         </View>
