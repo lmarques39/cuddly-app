@@ -3,33 +3,44 @@
  * Kept as plain objects so any screen can `import { colors, spacing } from '@/theme/tokens'`.
  */
 
+// Wireframe/Figma pass (2026-09-14): hand-drawn-doodle look — cream ground,
+// solid black ink outlines on every control, pastel fills, pill buttons.
+// See docs/assets/figma/ for the source screenshots this matches.
 export const colors = {
-  paper: '#F1ECE3',
-  surface: '#FBF8F3',
-  surfaceSunken: '#E7DFD1',
-  ink: '#2A2620',
+  paper: '#F8F2E4',
+  surface: '#FFFFFF',
+  surfaceSunken: '#F0E9D8',
+  ink: '#1C1712',
   inkSecondary: '#6B6558',
   inkMuted: '#948C7C',
-  border: 'rgba(42,38,32,0.14)',
-  borderStrong: 'rgba(42,38,32,0.24)',
+  // Solid-reading (not a faint hairline) — every text input/toggle pill
+  // in the wireframe has a visible ink outline, not a barely-there divider.
+  border: 'rgba(28,23,18,0.55)',
+  borderStrong: 'rgba(28,23,18,0.75)',
+  // solid (non-alpha) ink border used on every card/button/input — the
+  // wireframe's signature outline. Kept separate from `border` (which
+  // stays a soft rgba hairline for subtler dividers).
+  inkBorder: '#1C1712',
 
   primary: '#6B4E9C',
-  primaryInk: '#FBF8F3',
+  primaryInk: '#FFFFFF',
   accent: '#4F8A3F',
   tertiary: '#D9724A',
-  cream: '#FCEECB', creamInk: '#2A2620',
-  action: '#5EBE7A', actionInk: '#FFFFFF',
-  coral: '#E8677A', coralBg: '#FBDEE2',
-  cardBorder: 'rgba(42,38,32,0.30)',
+  cream: '#F6D888', creamInk: '#1C1712',
+  action: '#7FC993', actionInk: '#1C1712',
+  coral: '#E0836F', coralBg: '#F8DAD2',
+  cardBorder: '#1C1712',
 
-  // one colour per tracking domain, consistent with the wireframes/gantt
+  // one pastel per tracking domain — black ink text/borders throughout,
+  // matching the wireframe convention (fill carries the meaning, not text
+  // colour).
   domain: {
-    contractions: { bg: '#D9724A', ink: '#FBF8F3' },
-    breastfeeding: { bg: '#6B4E9C', ink: '#FBF8F3' },
-    bottle: { bg: '#C98A1E', ink: '#2A2620' },
-    pumping: { bg: '#2E6FA8', ink: '#FBF8F3' },
-    diapers: { bg: '#4F8A3F', ink: '#FBF8F3' },
-    sleep: { bg: '#B0416E', ink: '#FBF8F3' },
+    contractions: { bg: '#F2B84B', ink: '#1C1712' },
+    breastfeeding: { bg: '#B7A3E0', ink: '#1C1712' },
+    bottle: { bg: '#F6D888', ink: '#1C1712' },
+    pumping: { bg: '#93C1E6', ink: '#1C1712' },
+    diapers: { bg: '#EFA9BE', ink: '#1C1712' },
+    sleep: { bg: '#C9A6D6', ink: '#1C1712' },
   },
 
 } as const;

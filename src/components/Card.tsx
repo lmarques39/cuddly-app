@@ -9,9 +9,9 @@ export function Card({ style, ...rest }: ViewProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radii.lg,
+    borderWidth: 2,
+    borderColor: colors.inkBorder,
     padding: spacing.lg,
   },
 });

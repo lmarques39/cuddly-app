@@ -50,9 +50,9 @@ export function PerfilScreen() {
         <Text style={styles.logoutLabel}>Terminar sessão</Text>
       </Pressable>
 
-      {__DEV__ && (
+      {(__DEV__ || process.env.EXPO_PUBLIC_ENABLE_DEV_TOOLS === 'true') && (
         <View style={{ gap: spacing.sm }}>
-          <Text style={type.caption}>Apenas em desenvolvimento</Text>
+          <Text style={type.caption}>Ferramentas de demonstração</Text>
           <Pressable onPress={() => seedDemoData()} style={styles.devButton}>
             <Text style={styles.devLabel}>Carregar dados de demonstração</Text>
           </Pressable>

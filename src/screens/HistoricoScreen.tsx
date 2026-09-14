@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { loadList, STORAGE_KEYS } from '../storage/storage';
@@ -27,6 +27,13 @@ const KIND_COLOR: Record<Kind, string> = {
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_LETTER = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+function startOfDay(epochMs: number): number {
+  const d = new Date(epochMs);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
 
 export function HistoricoScreen() {
   const [items, setItems] = useState<TimelineItem[]>([]);
@@ -90,6 +97,18 @@ export function HistoricoScreen() {
   }, [last7Days]);
   const maxTotal = Math.max(1, ...Object.values(totals));
 
+  const dailyTotals = useMemo(() => {
+    const today = startOfDay(now);
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const dayStart = today - (6 - i) * 24 * 60 * 60 * 1000;
+      const date = new Date(dayStart);
+      const count = items.filter((it) => startOfDay(it.at) === dayStart).length;
+      return { key: dayStart, letter: DAY_LETTER[date.getDay()], count, isToday: dayStart === today };
+    });
+    return days;
+  }, [items, now]);
+  const maxDaily = Math.max(1, ...dailyTotals.map((d) => d.count));
+
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Text style={type.h1}>Histórico</Text>
@@ -152,8 +171,32 @@ export function HistoricoScreen() {
           />
         </>
       ) : (
-        <View style={{ gap: spacing.md }}>
-          <Text style={type.caption}>Últimos 7 dias</Text>
+        <ScrollView contentContainerStyle={{ gap: spacing.md, paddingBottom: spacing.xl }}>
+          <Card style={{ gap: spacing.sm }}>
+            <Text style={type.caption}>Atividade por dia · esta semana</Text>
+            <View style={styles.chartRow}>
+              {dailyTotals.map((d) => (
+                <View key={d.key} style={styles.chartCol}>
+                  <View style={styles.chartTrack}>
+                    <View
+                      style={[
+                        styles.chartBar,
+                        {
+                          height: `${(d.count / maxDaily) * 100}%`,
+                          backgroundColor: d.isToday ? colors.primary : colors.domain.breastfeeding.bg,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.chartLabel, d.isToday && { fontFamily: fontFamily.bodyBold, color: colors.ink }]}>
+                    {d.letter}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+
+          <Text style={type.caption}>Totais dos últimos 7 dias</Text>
           {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
             <Card key={k} style={{ gap: spacing.xs }}>
               <View style={styles.row}>
@@ -165,7 +208,7 @@ export function HistoricoScreen() {
               </View>
             </Card>
           ))}
-        </View>
+        </ScrollView>
       )}
     </SafeAreaView>
   );
@@ -178,6 +221,11 @@ const styles = StyleSheet.create({
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   filterChip: { paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  chartRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 110, paddingTop: spacing.sm },
+  chartCol: { alignItems: 'center', gap: spacing.xs, width: 28 },
+  chartTrack: { width: 16, height: 80, borderRadius: radii.pill, backgroundColor: colors.surfaceSunken, justifyContent: 'flex-end', overflow: 'hidden' },
+  chartBar: { width: '100%', borderRadius: radii.pill },
+  chartLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 11, color: colors.inkMuted },
   dot: { width: 10, height: 10, borderRadius: 5 },
   barTrack: { height: 10, borderRadius: radii.pill, backgroundColor: colors.surfaceSunken, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: radii.pill },

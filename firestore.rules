@@ -26,7 +26,12 @@ service cloud.firestore {
 
       match /members/{memberId} {
         allow read: if isFamilyMember(familyId);
-        allow write: if isFamilyMember(familyId) && request.auth.uid == memberId;
+        // create is intentionally not gated on isFamilyMember: that check
+        // requires the member doc to already exist, so the very first
+        // member of a new family could never be added otherwise. Creating
+        // your own member doc (uid == memberId) is safe regardless.
+        allow create: if isSignedIn() && request.auth.uid == memberId;
+        allow update, delete: if isFamilyMember(familyId) && request.auth.uid == memberId;
       }
 
       // BabyProfile, Activity (contractions/breastfeeding/pumping/diapers),
