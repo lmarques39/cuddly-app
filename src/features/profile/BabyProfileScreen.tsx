@@ -3,46 +3,27 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { DateField } from '../../components/DateField';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { useBabyProfile } from './useBabyProfile';
-
-function toDateInput(epochMs?: number): string {
-  if (!epochMs) return '';
-  // parseDateInput below builds the timestamp from local midnight — must
-  // read it back with local getters too. toISOString() converts to UTC,
-  // which in a positive-offset zone (e.g. Portugal in summer, UTC+1) rolls
-  // local midnight back to 23:00 the previous day, showing the date one
-  // day early after every save.
-  const d = new Date(epochMs);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function parseDateInput(value: string): number | undefined {
-  if (!value.trim()) return undefined;
-  const ms = new Date(`${value.trim()}T00:00:00`).getTime();
-  return Number.isNaN(ms) ? undefined : ms;
-}
 
 export function BabyProfileScreen() {
   const { profile, mode, save } = useBabyProfile();
   const [name, setName] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [birthDate, setBirthDate] = useState('');
+  const [dueDate, setDueDate] = useState<number | undefined>(undefined);
+  const [birthDate, setBirthDate] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     setName(profile?.name ?? '');
-    setDueDate(toDateInput(profile?.dueDate));
-    setBirthDate(toDateInput(profile?.birthDate));
+    setDueDate(profile?.dueDate);
+    setBirthDate(profile?.birthDate);
   }, [profile]);
 
   const onSave = () => {
     save({
       name: name.trim() || undefined,
-      dueDate: parseDateInput(dueDate),
-      birthDate: parseDateInput(birthDate),
+      dueDate,
+      birthDate,
     });
   };
 
@@ -64,26 +45,13 @@ export function BabyProfileScreen() {
             style={styles.input}
           />
         </View>
-        <View>
-          <Text style={type.caption}>Data prevista do parto (AAAA-MM-DD)</Text>
-          <TextInput
-            value={dueDate}
-            onChangeText={setDueDate}
-            placeholder="2026-12-01"
-            placeholderTextColor={colors.inkMuted}
-            style={styles.input}
-          />
-        </View>
-        <View>
-          <Text style={type.caption}>Data de nascimento (AAAA-MM-DD, se já nasceu)</Text>
-          <TextInput
-            value={birthDate}
-            onChangeText={setBirthDate}
-            placeholder="2026-11-20"
-            placeholderTextColor={colors.inkMuted}
-            style={styles.input}
-          />
-        </View>
+        <DateField label="Data prevista do parto" value={dueDate} onChange={setDueDate} placeholder="Data prevista" />
+        <DateField
+          label="Data de nascimento (se já nasceu)"
+          value={birthDate}
+          onChange={setBirthDate}
+          placeholder="Quando nasceu"
+        />
         <BigButton label="Guardar" background={colors.primary} foreground={colors.primaryInk} onPress={onSave} full />
       </Card>
     </SafeAreaView>

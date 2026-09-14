@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
+import { DateField } from '../../components/DateField';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { BabySex } from '../../types/records';
 
@@ -23,20 +24,13 @@ const SEX_LABEL: Record<BabySex, string> = {
   prefiro_nao_dizer: 'Prefiro não dizer',
 };
 
-function parseDateInput(value: string): number | undefined {
-  if (!value.trim()) return undefined;
-  const ms = new Date(`${value.trim()}T00:00:00`).getTime();
-  return Number.isNaN(ms) ? undefined : ms;
-}
-
 export function RegisterBabyScreen({ onFinish }: Props) {
   const [alreadyBorn, setAlreadyBorn] = useState(false);
   const [name, setName] = useState('');
-  const [dateInput, setDateInput] = useState('');
+  const [dateMs, setDateMs] = useState<number | undefined>(undefined);
   const [sex, setSex] = useState<BabySex | undefined>(undefined);
 
   const handleFinish = () => {
-    const dateMs = parseDateInput(dateInput);
     onFinish({
       name: name.trim(),
       alreadyBorn,
@@ -94,16 +88,12 @@ export function RegisterBabyScreen({ onFinish }: Props) {
           />
         </View>
 
-        <View>
-          <Text style={type.caption}>{alreadyBorn ? 'Data de nascimento' : 'Data prevista para o parto'} (AAAA-MM-DD)</Text>
-          <TextInput
-            value={dateInput}
-            onChangeText={setDateInput}
-            placeholder={alreadyBorn ? '2026-08-20' : '2026-12-01'}
-            placeholderTextColor={colors.inkMuted}
-            style={styles.input}
-          />
-        </View>
+        <DateField
+          label={alreadyBorn ? 'Data de nascimento' : 'Data prevista para o parto'}
+          value={dateMs}
+          onChange={setDateMs}
+          placeholder={alreadyBorn ? 'Quando nasceu' : 'Data prevista'}
+        />
 
         <View>
           <Text style={type.caption}>Sexo</Text>
