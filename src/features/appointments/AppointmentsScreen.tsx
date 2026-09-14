@@ -10,9 +10,22 @@ import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { Appointment } from '../../types/records';
 import { useNow } from '../../utils/useNow';
 
-function parseDateTimeInput(value: string): number | undefined {
-  const ms = new Date(value.trim().replace(' ', 'T')).getTime();
-  return Number.isNaN(ms) ? undefined : ms;
+const QUICK_TIMES = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+
+/** Builds a local-time timestamp from a "YYYY-MM-DD" key and a "HH:MM" label. */
+function combineDateAndTime(key: string, time: string): number | undefined {
+  const [y, m, d] = key.split('-').map(Number);
+  const timeMatch = time.trim().match(/^([0-2]?\d):([0-5]\d)$/);
+  if (!y || !m || !d || !timeMatch) return undefined;
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  if (hour > 23) return undefined;
+  return new Date(y, m - 1, d, hour, minute).getTime();
+}
+
+function formatDateLabel(key: string): string {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long' });
 }
 
 function formatAppointment(epochMs: number): string {
@@ -22,8 +35,9 @@ function formatAppointment(epochMs: number): string {
 export function AppointmentsScreen() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [title, setTitle] = useState('');
-  const [when, setWhen] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [time, setTime] = useState('09:00');
+  const [customTime, setCustomTime] = useState(false);
 
   const refresh = useCallback(() => {
     loadList<Appointment>(STORAGE_KEYS.appointments).then(setAppointments);
@@ -31,6 +45,8 @@ export function AppointmentsScreen() {
 
   useFocusEffect(refresh);
   const now = useNow(60000);
+  const todayKey = dateKey(now);
+  const formDateKey = selectedKey ?? todayKey;
 
   const markedDates = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -46,15 +62,17 @@ export function AppointmentsScreen() {
   const upcoming = visible.filter((a) => a.scheduledAt >= now);
   const past = visible.filter((a) => a.scheduledAt < now).reverse();
 
-  const canSave = title.trim().length > 0 && parseDateTimeInput(when) != null;
+  const scheduledAt = combineDateAndTime(formDateKey, time);
+  const canSave = title.trim().length > 0 && scheduledAt != null;
 
   const save = async () => {
-    if (!canSave) return;
-    const entry: Appointment = { id: makeId(), title: title.trim(), scheduledAt: parseDateTimeInput(when)! };
+    if (!canSave || scheduledAt == null) return;
+    const entry: Appointment = { id: makeId(), title: title.trim(), scheduledAt };
     const next = await addToList(STORAGE_KEYS.appointments, entry);
     setAppointments(next);
     setTitle('');
-    setWhen('');
+    setTime('09:00');
+    setCustomTime(false);
   };
 
   return (
@@ -75,6 +93,11 @@ export function AppointmentsScreen() {
         )}
 
         <Card style={{ gap: spacing.md }}>
+          <Text style={[type.caption, styles.formTarget]}>
+            A marcar para <Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
+            {!selectedKey && ' (hoje — toca num dia no calendário para escolher outro)'}
+          </Text>
+
           <View>
             <Text style={type.caption}>Título</Text>
             <TextInput
@@ -85,16 +108,40 @@ export function AppointmentsScreen() {
               style={styles.input}
             />
           </View>
+
           <View>
-            <Text style={type.caption}>Data e hora (AAAA-MM-DD HH:MM)</Text>
-            <TextInput
-              value={when}
-              onChangeText={setWhen}
-              placeholder="2026-09-20 10:30"
-              placeholderTextColor={colors.inkMuted}
-              style={styles.input}
-            />
+            <Text style={type.caption}>Hora</Text>
+            <View style={styles.timeGrid}>
+              {QUICK_TIMES.map((t) => (
+                <Pressable
+                  key={t}
+                  onPress={() => {
+                    setTime(t);
+                    setCustomTime(false);
+                  }}
+                  style={[styles.timePill, !customTime && time === t && styles.timePillOn]}
+                >
+                  <Text style={[styles.timePillLabel, !customTime && time === t && styles.timePillLabelOn]}>{t}</Text>
+                </Pressable>
+              ))}
+              <Pressable
+                onPress={() => setCustomTime(true)}
+                style={[styles.timePill, customTime && styles.timePillOn]}
+              >
+                <Text style={[styles.timePillLabel, customTime && styles.timePillLabelOn]}>Outra</Text>
+              </Pressable>
+            </View>
+            {customTime && (
+              <TextInput
+                value={time}
+                onChangeText={setTime}
+                placeholder="HH:MM"
+                placeholderTextColor={colors.inkMuted}
+                style={[styles.input, { marginTop: spacing.sm }]}
+              />
+            )}
           </View>
+
           <BigButton
             label="Marcar consulta"
             background={canSave ? colors.primary : colors.surfaceSunken}
@@ -140,4 +187,18 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   clearFilter: { alignSelf: 'flex-start' },
   clearFilterLabel: { fontFamily: fontFamily.bodyBold, fontSize: 12.5, color: colors.primary },
+  formTarget: { backgroundColor: colors.surfaceSunken, borderRadius: radii.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  formTargetBold: { fontFamily: fontFamily.bodyBold, color: colors.ink },
+  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
+  timePill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  timePillOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  timePillLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: colors.inkSecondary },
+  timePillLabelOn: { color: colors.primaryInk, fontFamily: fontFamily.bodyBold },
 });
