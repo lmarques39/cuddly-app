@@ -5,8 +5,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  getAdditionalUserInfo,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  signInWithCredential,
   signInWithEmailAndPassword,
   User,
 } from 'firebase/auth';
@@ -26,9 +29,6 @@ import { migrateLocalDataToFirestore } from './src/storage/migrate';
 import { clearAllLocalData } from './src/storage/storage';
 import { colors } from './src/theme/tokens';
 
-// Google sign-in still needs expo-auth-session wired to a Google Cloud OAuth
-// client (separate console step) — not done yet, "Continuar com Google" is
-// a no-op for now.
 type AuthStep = 'login' | 'createAccount' | 'recoverPassword' | 'registerParent' | 'registerBaby' | 'app';
 
 // react-native-web's Alert.alert() is a no-op (no popup, no console log) —
@@ -125,6 +125,23 @@ export default function App() {
     }
   };
 
+  const handleContinueWithGoogle = async (idToken: string) => {
+    setAuthError(null);
+    try {
+      const credential = GoogleAuthProvider.credential(idToken);
+      const result = await signInWithCredential(auth, credential);
+      if (getAdditionalUserInfo(result)?.isNewUser) {
+        // Same per-device AsyncStorage caveat as handleCreateAccount below.
+        await clearAllLocalData().catch(() => {});
+        setAuthStep('registerParent');
+      } else {
+        setAuthStep('app');
+      }
+    } catch (err) {
+      setAuthError(describeAuthError(err));
+    }
+  };
+
   const handleSendResetEmail = async (email: string) => {
     setAuthError(null);
     try {
@@ -176,7 +193,7 @@ export default function App() {
       {authStep === 'login' && (
         <LoginScreen
           onLogin={handleLogin}
-          onContinueWithGoogle={() => {}}
+          onContinueWithGoogle={handleContinueWithGoogle}
           onCreateAccount={() => {
             setAuthError(null);
             setAuthStep('createAccount');

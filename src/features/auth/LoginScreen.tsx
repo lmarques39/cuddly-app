@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 
+// Dismisses the in-app browser once the OAuth redirect completes — the
+// standard expo-auth-session pattern, needs to run once at module load.
+WebBrowser.maybeCompleteAuthSession();
+
 type Props = {
   onLogin: (email: string, password: string) => void;
-  onContinueWithGoogle: () => void;
+  onContinueWithGoogle: (idToken: string) => void;
   onCreateAccount: () => void;
   onForgotPassword: () => void;
   error?: string | null;
@@ -15,6 +21,16 @@ type Props = {
 export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, onForgotPassword, error }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useIdTokenAuthRequest({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  });
+
+  useEffect(() => {
+    if (googleResponse?.type === 'success' && googleResponse.params.id_token) {
+      onContinueWithGoogle(googleResponse.params.id_token);
+    }
+  }, [googleResponse, onContinueWithGoogle]);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -77,7 +93,11 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
             <View style={styles.dividerLine} />
           </View>
 
-          <Pressable onPress={onContinueWithGoogle} style={styles.googleButton}>
+          <Pressable
+            onPress={() => promptGoogleSignIn()}
+            disabled={!googleRequest}
+            style={[styles.googleButton, !googleRequest && { opacity: 0.5 }]}
+          >
             <Text style={styles.googleLabel}>Continuar com Google</Text>
           </Pressable>
         </View>
