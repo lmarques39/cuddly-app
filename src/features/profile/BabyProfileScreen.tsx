@@ -8,7 +8,16 @@ import { useBabyProfile } from './useBabyProfile';
 
 function toDateInput(epochMs?: number): string {
   if (!epochMs) return '';
-  return new Date(epochMs).toISOString().slice(0, 10);
+  // parseDateInput below builds the timestamp from local midnight — must
+  // read it back with local getters too. toISOString() converts to UTC,
+  // which in a positive-offset zone (e.g. Portugal in summer, UTC+1) rolls
+  // local midnight back to 23:00 the previous day, showing the date one
+  // day early after every save.
+  const d = new Date(epochMs);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function parseDateInput(value: string): number | undefined {

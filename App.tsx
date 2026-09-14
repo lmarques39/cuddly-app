@@ -4,7 +4,6 @@ import { useFonts } from 'expo-font';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, User } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,9 +11,10 @@ import { BabyInfo, RegisterBabyScreen } from './src/features/auth/RegisterBabySc
 import { CreateAccountScreen } from './src/features/auth/CreateAccountScreen';
 import { LoginScreen } from './src/features/auth/LoginScreen';
 import { ParentInfo, RegisterParentScreen } from './src/features/auth/RegisterParentScreen';
+import { createFamilyForUser } from './src/features/family/createFamily';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { auth, db } from './src/services/firebase';
+import { auth } from './src/services/firebase';
 import { colors } from './src/theme/tokens';
 
 // Google sign-in still needs expo-auth-session wired to a Google Cloud OAuth
@@ -105,13 +105,10 @@ export default function App() {
     setAuthError(null);
     if (user) {
       try {
-        await setDoc(doc(db, 'users', user.uid), {
-          name: parent.name,
-          role: parent.role,
-          email: parent.email,
-          phone: parent.phone || null,
-          createdAt: serverTimestamp(),
-        });
+        // Creates families/{familyId} + families/{familyId}/members/{uid},
+        // and points users/{uid} at it — see firestore.rules for the shape
+        // this is expected to match.
+        await createFamilyForUser(user.uid, parent);
       } catch (err) {
         setAuthError(describeAuthError(err));
         return;

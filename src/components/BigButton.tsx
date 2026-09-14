@@ -36,7 +36,9 @@ export function BigButton({ label, onPress, background, foreground = colors.surf
 const styles = StyleSheet.create({
   button: {
     minHeight: touchTarget.minHeight,
-    borderRadius: radii.lg,
+    borderRadius: radii.pill,
+    borderWidth: 2,
+    borderColor: colors.inkBorder,
     paddingHorizontal: spacing.lg,
     justifyContent: 'center',
     alignItems: 'center',

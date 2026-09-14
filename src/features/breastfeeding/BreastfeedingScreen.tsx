@@ -61,7 +61,7 @@ export function BreastfeedingScreen() {
       </Card>
 
       <BigButton
-        label={running == null ? 'Iniciar mamada' : 'Terminar mamada'}
+        label={running == null ? 'Iniciar' : 'Terminar'}
         background={colors.domain.breastfeeding.bg}
         foreground={colors.domain.breastfeeding.ink}
         onPress={() => (running == null ? start(selectedSide) : stop())}
