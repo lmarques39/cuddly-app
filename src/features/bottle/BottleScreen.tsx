@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
-import { addToList, isToday, loadList, makeId, STORAGE_KEYS } from '../../storage/storage';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
-import { BottleEntry, BottleType } from '../../types/records';
+import { BottleType } from '../../types/records';
 import { formatClock } from '../../utils/time';
+import { useBottle } from './useBottle';
 
 const TYPE_LABEL: Record<BottleType, string> = {
   breastmilk: 'Leite materno',
@@ -15,24 +15,15 @@ const TYPE_LABEL: Record<BottleType, string> = {
 };
 
 export function BottleScreen() {
-  const [entries, setEntries] = useState<BottleEntry[]>([]);
+  const { todayEntries, todayTotalMl, save } = useBottle();
   const [amount, setAmount] = useState('');
   const [type_, setType] = useState<BottleType>('breastmilk');
 
-  useEffect(() => {
-    loadList<BottleEntry>(STORAGE_KEYS.bottle).then(setEntries);
-  }, []);
-
-  const todayEntries = useMemo(() => entries.filter((e) => isToday(e.at)), [entries]);
-  const todayTotalMl = useMemo(() => todayEntries.reduce((sum, e) => sum + e.amountMl, 0), [todayEntries]);
-
   const canSave = Number(amount) > 0;
 
-  const save = async () => {
+  const handleSave = async () => {
     if (!canSave) return;
-    const entry: BottleEntry = { id: makeId(), amountMl: Number(amount), type: type_, at: Date.now() };
-    const next = await addToList(STORAGE_KEYS.bottle, entry);
-    setEntries(next);
+    await save(Number(amount), type_);
     setAmount('');
   };
 
@@ -74,7 +65,7 @@ export function BottleScreen() {
           label="Guardar biberão"
           background={canSave ? colors.domain.bottle.bg : colors.surfaceSunken}
           foreground={canSave ? colors.domain.bottle.ink : colors.inkMuted}
-          onPress={save}
+          onPress={handleSave}
           full
         />
       </Card>
