@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { addToList, isToday, loadList, makeId, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, isToday, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { BreastfeedingEntry } from '../../types/records';
 
 export function useBreastfeeding() {
@@ -7,7 +8,17 @@ export function useBreastfeeding() {
   const [running, setRunning] = useState<{ side: 'left' | 'right'; startedAt: number } | null>(null);
 
   useEffect(() => {
+    // Cold-start cache: show what's already on-device instantly, before the
+    // Firestore subscription below (which needs network) has a chance to arrive.
     loadList<BreastfeedingEntry>(STORAGE_KEYS.breastfeeding).then(setEntries);
+
+    // Firestore becomes the source of truth once connected — every update
+    // here also refreshes the local cache above, so the next cold start is fresh.
+    return subscribeToCollection<BreastfeedingEntry>('breastfeeding', (items) => {
+      const sorted = [...items].sort((a, b) => b.startedAt - a.startedAt);
+      setEntries(sorted);
+      saveList(STORAGE_KEYS.breastfeeding, sorted);
+    });
   }, []);
 
   const start = useCallback((side: 'left' | 'right') => {
@@ -19,6 +30,7 @@ export function useBreastfeeding() {
       if (current == null) return current;
       const entry: BreastfeedingEntry = { id: makeId(), side: current.side, startedAt: current.startedAt, endedAt: Date.now() };
       addToList(STORAGE_KEYS.breastfeeding, entry).then(setEntries);
+      syncEntry('breastfeeding', entry.id, entry);
       return null;
     });
   }, []);

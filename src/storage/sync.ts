@@ -129,3 +129,32 @@ export function subscribeToCollection<T>(collectionName: string, onChange: (item
     unsubscribeSnapshot?.();
   };
 }
+
+/**
+ * Subscribes to a single document at families/{familyId}/{collectionName}/{entryId}
+ * — for things like BabyProfile that are one record, not a list of entries.
+ * Write with syncEntry(collectionName, entryId, payload) as usual. Calls
+ * onChange(null) if the document doesn't exist yet (e.g. nothing synced from
+ * this account before); callers should keep whatever the local cache has in
+ * that case rather than clearing it.
+ */
+export function subscribeToDocument<T>(
+  collectionName: string,
+  entryId: string,
+  onChange: (item: T | null) => void,
+): () => void {
+  let cancelled = false;
+  let unsubscribeSnapshot: (() => void) | null = null;
+
+  getFamilyId().then((familyId) => {
+    if (cancelled || !familyId) return;
+    unsubscribeSnapshot = onSnapshot(doc(db, 'families', familyId, collectionName, entryId), (snap) => {
+      onChange(snap.exists() ? (snap.data() as T) : null);
+    });
+  });
+
+  return () => {
+    cancelled = true;
+    unsubscribeSnapshot?.();
+  };
+}
