@@ -1,38 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../components/Card';
-import { addToList, isToday, loadList, makeId, STORAGE_KEYS } from '../../storage/storage';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
-import { DiaperEntry, DiaperType } from '../../types/records';
+import { DiaperType } from '../../types/records';
 import { formatClock, formatSince } from '../../utils/time';
+import { useDiapers } from './useDiapers';
 
 const TYPE_LABEL: Record<DiaperType, string> = { wet: 'Xixi', dirty: 'Cocó', both: 'Ambos' };
 
 export function DiapersScreen() {
-  const [entries, setEntries] = useState<DiaperEntry[]>([]);
+  const { todayEntries, lastEntry, register } = useDiapers();
   const [, forceTick] = useState(0);
-
-  useEffect(() => {
-    loadList<DiaperEntry>(STORAGE_KEYS.diapers).then(setEntries);
-  }, []);
 
   useEffect(() => {
     const id = setInterval(() => forceTick((n) => n + 1), 30000);
     return () => clearInterval(id);
   }, []);
-
-  const todayEntries = useMemo(() => entries.filter((e) => isToday(e.at)), [entries]);
-  const lastEntry = entries[0];
-
-  const register = async (diaperType: DiaperType) => {
-    // Runs on tap (see onPress below), not during render — react-hooks/purity
-    // can't tell the two apart here, but there's nothing to fix.
-    // eslint-disable-next-line react-hooks/purity
-    const entry: DiaperEntry = { id: makeId(), type: diaperType, at: Date.now() };
-    const next = await addToList(STORAGE_KEYS.diapers, entry);
-    setEntries(next);
-  };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
