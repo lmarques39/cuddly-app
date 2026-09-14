@@ -15,6 +15,7 @@ import { createFamilyForUser } from './src/features/family/createFamily';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { auth } from './src/services/firebase';
+import { migrateLocalDataToFirestore } from './src/storage/migrate';
 import { clearAllLocalData } from './src/storage/storage';
 import { colors } from './src/theme/tokens';
 
@@ -82,6 +83,15 @@ export default function App() {
     });
   }, []);
 
+  useEffect(() => {
+    // One-time push of pre-existing local data into this account's family —
+    // see migrate.ts. No-ops instantly on every later render once the flag
+    // it sets is in place, so this is safe to leave unconditional here.
+    if (authStep === 'app' && user) {
+      migrateLocalDataToFirestore(user.uid);
+    }
+  }, [authStep, user]);
+
   const handleLogin = async (email: string, password: string) => {
     setAuthError(null);
     try {
@@ -125,9 +135,8 @@ export default function App() {
   };
 
   const handleBabyFinish = async (baby: BabyInfo) => {
-    // Baby profile stays local (AsyncStorage) for now — it's what Início and
-    // Registar already read to decide Grávida vs Pós-parto mode. Proper
-    // Firestore sync (families/{id}/babyProfile) is separate follow-up work.
+    // useBabyProfile's save() writes to AsyncStorage and queues the Firestore
+    // sync — see src/features/profile/useBabyProfile.ts.
     await saveBabyProfile({
       name: baby.name || undefined,
       dueDate: baby.dueDate,
