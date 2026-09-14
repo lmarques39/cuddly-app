@@ -26,6 +26,12 @@
     "plugins": [
       "expo-font",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8e3fa4d3-1025-4856-8754-703b9f002a0c"
+      }
+    },
+    "owner": "ulysses39s-team"
   }
 }
