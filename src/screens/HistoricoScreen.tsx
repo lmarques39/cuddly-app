@@ -1,11 +1,12 @@
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
-import { loadList, STORAGE_KEYS } from '../storage/storage';
+import { useBottle } from '../features/bottle/useBottle';
+import { useBreastfeeding } from '../features/breastfeeding/useBreastfeeding';
+import { useContractions } from '../features/contractions/useContractions';
+import { useDiapers } from '../features/diapers/useDiapers';
 import { colors, fontFamily, radii, spacing, type } from '../theme/tokens';
-import { BottleEntry, BreastfeedingEntry, ContractionEntry, DiaperEntry } from '../types/records';
 import { formatClock, formatDuration } from '../utils/time';
 import { useNow } from '../utils/useNow';
 
@@ -36,53 +37,49 @@ function startOfDay(epochMs: number): number {
 }
 
 export function HistoricoScreen() {
-  const [items, setItems] = useState<TimelineItem[]>([]);
   const [view, setView] = useState<'linha' | 'tendencias'>('linha');
   const [filter, setFilter] = useState<Kind | 'todos'>('todos');
 
-  const refresh = useCallback(() => {
-    Promise.all([
-      loadList<ContractionEntry>(STORAGE_KEYS.contractions),
-      loadList<BreastfeedingEntry>(STORAGE_KEYS.breastfeeding),
-      loadList<BottleEntry>(STORAGE_KEYS.bottle),
-      loadList<DiaperEntry>(STORAGE_KEYS.diapers),
-    ]).then(([contractions, breastfeeding, bottle, diapers]) => {
-      const merged: TimelineItem[] = [
-        ...contractions.map((e) => ({
-          id: e.id,
-          kind: 'contraction' as const,
-          label: 'Contração',
-          detail: formatDuration(e.endedAt - e.startedAt),
-          at: e.endedAt,
-        })),
-        ...breastfeeding.map((e) => ({
-          id: e.id,
-          kind: 'breastfeeding' as const,
-          label: `Amamentação · ${e.side === 'left' ? 'esquerdo' : 'direito'}`,
-          detail: formatDuration(e.endedAt - e.startedAt),
-          at: e.endedAt,
-        })),
-        ...bottle.map((e) => ({
-          id: e.id,
-          kind: 'bottle' as const,
-          label: 'Biberão',
-          detail: `${e.amountMl}ml`,
-          at: e.at,
-        })),
-        ...diapers.map((e) => ({
-          id: e.id,
-          kind: 'diaper' as const,
-          label: 'Fralda',
-          detail: e.type === 'wet' ? 'Xixi' : e.type === 'dirty' ? 'Cocó' : 'Ambos',
-          at: e.at,
-        })),
-      ];
-      merged.sort((a, b) => b.at - a.at);
-      setItems(merged);
-    });
-  }, []);
+  const { entries: contractions } = useContractions();
+  const { entries: breastfeeding } = useBreastfeeding();
+  const { entries: bottle } = useBottle();
+  const { entries: diapers } = useDiapers();
 
-  useFocusEffect(refresh);
+  // Each of these hooks already stays live via its own Firestore
+  // subscription — no refetch-on-focus needed, just derive the view.
+  const items = useMemo(() => {
+    const merged: TimelineItem[] = [
+      ...contractions.map((e) => ({
+        id: e.id,
+        kind: 'contraction' as const,
+        label: 'Contração',
+        detail: formatDuration(e.endedAt - e.startedAt),
+        at: e.endedAt,
+      })),
+      ...breastfeeding.map((e) => ({
+        id: e.id,
+        kind: 'breastfeeding' as const,
+        label: `Amamentação · ${e.side === 'left' ? 'esquerdo' : 'direito'}`,
+        detail: formatDuration(e.endedAt - e.startedAt),
+        at: e.endedAt,
+      })),
+      ...bottle.map((e) => ({
+        id: e.id,
+        kind: 'bottle' as const,
+        label: 'Biberão',
+        detail: `${e.amountMl}ml`,
+        at: e.at,
+      })),
+      ...diapers.map((e) => ({
+        id: e.id,
+        kind: 'diaper' as const,
+        label: 'Fralda',
+        detail: e.type === 'wet' ? 'Xixi' : e.type === 'dirty' ? 'Cocó' : 'Ambos',
+        at: e.at,
+      })),
+    ];
+    return merged.sort((a, b) => b.at - a.at);
+  }, [contractions, breastfeeding, bottle, diapers]);
 
   const filtered = useMemo(() => (filter === 'todos' ? items : items.filter((i) => i.kind === filter)), [items, filter]);
 

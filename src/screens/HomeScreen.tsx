@@ -1,15 +1,20 @@
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import React, { useCallback, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
+import { useAppointments } from '../features/appointments/useAppointments';
+import { useBottle } from '../features/bottle/useBottle';
+import { useBreastfeeding } from '../features/breastfeeding/useBreastfeeding';
+import { useContractions } from '../features/contractions/useContractions';
+import { useDiapers } from '../features/diapers/useDiapers';
 import { useBabyProfile } from '../features/profile/useBabyProfile';
 import { RootTabParamList } from '../navigation/types';
-import { loadList, STORAGE_KEYS } from '../storage/storage';
 import { colors, spacing, type } from '../theme/tokens';
-import { Appointment, BottleEntry, BreastfeedingEntry, ContractionEntry, DiaperEntry } from '../types/records';
+import { Appointment } from '../types/records';
 import { formatSince } from '../utils/time';
+import { useNow } from '../utils/useNow';
 
 type Nav = BottomTabNavigationProp<RootTabParamList, 'Início'>;
 
@@ -51,19 +56,17 @@ function NextAppointmentCard({ appointment, onPress }: { appointment: Appointmen
 
 export function HomeScreen() {
   const navigation = useNavigation<Nav>();
-  const { profile, mode, refresh: refreshProfile } = useBabyProfile();
-  const [latest, setLatest] = useState<LatestEntry[]>([]);
-  const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
+  const { profile, mode } = useBabyProfile();
+  const { entries: contractions } = useContractions();
+  const { entries: breastfeeding } = useBreastfeeding();
+  const { entries: bottle } = useBottle();
+  const { entries: diapers } = useDiapers();
+  const { appointments } = useAppointments();
+  const now = useNow(60000);
 
-  const refresh = useCallback(async () => {
-    refreshProfile();
-    const [contractions, breastfeeding, bottle, diapers, appointments] = await Promise.all([
-      loadList<ContractionEntry>(STORAGE_KEYS.contractions),
-      loadList<BreastfeedingEntry>(STORAGE_KEYS.breastfeeding),
-      loadList<BottleEntry>(STORAGE_KEYS.bottle),
-      loadList<DiaperEntry>(STORAGE_KEYS.diapers),
-      loadList<Appointment>(STORAGE_KEYS.appointments),
-    ]);
+  // Each of these hooks already stays live via its own Firestore
+  // subscription — no refetch-on-focus needed, just derive the view.
+  const latest = useMemo(() => {
     const items: LatestEntry[] = [
       contractions[0] && { label: 'Contração registada', at: contractions[0].endedAt },
       breastfeeding[0] && {
@@ -73,16 +76,13 @@ export function HomeScreen() {
       bottle[0] && { label: `Biberão · ${bottle[0].amountMl}ml`, at: bottle[0].at },
       diapers[0] && { label: 'Muda de fralda', at: diapers[0].at },
     ].filter(Boolean) as LatestEntry[];
-    items.sort((a, b) => b.at - a.at);
-    setLatest(items);
+    return items.sort((a, b) => b.at - a.at);
+  }, [contractions, breastfeeding, bottle, diapers]);
 
-    const upcoming = appointments.filter((a) => a.scheduledAt >= Date.now()).sort((a, b) => a.scheduledAt - b.scheduledAt);
-    setNextAppointment(upcoming[0] ?? null);
-  }, [refreshProfile]);
-
-  useFocusEffect(useCallback(() => {
-    refresh();
-  }, [refresh]));
+  const nextAppointment: Appointment | null = useMemo(() => {
+    const upcoming = appointments.filter((a) => a.scheduledAt >= now).sort((a, b) => a.scheduledAt - b.scheduledAt);
+    return upcoming[0] ?? null;
+  }, [appointments, now]);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
