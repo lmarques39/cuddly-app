@@ -15,7 +15,8 @@ const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers
 
 let cachedFamilyId: string | null = null;
 
-async function getFamilyId(): Promise<string | null> {
+/** Exported for one-shot direct-write features (e.g. invites) that need the caller's familyId but aren't trackers. */
+export async function getFamilyId(): Promise<string | null> {
   if (cachedFamilyId) return cachedFamilyId;
   const uid = auth.currentUser?.uid;
   if (!uid) return null;

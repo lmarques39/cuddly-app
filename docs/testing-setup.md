@@ -20,6 +20,8 @@
 
 **Nota para quem escrever mais testes destes** (RNTL 14, ver commit desta issue): `render`, `renderHook` e o `act()` que envolve um `start()`/`stop()` de hook são todos **assíncronos** nesta versão — `await render(...)`, `await renderHook(...)`, `await act(async () => ...)`. Uma chamada `act()` síncrona não força o efeito que atualiza a ref do `renderHook` a correr, e os testes falham de forma confusa (`result` fica `null`/`undefined`) sem isso.
 
+**Mais uma (#52):** o mesmo vale para `fireEvent.changeText`/`fireEvent.press` num componente normal (não só no `renderHook`) — sem `await act(async () => fireEvent...(...))` à volta de **cada** interação (incluindo o `changeText` antes do `press`), a consola avisa "overlapping act() calls" e o handler simplesmente não é chamado (0 chamadas ao mock), sem erro claro a apontar para a causa.
+
 ## 3. E2E smoke test (Maestro)
 
 - [ ] Instalar a CLI do Maestro (`curl -Ls "https://get.maestro.mobile.dev" | bash`)
