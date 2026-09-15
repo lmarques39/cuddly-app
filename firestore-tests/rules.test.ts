@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { collection, collectionGroup, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, collectionGroup, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
 
 let testEnv: RulesTestEnvironment;
@@ -264,6 +264,42 @@ describe('accepting an invite (#53)', () => {
 
     expect(snap.docs).toHaveLength(1);
     expect(snap.docs[0].ref.parent.parent!.id).toBe('famA');
+  });
+});
+
+describe('removing a caregiver (#55)', () => {
+  async function makeFamily(uid: string, familyId: string) {
+    const ctx = testEnv.authenticatedContext(uid);
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', familyId, 'members', uid), { name: uid });
+    return ctx;
+  }
+
+  it("lets a family member delete another member's doc", async () => {
+    const alice = await makeFamily('alice', 'famA');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob'), { name: 'Bob' });
+
+    await assertSucceeds(deleteDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob')));
+  });
+
+  it('revokes access immediately: a removed member can no longer read family data', async () => {
+    const alice = await makeFamily('alice', 'famA');
+    const bob = testEnv.authenticatedContext('bob');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob'), { name: 'Bob' });
+    await assertSucceeds(getDoc(doc(bob.firestore(), 'families', 'famA')));
+
+    await deleteDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob'));
+
+    await assertFails(getDoc(doc(bob.firestore(), 'families', 'famA')));
+  });
+
+  it("does not let someone outside the family delete one of its members", async () => {
+    const alice = await makeFamily('alice', 'famA');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob'), { name: 'Bob' });
+    const carol = await makeFamily('carol', 'famB');
+
+    await assertFails(deleteDoc(doc(carol.firestore(), 'families', 'famA', 'members', 'bob')));
   });
 });
 

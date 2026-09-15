@@ -40,7 +40,15 @@ service cloud.firestore {
         // member of a new family could never be added otherwise. Creating
         // your own member doc (uid == memberId) is safe regardless.
         allow create: if isSignedIn() && request.auth.uid == memberId;
-        allow update, delete: if isFamilyMember(familyId) && request.auth.uid == memberId;
+        allow update: if isFamilyMember(familyId) && request.auth.uid == memberId;
+        // Removing a caregiver (#55) is done by another current family
+        // member, not by the removed member themselves — so delete can't be
+        // gated on request.auth.uid == memberId the way update is. Revoking
+        // access is just this: isFamilyMember(familyId) re-evaluates
+        // exists() on every request, so deleting the doc immediately locks
+        // the removed member out of every read/write gated by it — no
+        // separate "access token" to invalidate.
+        allow delete: if isFamilyMember(familyId);
       }
 
       // Invites are deliberately their own collection, not a member with a

@@ -1,12 +1,14 @@
-import { getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { deleteDoc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
+import { Alert } from 'react-native';
 import { auth } from '../../services/firebase';
 import { CuidadoresScreen } from './CuidadoresScreen';
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockOnSnapshot = onSnapshot as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
+const mockDeleteDoc = deleteDoc as jest.Mock;
 
 function fireMembers(list: unknown[]) {
   mockOnSnapshot.mock.calls[0][1]({ docs: list });
@@ -76,4 +78,30 @@ it('reveals the invite form on "Convidar cuidador" and creates the invite on sub
 
   expect(mockSetDoc).toHaveBeenCalledTimes(1);
   expect(mockSetDoc.mock.calls[0][1]).toMatchObject({ email: 'novo@x.com', invitedBy: 'alice', status: 'pending' });
+});
+
+it('shows "Remover" only for other members, and deletes their member doc after confirming', async () => {
+  jest.spyOn(Alert, 'alert').mockImplementation((_title, _msg, buttons) => {
+    const confirm = buttons?.find((b) => b.text === 'Remover');
+    confirm?.onPress?.();
+  });
+
+  await render(<CuidadoresScreen />);
+
+  await act(async () => {
+    fireMembers([
+      { id: 'alice', data: () => ({ name: 'Alice', role: 'mae', email: 'alice@x.com' }) },
+      { id: 'bob', data: () => ({ name: 'Bob', role: 'cuidador', email: 'bob@x.com' }) },
+    ]);
+    fireInvites([]);
+  });
+
+  expect(screen.getAllByText('Remover')).toHaveLength(1); // only for Bob, not for Alice ("Tu")
+
+  await act(async () => {
+    fireEvent.press(screen.getByText('Remover'));
+  });
+
+  expect(mockDeleteDoc).toHaveBeenCalledTimes(1);
+  expect(mockDeleteDoc.mock.calls[0][0].segments).toEqual(expect.arrayContaining(['members', 'bob']));
 });
