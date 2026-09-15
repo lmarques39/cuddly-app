@@ -15,6 +15,7 @@ export const STORAGE_KEYS = {
   appointments: '@cuddly/appointments',
   babyProfile: '@cuddly/baby-profile',
   sono: '@cuddly/sono',
+  pumping: '@cuddly/pumping',
 } as const;
 
 export async function loadList<T>(key: string): Promise<T[]> {
@@ -72,6 +73,7 @@ export async function clearAllLocalData(): Promise<void> {
     saveList(STORAGE_KEYS.diapers, []),
     saveList(STORAGE_KEYS.appointments, []),
     saveList(STORAGE_KEYS.sono, []),
+    saveList(STORAGE_KEYS.pumping, []),
   ]);
 }
 

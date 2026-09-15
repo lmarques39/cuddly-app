@@ -10,6 +10,13 @@ export type SonoEntry = {
   endedAt: number; // epoch ms
 };
 
+export type PumpingEntry = {
+  id: string;
+  startedAt: number; // epoch ms
+  endedAt: number; // epoch ms
+  amountMl: number;
+};
+
 export type BreastfeedingEntry = {
   id: string;
   side: 'left' | 'right';

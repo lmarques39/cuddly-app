@@ -82,7 +82,7 @@ describe('clearFamilyData', () => {
 
     await clearFamilyData();
 
-    // 6 tracker collections x 2 docs each (from the mock above) + 1 profile doc
-    expect(mockDeleteDoc).toHaveBeenCalledTimes(13);
+    // 7 tracker collections x 2 docs each (from the mock above) + 1 profile doc
+    expect(mockDeleteDoc).toHaveBeenCalledTimes(15);
   });
 });

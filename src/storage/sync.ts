@@ -3,7 +3,7 @@ import { collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, setDoc } from 
 import { auth, db } from '../services/firebase';
 import { loadList, makeId, saveList } from './storage';
 
-const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments', 'sono'];
+const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments', 'sono', 'pumping'];
 
 /**
  * Firestore sync: entry-per-document under families/{familyId}/{collectionName}/{entryId},
