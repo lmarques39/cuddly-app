@@ -63,3 +63,15 @@ export type BabyProfile = {
 };
 
 export type AppMode = 'gravida' | 'posparto';
+
+export type InviteStatus = 'pending' | 'accepted';
+
+// Lives at families/{familyId}/invites/{inviteId} — deliberately its own
+// collection, not a member with a pending flag (see firestore.rules).
+export type Invite = {
+  id: string;
+  email: string;
+  invitedBy: string; // uid of the family member who sent it
+  invitedAt: number; // epoch ms
+  status: InviteStatus;
+};

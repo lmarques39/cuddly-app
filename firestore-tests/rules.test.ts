@@ -98,6 +98,70 @@ describe('users/{userId}', () => {
   });
 });
 
+describe('families/{familyId}/invites/{inviteId}', () => {
+  async function makeFamily(uid: string, familyId: string, email: string) {
+    const ctx = testEnv.authenticatedContext(uid, { email });
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', familyId, 'members', uid), { name: uid, email });
+    return ctx;
+  }
+
+  it('lets a family member create an invite for their own family', async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+
+    await assertSucceeds(
+      setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+        email: 'bob@x.com',
+        invitedBy: 'alice',
+        invitedAt: Date.now(),
+        status: 'pending',
+      }),
+    );
+  });
+
+  it('does not let a non-member create an invite for a family they do not belong to', async () => {
+    await makeFamily('alice', 'famA', 'alice@x.com');
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' });
+
+    await assertFails(
+      setDoc(doc(bob.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+        email: 'bob@x.com',
+        invitedBy: 'bob',
+        invitedAt: Date.now(),
+        status: 'pending',
+      }),
+    );
+  });
+
+  it('lets the invited person read an invite addressed to their own email — before they are a member', async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+      email: 'bob@x.com',
+      invitedBy: 'alice',
+      invitedAt: Date.now(),
+      status: 'pending',
+    });
+
+    // bob has no members/{uid} doc in famA yet — isFamilyMember(famA) is false for him.
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' });
+    await assertSucceeds(getDoc(doc(bob.firestore(), 'families', 'famA', 'invites', 'inv1')));
+  });
+
+  it("does not let a signed-in user read an invite addressed to someone else's email", async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+      email: 'bob@x.com',
+      invitedBy: 'alice',
+      invitedAt: Date.now(),
+      status: 'pending',
+    });
+
+    const carol = testEnv.authenticatedContext('carol', { email: 'carol@x.com' });
+    await assertFails(getDoc(doc(carol.firestore(), 'families', 'famA', 'invites', 'inv1')));
+  });
+});
+
 describe('unauthenticated access', () => {
   it('denies reads and writes without sign-in', async () => {
     const anon = testEnv.unauthenticatedContext();

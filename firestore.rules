@@ -34,6 +34,14 @@ service cloud.firestore {
         allow update, delete: if isFamilyMember(familyId) && request.auth.uid == memberId;
       }
 
+      // Invites are deliberately their own collection, not a member with a
+      // pending flag — an invitee has no family access at all until they
+      // accept and a real members/{uid} doc is created for them (#53).
+      match /invites/{inviteId} {
+        allow create: if isFamilyMember(familyId);
+        allow read: if isSignedIn() && request.auth.token.email == resource.data.email;
+      }
+
       // BabyProfile, Activity (contractions/breastfeeding/pumping/diapers),
       // FoodIntroduction, Appointment — all nested under their family.
       match /{collection}/{documentId} {
