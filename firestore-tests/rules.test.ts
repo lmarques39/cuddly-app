@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { collectionGroup, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
 
 let testEnv: RulesTestEnvironment;
@@ -159,6 +159,84 @@ describe('families/{familyId}/invites/{inviteId}', () => {
 
     const carol = testEnv.authenticatedContext('carol', { email: 'carol@x.com' });
     await assertFails(getDoc(doc(carol.firestore(), 'families', 'famA', 'invites', 'inv1')));
+  });
+});
+
+describe('accepting an invite (#53)', () => {
+  async function makeFamily(uid: string, familyId: string, email: string) {
+    const ctx = testEnv.authenticatedContext(uid, { email });
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', familyId, 'members', uid), { name: uid, email });
+    return ctx;
+  }
+
+  it('lets the invitee flip their own invite to accepted', async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+      email: 'bob@x.com',
+      invitedBy: 'alice',
+      invitedAt: Date.now(),
+      status: 'pending',
+    });
+
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' });
+    await assertSucceeds(updateDoc(doc(bob.firestore(), 'families', 'famA', 'invites', 'inv1'), { status: 'accepted' }));
+
+    // Accepting also lets them create their own member doc — same rule that
+    // already allows the first member of a new family, unconditional on
+    // isFamilyMember, applies equally to joining an existing one.
+    await assertSucceeds(
+      setDoc(doc(bob.firestore(), 'families', 'famA', 'members', 'bob'), { name: 'Bob', role: 'cuidador', email: 'bob@x.com' }),
+    );
+  });
+
+  it('does not let the invitee change any other field while accepting', async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+      email: 'bob@x.com',
+      invitedBy: 'alice',
+      invitedAt: Date.now(),
+      status: 'pending',
+    });
+
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' });
+    await assertFails(
+      updateDoc(doc(bob.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+        status: 'accepted',
+        invitedBy: 'bob', // trying to also rewrite who invited them
+      }),
+    );
+  });
+
+  it("does not let a signed-in user accept someone else's invite", async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+      email: 'bob@x.com',
+      invitedBy: 'alice',
+      invitedAt: Date.now(),
+      status: 'pending',
+    });
+
+    const carol = testEnv.authenticatedContext('carol', { email: 'carol@x.com' });
+    await assertFails(updateDoc(doc(carol.firestore(), 'families', 'famA', 'invites', 'inv1'), { status: 'accepted' }));
+  });
+
+  it("finds a pending invite via a collectionGroup query on the invitee's own email", async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+      email: 'bob@x.com',
+      invitedBy: 'alice',
+      invitedAt: Date.now(),
+      status: 'pending',
+    });
+
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' });
+    const q = query(collectionGroup(bob.firestore(), 'invites'), where('email', '==', 'bob@x.com'), where('status', '==', 'pending'));
+    const snap = await getDocs(q);
+
+    expect(snap.docs).toHaveLength(1);
+    expect(snap.docs[0].ref.parent.parent!.id).toBe('famA');
   });
 });
 

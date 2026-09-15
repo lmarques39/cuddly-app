@@ -20,6 +20,15 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
+    // Collection-group query support (#53): the nested match below already
+    // secures get/create/update on families/{familyId}/invites/{inviteId},
+    // but Firestore's rule-provability check for a `list`/collectionGroup
+    // query needs a top-level {path=**} match to recognize and validate it
+    // — the nested one alone isn't enough for that operation type.
+    match /{path=**}/invites/{inviteId} {
+      allow list: if isSignedIn() && request.auth.token.email == resource.data.email;
+    }
+
     match /families/{familyId} {
       allow read, update, delete: if isFamilyMember(familyId);
       allow create: if isSignedIn();
@@ -40,6 +49,13 @@ service cloud.firestore {
       match /invites/{inviteId} {
         allow create: if isFamilyMember(familyId);
         allow read: if isSignedIn() && request.auth.token.email == resource.data.email;
+        // Accepting an invite (#53): only the invitee can update it, and only
+        // to flip status to accepted — not to rewrite the email/invitedBy of
+        // an invite that isn't theirs to redirect, or reopen an accepted one.
+        allow update: if isSignedIn() &&
+          request.auth.token.email == resource.data.email &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+          request.resource.data.status == 'accepted';
       }
 
       // BabyProfile, Activity (contractions/breastfeeding/pumping/diapers),

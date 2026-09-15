@@ -14,9 +14,14 @@ module.exports = {
     return { id, segments };
   }),
   setDoc: jest.fn(() => Promise.resolve()),
+  updateDoc: jest.fn(() => Promise.resolve()),
   deleteDoc: jest.fn(() => Promise.resolve()),
   getDoc: jest.fn(() => Promise.resolve({ exists: () => false, data: () => undefined })),
   getDocs: jest.fn(() => Promise.resolve({ docs: [] })),
   onSnapshot: jest.fn(() => () => {}), // no-op unsubscribe by default; override per-test as needed
   serverTimestamp: jest.fn(() => 'mock-server-timestamp'),
+  // Query builders are pass-through stubs — tests control results via getDocs's mock, not by inspecting these.
+  collectionGroup: jest.fn((...segments) => ({ segments })),
+  query: jest.fn((source, ...constraints) => ({ source, constraints })),
+  where: jest.fn((field, op, value) => ({ field, op, value })),
 };
