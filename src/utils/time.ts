@@ -17,6 +17,10 @@ export function formatSince(epochMs: number): string {
   if (minutes < 1) return 'agora mesmo';
   if (minutes < 60) return `há ${minutes} min`;
   const hours = Math.floor(minutes / 60);
-  const remMin = minutes % 60;
-  return remMin > 0 ? `há ${hours}h ${remMin}min` : `há ${hours}h`;
+  if (hours < 24) {
+    const remMin = minutes % 60;
+    return remMin > 0 ? `há ${hours}h ${remMin}min` : `há ${hours}h`;
+  }
+  const days = Math.floor(hours / 24);
+  return days === 1 ? 'há 1 dia' : `há ${days} dias`;
 }

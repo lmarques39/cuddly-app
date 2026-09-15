@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { collectionGroup, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, collectionGroup, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
 
 let testEnv: RulesTestEnvironment;
@@ -159,6 +159,33 @@ describe('families/{familyId}/invites/{inviteId}', () => {
 
     const carol = testEnv.authenticatedContext('carol', { email: 'carol@x.com' });
     await assertFails(getDoc(doc(carol.firestore(), 'families', 'famA', 'invites', 'inv1')));
+  });
+
+  it('lets any family member list all pending invites for their own family (#54)', async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+      email: 'bob@x.com',
+      invitedBy: 'alice',
+      invitedAt: Date.now(),
+      status: 'pending',
+    });
+
+    const q = query(collection(alice.firestore(), 'families', 'famA', 'invites'));
+    const snap = await assertSucceeds(getDocs(q));
+    expect(snap.docs).toHaveLength(1);
+  });
+
+  it("does not let a member of a different family list famA's invites", async () => {
+    const alice = await makeFamily('alice', 'famA', 'alice@x.com');
+    await setDoc(doc(alice.firestore(), 'families', 'famA', 'invites', 'inv1'), {
+      email: 'bob@x.com',
+      invitedBy: 'alice',
+      invitedAt: Date.now(),
+      status: 'pending',
+    });
+    const carol = await makeFamily('carol', 'famB', 'carol@x.com');
+
+    await assertFails(getDocs(collection(carol.firestore(), 'families', 'famA', 'invites')));
   });
 });
 

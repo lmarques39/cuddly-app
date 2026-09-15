@@ -114,7 +114,10 @@ export function watchConnectivity(): () => void {
  * it. Returns an unsubscribe function usable immediately, even before the
  * familyId lookup and the Firestore subscription itself have resolved.
  * Callers are responsible for caching to AsyncStorage if they want a
- * cold-start cache (each hook decides this for itself).
+ * cold-start cache (each hook decides this for itself). Each item is merged
+ * with its document id (as `id`) — trackers already store that as a field
+ * themselves so this is a no-op for them, but it's what lets a collection
+ * like members/{uid}, which has no such field, know which doc is which.
  */
 export function subscribeToCollection<T>(collectionName: string, onChange: (items: T[]) => void): () => void {
   let cancelled = false;
@@ -123,7 +126,7 @@ export function subscribeToCollection<T>(collectionName: string, onChange: (item
   getFamilyId().then((familyId) => {
     if (cancelled || !familyId) return;
     unsubscribeSnapshot = onSnapshot(collection(db, 'families', familyId, collectionName), (snap) => {
-      onChange(snap.docs.map((d) => d.data() as T));
+      onChange(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as T));
     });
   });
 

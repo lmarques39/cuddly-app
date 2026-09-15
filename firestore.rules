@@ -48,7 +48,11 @@ service cloud.firestore {
       // accept and a real members/{uid} doc is created for them (#53).
       match /invites/{inviteId} {
         allow create: if isFamilyMember(familyId);
-        allow read: if isSignedIn() && request.auth.token.email == resource.data.email;
+        // A family member sees every pending invite for their own family
+        // (#54 — the Cuidadores screen lists them); the invitee themselves
+        // can also read the one addressed to them before they're a member.
+        allow read: if isFamilyMember(familyId) ||
+          (isSignedIn() && request.auth.token.email == resource.data.email);
         // Accepting an invite (#53): only the invitee can update it, and only
         // to flip status to accepted — not to rewrite the email/invitedBy of
         // an invite that isn't theirs to redirect, or reopen an accepted one.

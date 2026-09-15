@@ -64,6 +64,15 @@ export type BabyProfile = {
 
 export type AppMode = 'gravida' | 'posparto';
 
+// Lives at families/{familyId}/members/{uid} — id is the doc id (== uid),
+// added by subscribeToCollection, not stored as a field (unlike Invite).
+export type Member = {
+  id: string;
+  name: string;
+  role: string; // 'mae' | 'pai' | 'cuidador' (see ParentRole) — kept loose here to avoid records.ts depending on a feature module
+  email: string;
+};
+
 export type InviteStatus = 'pending' | 'accepted';
 
 // Lives at families/{familyId}/invites/{inviteId} — deliberately its own

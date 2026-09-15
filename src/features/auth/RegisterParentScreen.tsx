@@ -21,7 +21,7 @@ type Props = {
   error?: string | null;
 };
 
-const ROLE_LABEL: Record<ParentRole, string> = {
+export const ROLE_LABEL: Record<ParentRole, string> = {
   mae: 'Mãe',
   pai: 'Pai',
   cuidador: 'Cuidador(a)',
