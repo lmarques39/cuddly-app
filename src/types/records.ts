@@ -4,6 +4,12 @@ export type ContractionEntry = {
   endedAt: number; // epoch ms
 };
 
+export type SonoEntry = {
+  id: string;
+  startedAt: number; // epoch ms
+  endedAt: number; // epoch ms
+};
+
 export type BreastfeedingEntry = {
   id: string;
   side: 'left' | 'right';
