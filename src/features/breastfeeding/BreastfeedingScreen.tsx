@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { rescheduleBreastfeedingReminder } from '../notifications/reminderScheduling';
+import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { useBreastfeeding } from './useBreastfeeding';
@@ -12,6 +14,7 @@ const SIDE_LABEL = { left: 'Esquerda', right: 'Direita' } as const;
 
 export function BreastfeedingScreen() {
   const { todayEntries, todayDurationMs, running, start, stop, suggestedSide } = useBreastfeeding();
+  const { preferences } = useNotificationPreferences();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right'>(suggestedSide);
   const now = useNow(1000, running != null);
 
@@ -64,7 +67,16 @@ export function BreastfeedingScreen() {
         label={running == null ? 'Iniciar' : 'Terminar'}
         background={colors.domain.breastfeeding.bg}
         foreground={colors.domain.breastfeeding.ink}
-        onPress={() => (running == null ? start(selectedSide) : stop())}
+        onPress={() => {
+          if (running == null) {
+            start(selectedSide);
+            return;
+          }
+          stop();
+          if (preferences.breastfeeding.enabled) {
+            rescheduleBreastfeedingReminder(preferences.breastfeeding.intervalHours);
+          }
+        }}
         full
       />
 

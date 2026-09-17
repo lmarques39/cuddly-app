@@ -6,6 +6,8 @@ import { Card } from '../../components/Card';
 import { dateKey, MonthCalendar } from '../../components/MonthCalendar';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { useNow } from '../../utils/useNow';
+import { scheduleAppointmentReminder } from '../notifications/reminderScheduling';
+import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
 import { useAppointments } from './useAppointments';
 
 const QUICK_TIMES = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
@@ -32,6 +34,7 @@ function formatAppointment(epochMs: number): string {
 
 export function AppointmentsScreen() {
   const { appointments, save: saveAppointment } = useAppointments();
+  const { preferences } = useNotificationPreferences();
   const [title, setTitle] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [time, setTime] = useState('09:00');
@@ -60,7 +63,10 @@ export function AppointmentsScreen() {
 
   const save = async () => {
     if (!canSave || scheduledAt == null) return;
-    await saveAppointment({ title: title.trim(), scheduledAt });
+    const created = await saveAppointment({ title: title.trim(), scheduledAt });
+    if (preferences.appointment.enabled) {
+      scheduleAppointmentReminder(created, preferences.appointment.daysBefore);
+    }
     setTitle('');
     setTime('09:00');
     setCustomTime(false);

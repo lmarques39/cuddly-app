@@ -16,6 +16,10 @@ export const STORAGE_KEYS = {
   babyProfile: '@cuddly/baby-profile',
   sono: '@cuddly/sono',
   pumping: '@cuddly/pumping',
+  // Not wiped by clearAllLocalData() on a new sign-up, unlike babyProfile —
+  // this is a device preference ("show me reminders"), not account data,
+  // so there's no privacy reason to reset it when the signed-in account changes.
+  notificationPreferences: '@cuddly/notification-preferences',
 } as const;
 
 export async function loadList<T>(key: string): Promise<T[]> {

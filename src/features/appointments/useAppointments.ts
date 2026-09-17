@@ -27,6 +27,7 @@ export function useAppointments() {
     const next = await addToList(STORAGE_KEYS.appointments, withId);
     setAppointments(next);
     syncEntry('appointments', withId.id, withId);
+    return withId;
   }, []);
 
   return { appointments, save };

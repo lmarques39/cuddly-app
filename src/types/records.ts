@@ -64,6 +64,21 @@ export type BabyProfile = {
 
 export type AppMode = 'gravida' | 'posparto';
 
+// Local-device settings, never synced to Firestore — the actual OS-level
+// notification schedule is per-device regardless, so syncing just the
+// preference wouldn't buy anything. See #14's "why local, not push" note.
+export type NotificationPreferences = {
+  breastfeeding: { enabled: boolean; intervalHours: number };
+  appointment: { enabled: boolean; daysBefore: number };
+  dailySummary: { enabled: boolean; hour: number };
+};
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  breastfeeding: { enabled: false, intervalHours: 3 },
+  appointment: { enabled: false, daysBefore: 1 },
+  dailySummary: { enabled: false, hour: 21 },
+};
+
 // Lives at families/{familyId}/members/{uid} — id is the doc id (== uid),
 // added by subscribeToCollection, not stored as a field (unlike Invite).
 export type Member = {
