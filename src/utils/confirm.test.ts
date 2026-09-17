@@ -12,14 +12,14 @@ describe('confirmDestructive', () => {
   it('uses window.confirm on web, since Alert.alert is a no-op there', async () => {
     Platform.OS = 'web';
     const windowConfirm = jest.fn().mockReturnValue(true);
-    (global as { window?: { confirm: typeof windowConfirm } }).window = { confirm: windowConfirm };
+    (globalThis as unknown as { window: { confirm: typeof windowConfirm } }).window = { confirm: windowConfirm };
 
     const result = await confirmDestructive('Título', 'Mensagem');
 
     expect(windowConfirm).toHaveBeenCalledWith('Título\n\nMensagem');
     expect(result).toBe(true);
 
-    delete (global as { window?: unknown }).window;
+    delete (globalThis as unknown as { window?: unknown }).window;
   });
 
   it('uses Alert.alert on native and resolves true when the destructive action is pressed', async () => {
