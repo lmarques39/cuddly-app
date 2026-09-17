@@ -1,14 +1,20 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
-import { Alert } from 'react-native';
 import { RemoveEntryButton } from './RemoveEntryButton';
+import { confirmDestructive } from '../utils/confirm';
+
+jest.mock('../utils/confirm');
+
+const mockConfirmDestructive = confirmDestructive as jest.MockedFunction<typeof confirmDestructive>;
 
 describe('RemoveEntryButton', () => {
+  afterEach(() => {
+    mockConfirmDestructive.mockReset();
+  });
+
   it('calls onRemove only after confirming', async () => {
     const onRemove = jest.fn();
-    jest.spyOn(Alert, 'alert').mockImplementation((_title, _msg, buttons) => {
-      buttons?.find((b) => b.text === 'Remover')?.onPress?.();
-    });
+    mockConfirmDestructive.mockResolvedValue(true);
 
     await render(<RemoveEntryButton onRemove={onRemove} />);
     await act(async () => {
@@ -18,9 +24,9 @@ describe('RemoveEntryButton', () => {
     expect(onRemove).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call onRemove when the alert is not shown to confirm', async () => {
+  it('does not call onRemove when the confirmation is cancelled', async () => {
     const onRemove = jest.fn();
-    jest.spyOn(Alert, 'alert').mockImplementation(() => {}); // user dismissed / cancelled
+    mockConfirmDestructive.mockResolvedValue(false);
 
     await render(<RemoveEntryButton onRemove={onRemove} />);
     await act(async () => {

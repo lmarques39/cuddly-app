@@ -1,14 +1,17 @@
 import { deleteDoc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
-import { Alert } from 'react-native';
 import { auth } from '../../services/firebase';
+import { confirmDestructive } from '../../utils/confirm';
 import { CuidadoresScreen } from './CuidadoresScreen';
+
+jest.mock('../../utils/confirm');
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockOnSnapshot = onSnapshot as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
 const mockDeleteDoc = deleteDoc as jest.Mock;
+const mockConfirmDestructive = confirmDestructive as jest.MockedFunction<typeof confirmDestructive>;
 
 function fireMembers(list: unknown[]) {
   mockOnSnapshot.mock.calls[0][1]({ docs: list });
@@ -81,10 +84,7 @@ it('reveals the invite form on "Convidar cuidador" and creates the invite on sub
 });
 
 it('shows "Remover" only for other members, and deletes their member doc after confirming', async () => {
-  jest.spyOn(Alert, 'alert').mockImplementation((_title, _msg, buttons) => {
-    const confirm = buttons?.find((b) => b.text === 'Remover');
-    confirm?.onPress?.();
-  });
+  mockConfirmDestructive.mockResolvedValue(true);
 
   await render(<CuidadoresScreen />);
 

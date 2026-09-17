@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
@@ -10,6 +10,7 @@ import { useCuidadores } from '../caregivers/useCuidadores';
 import { ROLE_LABEL, ParentRole } from '../auth/RegisterParentScreen';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { Invite, Member } from '../../types/records';
+import { confirmDestructive } from '../../utils/confirm';
 import { formatSince } from '../../utils/time';
 
 type Row = { kind: 'member'; data: Member } | { kind: 'invite'; data: Invite };
@@ -28,11 +29,12 @@ export function CuidadoresScreen() {
     setInviting(false);
   };
 
-  const confirmRemove = (member: Member) => {
-    Alert.alert('Remover cuidador', `Tens a certeza que queres remover ${member.name}? Perde o acesso já.`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: () => removeCaregiver(member.id) },
-    ]);
+  const confirmRemove = async (member: Member) => {
+    const confirmed = await confirmDestructive(
+      'Remover cuidador',
+      `Tens a certeza que queres remover ${member.name}? Perde o acesso já.`
+    );
+    if (confirmed) removeCaregiver(member.id);
   };
 
   return (

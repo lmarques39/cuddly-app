@@ -1,6 +1,7 @@
 import React from 'react';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { colors, fontFamily } from '../theme/tokens';
+import { confirmDestructive } from '../utils/confirm';
 
 type Props = {
   onRemove: () => void;
@@ -8,11 +9,12 @@ type Props = {
 
 /** Shared "Remover" link + confirmation used on every tracker's history row. */
 export function RemoveEntryButton({ onRemove }: Props) {
-  const confirm = () => {
-    Alert.alert('Remover registo', 'Tens a certeza que queres remover este registo?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: onRemove },
-    ]);
+  const confirm = async () => {
+    const confirmed = await confirmDestructive(
+      'Remover registo',
+      'Tens a certeza que queres remover este registo?'
+    );
+    if (confirmed) onRemove();
   };
 
   return (
