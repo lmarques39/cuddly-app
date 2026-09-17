@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { addToList, isToday, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, isToday, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { BreastfeedingEntry } from '../../types/records';
 
@@ -45,5 +45,15 @@ export function useBreastfeeding() {
     return entries[0].side === 'left' ? 'right' : 'left';
   }, [entries]);
 
-  return { entries, todayEntries, todayDurationMs, running, start, stop, suggestedSide };
+  const remove = useCallback((id: string) => {
+    removeFromList<BreastfeedingEntry>(STORAGE_KEYS.breastfeeding, id).then(setEntries);
+    syncEntry('breastfeeding', id, null);
+  }, []);
+
+  const update = useCallback((updated: BreastfeedingEntry) => {
+    replaceInList(STORAGE_KEYS.breastfeeding, updated).then(setEntries);
+    syncEntry('breastfeeding', updated.id, updated);
+  }, []);
+
+  return { entries, todayEntries, todayDurationMs, running, start, stop, remove, update, suggestedSide };
 }

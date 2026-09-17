@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { rescheduleBreastfeedingReminder } from '../notifications/reminderScheduling';
 import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
@@ -13,7 +14,7 @@ import { useBreastfeeding } from './useBreastfeeding';
 const SIDE_LABEL = { left: 'Esquerda', right: 'Direita' } as const;
 
 export function BreastfeedingScreen() {
-  const { todayEntries, todayDurationMs, running, start, stop, suggestedSide } = useBreastfeeding();
+  const { todayEntries, todayDurationMs, running, start, stop, remove, suggestedSide } = useBreastfeeding();
   const { preferences } = useNotificationPreferences();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right'>(suggestedSide);
   const now = useNow(1000, running != null);
@@ -91,8 +92,11 @@ export function BreastfeedingScreen() {
         ListEmptyComponent={<Text style={type.caption}>Ainda sem registos hoje.</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
-            <Text style={type.body}>{formatClock(item.startedAt)} · {SIDE_LABEL[item.side]}</Text>
-            <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)}</Text>
+            <View>
+              <Text style={type.body}>{formatClock(item.startedAt)} · {SIDE_LABEL[item.side]}</Text>
+              <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)}</Text>
+            </View>
+            <RemoveEntryButton onRemove={() => remove(item.id)} />
           </Card>
         )}
       />

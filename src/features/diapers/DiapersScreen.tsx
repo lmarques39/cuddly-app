@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../components/Card';
+import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { DiaperType } from '../../types/records';
 import { formatClock, formatSince } from '../../utils/time';
@@ -10,7 +11,7 @@ import { useDiapers } from './useDiapers';
 const TYPE_LABEL: Record<DiaperType, string> = { wet: 'Xixi', dirty: 'Cocó', both: 'Ambos' };
 
 export function DiapersScreen() {
-  const { todayEntries, lastEntry, register } = useDiapers();
+  const { todayEntries, lastEntry, register, remove } = useDiapers();
   const [, forceTick] = useState(0);
 
   useEffect(() => {
@@ -49,8 +50,11 @@ export function DiapersScreen() {
         ListEmptyComponent={<Text style={type.caption}>Ainda sem registos hoje.</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
-            <Text style={type.body}>{formatClock(item.at)}</Text>
-            <Text style={type.caption}>{TYPE_LABEL[item.type]}</Text>
+            <View>
+              <Text style={type.body}>{formatClock(item.at)}</Text>
+              <Text style={type.caption}>{TYPE_LABEL[item.type]}</Text>
+            </View>
+            <RemoveEntryButton onRemove={() => remove(item.id)} />
           </Card>
         )}
       />

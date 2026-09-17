@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { BottleType } from '../../types/records';
 import { formatClock } from '../../utils/time';
@@ -15,7 +16,7 @@ const TYPE_LABEL: Record<BottleType, string> = {
 };
 
 export function BottleScreen() {
-  const { todayEntries, todayTotalMl, save } = useBottle();
+  const { todayEntries, todayTotalMl, save, remove } = useBottle();
   const [amount, setAmount] = useState('');
   const [type_, setType] = useState<BottleType>('breastmilk');
 
@@ -81,8 +82,11 @@ export function BottleScreen() {
         ListEmptyComponent={<Text style={type.caption}>Ainda sem registos hoje.</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
-            <Text style={type.body}>{formatClock(item.at)} · {TYPE_LABEL[item.type]}</Text>
-            <Text style={type.caption}>{item.amountMl}ml</Text>
+            <View>
+              <Text style={type.body}>{formatClock(item.at)} · {TYPE_LABEL[item.type]}</Text>
+              <Text style={type.caption}>{item.amountMl}ml</Text>
+            </View>
+            <RemoveEntryButton onRemove={() => remove(item.id)} />
           </Card>
         )}
       />

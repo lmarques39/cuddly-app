@@ -57,4 +57,30 @@ describe('usePumping', () => {
 
     expect(result.current.entries).toEqual([]);
   });
+
+  it('removes an entry by id', async () => {
+    const { result } = await renderHook(() => usePumping());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    await act(async () => result.current.start());
+    await act(async () => result.current.stop(120));
+    const [entry] = result.current.entries;
+
+    await act(async () => result.current.remove(entry.id));
+
+    expect(result.current.entries).toEqual([]);
+  });
+
+  it('updates an entry, e.g. correcting a mistyped amount', async () => {
+    const { result } = await renderHook(() => usePumping());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    await act(async () => result.current.start());
+    await act(async () => result.current.stop(120));
+    const [entry] = result.current.entries;
+
+    await act(async () => result.current.update({ ...entry, amountMl: 150 }));
+
+    expect(result.current.entries).toEqual([{ ...entry, amountMl: 150 }]);
+  });
 });

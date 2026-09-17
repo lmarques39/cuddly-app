@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { addToList, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { PumpingEntry } from '../../types/records';
 
@@ -40,5 +40,15 @@ export function usePumping() {
     });
   }, []);
 
-  return { entries, runningSince, start, stop, loaded };
+  const remove = useCallback((id: string) => {
+    removeFromList<PumpingEntry>(STORAGE_KEYS.pumping, id).then(setEntries);
+    syncEntry('pumping', id, null);
+  }, []);
+
+  const update = useCallback((updated: PumpingEntry) => {
+    replaceInList(STORAGE_KEYS.pumping, updated).then(setEntries);
+    syncEntry('pumping', updated.id, updated);
+  }, []);
+
+  return { entries, runningSince, start, stop, remove, update, loaded };
 }

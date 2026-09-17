@@ -1,5 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { addToList, isToday, loadList, loadObject, makeId, saveList, saveObject } from './storage';
+import {
+  addToList,
+  isToday,
+  loadList,
+  loadObject,
+  makeId,
+  removeFromList,
+  replaceInList,
+  saveList,
+  saveObject,
+} from './storage';
 
 const KEY = '@cuddly-test/list';
 const OBJ_KEY = '@cuddly-test/object';
@@ -26,6 +36,26 @@ describe('loadList / saveList / addToList', () => {
   it('returns an empty array for corrupted JSON instead of throwing', async () => {
     await AsyncStorage.setItem(KEY, 'not json');
     expect(await loadList(KEY)).toEqual([]);
+  });
+});
+
+describe('removeFromList / replaceInList', () => {
+  it('removes only the entry with the matching id', async () => {
+    await saveList(KEY, [{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+    expect(await removeFromList(KEY, 'b')).toEqual([{ id: 'a' }, { id: 'c' }]);
+    expect(await loadList(KEY)).toEqual([{ id: 'a' }, { id: 'c' }]);
+  });
+
+  it('does nothing when the id is not found', async () => {
+    await saveList(KEY, [{ id: 'a' }]);
+    expect(await removeFromList(KEY, 'missing')).toEqual([{ id: 'a' }]);
+  });
+
+  it('replaces only the entry with the matching id, leaving others untouched', async () => {
+    await saveList(KEY, [{ id: 'a', value: 1 }, { id: 'b', value: 2 }]);
+    const next = await replaceInList(KEY, { id: 'a', value: 99 });
+    expect(next).toEqual([{ id: 'a', value: 99 }, { id: 'b', value: 2 }]);
+    expect(await loadList(KEY)).toEqual([{ id: 'a', value: 99 }, { id: 'b', value: 2 }]);
   });
 });
 

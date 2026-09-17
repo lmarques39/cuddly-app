@@ -76,4 +76,21 @@ describe('useContractions', () => {
 
     expect(result.current.fiveOneOne).toBe(true);
   });
+
+  it('removes and updates an entry', async () => {
+    const clock = useControlledClock();
+    const { result } = await renderHook(() => useContractions());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    await act(async () => result.current.start());
+    clock.advance(60_000);
+    await act(async () => result.current.stop());
+    const [entry] = result.current.entries;
+
+    await act(async () => result.current.update({ ...entry, endedAt: entry.endedAt + 1000 }));
+    expect(result.current.entries[0].endedAt).toBe(entry.endedAt + 1000);
+
+    await act(async () => result.current.remove(entry.id));
+    expect(result.current.entries).toEqual([]);
+  });
 });

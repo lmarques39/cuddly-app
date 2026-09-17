@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { addToList, isToday, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, isToday, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { DiaperEntry, DiaperType } from '../../types/records';
 
@@ -30,5 +30,15 @@ export function useDiapers() {
     syncEntry('diapers', entry.id, entry);
   }, []);
 
-  return { entries, todayEntries, lastEntry, register };
+  const remove = useCallback((id: string) => {
+    removeFromList<DiaperEntry>(STORAGE_KEYS.diapers, id).then(setEntries);
+    syncEntry('diapers', id, null);
+  }, []);
+
+  const update = useCallback((updated: DiaperEntry) => {
+    replaceInList(STORAGE_KEYS.diapers, updated).then(setEntries);
+    syncEntry('diapers', updated.id, updated);
+  }, []);
+
+  return { entries, todayEntries, lastEntry, register, remove, update };
 }

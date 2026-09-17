@@ -1,8 +1,9 @@
 import React from 'react';
-import { FlatList, StyleSheet, Text } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, spacing, type } from '../../theme/tokens';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
@@ -15,7 +16,7 @@ import { useSono } from './useSono';
  * useSono.ts.
  */
 export function SonoScreen() {
-  const { entries, runningSince, start, stop } = useSono();
+  const { entries, runningSince, start, stop, remove } = useSono();
   const now = useNow(1000, runningSince != null);
 
   const elapsed = runningSince != null ? now - runningSince : 0;
@@ -45,8 +46,11 @@ export function SonoScreen() {
         ListEmptyComponent={<Text style={type.caption}>Ainda sem registos.</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
-            <Text style={type.body}>{formatClock(item.startedAt)}</Text>
-            <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)} de duração</Text>
+            <View>
+              <Text style={type.body}>{formatClock(item.startedAt)}</Text>
+              <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)} de duração</Text>
+            </View>
+            <RemoveEntryButton onRemove={() => remove(item.id)} />
           </Card>
         )}
       />

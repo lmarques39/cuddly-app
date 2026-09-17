@@ -3,13 +3,14 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, spacing, type } from '../../theme/tokens';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { useContractions } from './useContractions';
 
 export function ContractionsScreen() {
-  const { entries, runningSince, start, stop, fiveOneOne } = useContractions();
+  const { entries, runningSince, start, stop, remove, fiveOneOne } = useContractions();
   const now = useNow(1000, runningSince != null);
 
   const elapsed = runningSince != null ? now - runningSince : 0;
@@ -54,8 +55,11 @@ export function ContractionsScreen() {
         ListEmptyComponent={<Text style={type.caption}>Ainda sem registos hoje.</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
-            <Text style={type.body}>{formatClock(item.startedAt)}</Text>
-            <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)} de duração</Text>
+            <View>
+              <Text style={type.body}>{formatClock(item.startedAt)}</Text>
+              <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)} de duração</Text>
+            </View>
+            <RemoveEntryButton onRemove={() => remove(item.id)} />
           </Card>
         )}
       />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { addToList, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { ContractionEntry } from '../../types/records';
 
@@ -45,9 +45,19 @@ export function useContractions() {
     });
   }, []);
 
+  const remove = useCallback((id: string) => {
+    removeFromList<ContractionEntry>(STORAGE_KEYS.contractions, id).then(setEntries);
+    syncEntry('contractions', id, null);
+  }, []);
+
+  const update = useCallback((updated: ContractionEntry) => {
+    replaceInList(STORAGE_KEYS.contractions, updated).then(setEntries);
+    syncEntry('contractions', updated.id, updated);
+  }, []);
+
   const fiveOneOne = useMemo(() => matchesFiveOneOne(entries), [entries]);
 
-  return { entries, runningSince, start, stop, loaded, fiveOneOne };
+  return { entries, runningSince, start, stop, remove, update, loaded, fiveOneOne };
 }
 
 function matchesFiveOneOne(entries: ContractionEntry[]): boolean {

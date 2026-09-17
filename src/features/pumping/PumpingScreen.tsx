@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
@@ -14,9 +15,11 @@ import { usePumping } from './usePumping';
  * styling later without touching usePumping.ts.
  */
 export function PumpingScreen() {
-  const { entries, runningSince, start, stop } = usePumping();
+  const { entries, runningSince, start, stop, remove, update } = usePumping();
   const now = useNow(1000, runningSince != null);
   const [amountMl, setAmountMl] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState('');
 
   const elapsed = runningSince != null ? now - runningSince : 0;
   const parsedAmount = Number(amountMl);
@@ -26,6 +29,15 @@ export function PumpingScreen() {
     if (!canStop) return;
     stop(parsedAmount);
     setAmountMl('');
+  };
+
+  const parsedEditAmount = Number(editAmount);
+  const canSaveEdit = editAmount.trim().length > 0 && !Number.isNaN(parsedEditAmount) && parsedEditAmount > 0;
+
+  const saveEdit = (entry: (typeof entries)[number]) => {
+    if (!canSaveEdit) return;
+    update({ ...entry, amountMl: parsedEditAmount });
+    setEditingId(null);
   };
 
   return (
@@ -65,14 +77,43 @@ export function PumpingScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={type.caption}>Ainda sem registos.</Text>}
-        renderItem={({ item }) => (
-          <Card style={styles.row}>
-            <Text style={type.body}>{formatClock(item.startedAt)}</Text>
-            <Text style={type.caption}>
-              {formatDuration(item.endedAt - item.startedAt)} · {item.amountMl}ml
-            </Text>
-          </Card>
-        )}
+        renderItem={({ item }) =>
+          editingId === item.id ? (
+            <Card style={styles.row}>
+              <TextInput
+                value={editAmount}
+                onChangeText={setEditAmount}
+                keyboardType="numeric"
+                autoFocus
+                style={styles.editInput}
+              />
+              <View style={styles.editActions}>
+                <Pressable onPress={() => saveEdit(item)} style={styles.smallButton}>
+                  <Text style={styles.smallButtonLabel}>Guardar</Text>
+                </Pressable>
+                <Pressable onPress={() => setEditingId(null)} hitSlop={8}>
+                  <Text style={type.caption}>Cancelar</Text>
+                </Pressable>
+              </View>
+            </Card>
+          ) : (
+            <Card style={styles.row}>
+              <Pressable
+                style={styles.rowText}
+                onPress={() => {
+                  setEditingId(item.id);
+                  setEditAmount(String(item.amountMl));
+                }}
+              >
+                <Text style={type.body}>{formatClock(item.startedAt)}</Text>
+                <Text style={type.caption}>
+                  {formatDuration(item.endedAt - item.startedAt)} · {item.amountMl}ml · toca para editar
+                </Text>
+              </Pressable>
+              <RemoveEntryButton onRemove={() => remove(item.id)} />
+            </Card>
+          )
+        }
       />
     </SafeAreaView>
   );
@@ -93,4 +134,19 @@ const styles = StyleSheet.create({
   },
   listTitle: { marginTop: spacing.sm },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  rowText: { flex: 1 },
+  editInput: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    fontFamily: fontFamily.bodyMedium,
+    fontSize: 15,
+    color: colors.ink,
+  },
+  editActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginLeft: spacing.sm },
+  smallButton: { backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.md, paddingVertical: 8 },
+  smallButtonLabel: { fontFamily: fontFamily.bodyBold, fontSize: 13, color: colors.primaryInk },
 });

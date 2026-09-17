@@ -43,6 +43,20 @@ export async function addToList<T>(key: string, item: T): Promise<T[]> {
   return next;
 }
 
+export async function removeFromList<T extends { id: string }>(key: string, id: string): Promise<T[]> {
+  const current = await loadList<T>(key);
+  const next = current.filter((item) => item.id !== id);
+  await saveList(key, next);
+  return next;
+}
+
+export async function replaceInList<T extends { id: string }>(key: string, updated: T): Promise<T[]> {
+  const current = await loadList<T>(key);
+  const next = current.map((item) => (item.id === updated.id ? updated : item));
+  await saveList(key, next);
+  return next;
+}
+
 export async function loadObject<T>(key: string): Promise<T | null> {
   const raw = await AsyncStorage.getItem(key);
   if (!raw) return null;

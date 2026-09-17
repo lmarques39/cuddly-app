@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { addToList, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { SonoEntry } from '../../types/records';
 
@@ -40,5 +40,15 @@ export function useSono() {
     });
   }, []);
 
-  return { entries, runningSince, start, stop, loaded };
+  const remove = useCallback((id: string) => {
+    removeFromList<SonoEntry>(STORAGE_KEYS.sono, id).then(setEntries);
+    syncEntry('sono', id, null);
+  }, []);
+
+  const update = useCallback((updated: SonoEntry) => {
+    replaceInList(STORAGE_KEYS.sono, updated).then(setEntries);
+    syncEntry('sono', updated.id, updated);
+  }, []);
+
+  return { entries, runningSince, start, stop, remove, update, loaded };
 }

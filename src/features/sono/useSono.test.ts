@@ -76,4 +76,19 @@ describe('useSono', () => {
     expect(result.current.entries).toHaveLength(2);
     expect(result.current.entries[0].startedAt).toBe(secondStart);
   });
+
+  it('removes and updates an entry', async () => {
+    const { result } = await renderHook(() => useSono());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    await act(async () => result.current.start());
+    await act(async () => result.current.stop());
+    const [entry] = result.current.entries;
+
+    await act(async () => result.current.update({ ...entry, endedAt: entry.endedAt + 1000 }));
+    expect(result.current.entries[0].endedAt).toBe(entry.endedAt + 1000);
+
+    await act(async () => result.current.remove(entry.id));
+    expect(result.current.entries).toEqual([]);
+  });
 });

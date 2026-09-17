@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { addToList, isToday, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, isToday, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { BottleEntry, BottleType } from '../../types/records';
 
@@ -30,5 +30,15 @@ export function useBottle() {
     syncEntry('bottle', entry.id, entry);
   }, []);
 
-  return { entries, todayEntries, todayTotalMl, save };
+  const remove = useCallback((id: string) => {
+    removeFromList<BottleEntry>(STORAGE_KEYS.bottle, id).then(setEntries);
+    syncEntry('bottle', id, null);
+  }, []);
+
+  const update = useCallback((updated: BottleEntry) => {
+    replaceInList(STORAGE_KEYS.bottle, updated).then(setEntries);
+    syncEntry('bottle', updated.id, updated);
+  }, []);
+
+  return { entries, todayEntries, todayTotalMl, save, remove, update };
 }
