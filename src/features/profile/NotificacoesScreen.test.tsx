@@ -25,6 +25,7 @@ describe('NotificacoesScreen', () => {
     expect(mockSchedule).toHaveBeenCalledWith(
       expect.objectContaining({ trigger: expect.objectContaining({ seconds: 3 * 3600 }) }),
     );
+    expect(screen.getByText('Guardado com sucesso.')).toBeTruthy();
   });
 
   it('shows "Novidades da Cuddly" as disabled — it is genuine push, out of scope', async () => {
