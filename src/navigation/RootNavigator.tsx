@@ -111,6 +111,13 @@ export function RootNavigator() {
         name="Registar"
         component={RegistarNavigator}
         options={{ tabBarIcon: makeTabBarIcon('Registar'), tabBarActiveTintColor: TAB_COLOR.Registar, tabBarInactiveTintColor: TAB_COLOR.Registar }}
+        listeners={({ navigation }) => ({
+          // Leaving the tab resets its nested stack back to the hub screen —
+          // otherwise React Navigation keeps you exactly where you were
+          // (e.g. still on Notificações) the next time you tap this tab,
+          // which reads as a stuck/broken back button.
+          blur: () => navigation.reset({ index: 0, routes: [{ name: 'Registar' }] }),
+        })}
       />
       <Tab.Screen
         name="Histórico"
@@ -121,6 +128,9 @@ export function RootNavigator() {
         name="Perfil"
         component={PerfilNavigator}
         options={{ tabBarIcon: makeTabBarIcon('Perfil'), tabBarActiveTintColor: TAB_COLOR.Perfil, tabBarInactiveTintColor: TAB_COLOR.Perfil }}
+        listeners={({ navigation }) => ({
+          blur: () => navigation.reset({ index: 0, routes: [{ name: 'Perfil' }] }),
+        })}
       />
     </Tab.Navigator>
   );
