@@ -46,3 +46,12 @@ export async function scheduleAppointmentReminder(appointment: Appointment, days
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerAt },
   });
 }
+
+/**
+ * Called when a consulta is edited or removed — without this, an old
+ * reminder would keep pointing at the previous date/time (or fire for an
+ * appointment that no longer exists).
+ */
+export async function cancelAppointmentReminder(appointmentId: string): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(appointmentReminderId(appointmentId));
+}

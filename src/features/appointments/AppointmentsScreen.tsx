@@ -4,9 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { dateKey, MonthCalendar } from '../../components/MonthCalendar';
+import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { Appointment } from '../../types/records';
 import { useNow } from '../../utils/useNow';
-import { scheduleAppointmentReminder } from '../notifications/reminderScheduling';
+import { cancelAppointmentReminder, scheduleAppointmentReminder } from '../notifications/reminderScheduling';
 import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
 import { useAppointments } from './useAppointments';
 
@@ -32,13 +34,19 @@ function formatAppointment(epochMs: number): string {
   return new Date(epochMs).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
+function timeLabel(epochMs: number): string {
+  const d = new Date(epochMs);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export function AppointmentsScreen() {
-  const { appointments, save: saveAppointment } = useAppointments();
+  const { appointments, save: saveAppointment, remove: removeAppointment, update: updateAppointment } = useAppointments();
   const { preferences } = useNotificationPreferences();
   const [title, setTitle] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [time, setTime] = useState('09:00');
   const [customTime, setCustomTime] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const now = useNow(60000);
   const todayKey = dateKey(now);
@@ -61,15 +69,50 @@ export function AppointmentsScreen() {
   const scheduledAt = combineDateAndTime(formDateKey, time);
   const canSave = title.trim().length > 0 && scheduledAt != null;
 
+  const resetForm = () => {
+    setTitle('');
+    setTime('09:00');
+    setCustomTime(false);
+    setEditingId(null);
+  };
+
   const save = async () => {
     if (!canSave || scheduledAt == null) return;
+
+    if (editingId != null) {
+      const updated: Appointment = { id: editingId, title: title.trim(), scheduledAt };
+      updateAppointment(updated);
+      // Not awaited — like the scheduleAppointmentReminder call below,
+      // expo-notifications throws UnavailabilityError on web, and this must
+      // never block resetForm()/the rest of the save.
+      cancelAppointmentReminder(editingId);
+      if (preferences.appointment.enabled) {
+        scheduleAppointmentReminder(updated, preferences.appointment.daysBefore);
+      }
+      resetForm();
+      return;
+    }
+
     const created = await saveAppointment({ title: title.trim(), scheduledAt });
     if (preferences.appointment.enabled) {
       scheduleAppointmentReminder(created, preferences.appointment.daysBefore);
     }
-    setTitle('');
-    setTime('09:00');
-    setCustomTime(false);
+    resetForm();
+  };
+
+  const startEdit = (appointment: Appointment) => {
+    setEditingId(appointment.id);
+    setTitle(appointment.title);
+    setSelectedKey(dateKey(appointment.scheduledAt));
+    const label = timeLabel(appointment.scheduledAt);
+    setTime(label);
+    setCustomTime(!QUICK_TIMES.includes(label));
+  };
+
+  const removeAppointmentAndReminder = (id: string) => {
+    removeAppointment(id);
+    cancelAppointmentReminder(id);
+    if (editingId === id) resetForm();
   };
 
   return (
@@ -90,10 +133,19 @@ export function AppointmentsScreen() {
         )}
 
         <Card style={{ gap: spacing.md }}>
-          <Text style={[type.caption, styles.formTarget]}>
-            A marcar para <Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
-            {!selectedKey && ' (hoje — toca num dia no calendário para escolher outro)'}
-          </Text>
+          {editingId != null ? (
+            <View style={styles.editingBanner}>
+              <Text style={styles.editingBannerLabel}>A editar consulta</Text>
+              <Pressable onPress={resetForm} hitSlop={8}>
+                <Text style={styles.editingBannerCancel}>Cancelar</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Text style={[type.caption, styles.formTarget]}>
+              A marcar para <Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
+              {!selectedKey && ' (hoje — toca num dia no calendário para escolher outro)'}
+            </Text>
+          )}
 
           <View>
             <Text style={type.caption}>Título</Text>
@@ -140,7 +192,7 @@ export function AppointmentsScreen() {
           </View>
 
           <BigButton
-            label="Marcar consulta"
+            label={editingId != null ? 'Guardar alterações' : 'Marcar consulta'}
             background={canSave ? colors.primary : colors.surfaceSunken}
             foreground={canSave ? colors.primaryInk : colors.inkMuted}
             onPress={save}
@@ -156,8 +208,11 @@ export function AppointmentsScreen() {
           <View style={{ gap: spacing.sm }}>
             {[...upcoming, ...past].map((item) => (
               <Card key={item.id} style={styles.row}>
-                <Text style={type.body}>{item.title}</Text>
-                <Text style={type.caption}>{formatAppointment(item.scheduledAt)}</Text>
+                <Pressable style={styles.rowText} onPress={() => startEdit(item)}>
+                  <Text style={type.body}>{item.title}</Text>
+                  <Text style={type.caption}>{formatAppointment(item.scheduledAt)} · toca para editar</Text>
+                </Pressable>
+                <RemoveEntryButton onRemove={() => removeAppointmentAndReminder(item.id)} />
               </Card>
             ))}
           </View>
@@ -182,9 +237,21 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  rowText: { flex: 1 },
   clearFilter: { alignSelf: 'flex-start' },
   clearFilterLabel: { fontFamily: fontFamily.bodyBold, fontSize: 12.5, color: colors.primary },
   formTarget: { backgroundColor: colors.surfaceSunken, borderRadius: radii.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  editingBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  editingBannerLabel: { fontFamily: fontFamily.bodyBold, fontSize: 12.5, color: colors.ink },
+  editingBannerCancel: { fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: colors.coral },
   formTargetBold: { fontFamily: fontFamily.bodyBold, color: colors.ink },
   timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
   timePill: {

@@ -1,6 +1,11 @@
 import * as Notifications from 'expo-notifications';
 import { Appointment } from '../../types/records';
-import { appointmentReminderId, rescheduleBreastfeedingReminder, scheduleAppointmentReminder } from './reminderScheduling';
+import {
+  appointmentReminderId,
+  cancelAppointmentReminder,
+  rescheduleBreastfeedingReminder,
+  scheduleAppointmentReminder,
+} from './reminderScheduling';
 import { BREASTFEEDING_REMINDER_ID } from './useNotificationPreferences';
 
 const mockSchedule = Notifications.scheduleNotificationAsync as jest.Mock;
@@ -44,5 +49,13 @@ describe('scheduleAppointmentReminder', () => {
     await scheduleAppointmentReminder(soonAppointment, 5); // 5 days before something an hour away
 
     expect(mockSchedule).not.toHaveBeenCalled();
+  });
+});
+
+describe('cancelAppointmentReminder', () => {
+  it('cancels the reminder scheduled under that appointment id', async () => {
+    await cancelAppointmentReminder('apt1');
+
+    expect(mockCancel).toHaveBeenCalledWith(appointmentReminderId('apt1'));
   });
 });

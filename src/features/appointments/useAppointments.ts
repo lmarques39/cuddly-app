@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { addToList, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
+import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { Appointment } from '../../types/records';
 
@@ -30,5 +30,15 @@ export function useAppointments() {
     return withId;
   }, []);
 
-  return { appointments, save };
+  const remove = useCallback((id: string) => {
+    removeFromList<Appointment>(STORAGE_KEYS.appointments, id).then(setAppointments);
+    syncEntry('appointments', id, null);
+  }, []);
+
+  const update = useCallback((updated: Appointment) => {
+    replaceInList(STORAGE_KEYS.appointments, updated).then(setAppointments);
+    syncEntry('appointments', updated.id, updated);
+  }, []);
+
+  return { appointments, save, remove, update };
 }
