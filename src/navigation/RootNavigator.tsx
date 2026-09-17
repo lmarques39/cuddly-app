@@ -7,11 +7,13 @@ import { BottleScreen } from '../features/bottle/BottleScreen';
 import { BreastfeedingScreen } from '../features/breastfeeding/BreastfeedingScreen';
 import { ContractionsScreen } from '../features/contractions/ContractionsScreen';
 import { DiapersScreen } from '../features/diapers/DiapersScreen';
+import { PumpingScreen } from '../features/pumping/PumpingScreen';
 import { BabyProfileScreen } from '../features/profile/BabyProfileScreen';
 import { CuidadoresScreen } from '../features/profile/CuidadoresScreen';
 import { NotificacoesScreen } from '../features/profile/NotificacoesScreen';
 import { PerfilScreen } from '../features/profile/PerfilScreen';
 import { PrivacidadeScreen } from '../features/profile/PrivacidadeScreen';
+import { SonoScreen } from '../features/sono/SonoScreen';
 import { HistoricoScreen } from '../screens/HistoricoScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { RegistarScreen } from '../screens/RegistarScreen';
@@ -71,6 +73,8 @@ function RegistarNavigator() {
       <RegistarStack.Screen name="Amamentação" component={BreastfeedingScreen} />
       <RegistarStack.Screen name="Biberão" component={BottleScreen} />
       <RegistarStack.Screen name="Fraldas" component={DiapersScreen} />
+      <RegistarStack.Screen name="Sono" component={SonoScreen} />
+      <RegistarStack.Screen name="Pumping" component={PumpingScreen} />
       <RegistarStack.Screen name="MarcarConsulta" component={AppointmentsScreen} />
     </RegistarStack.Navigator>
   );

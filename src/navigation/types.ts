@@ -7,6 +7,8 @@ export type RegistarStackParamList = {
   Biberão: undefined;
   Fraldas: undefined;
   MarcarConsulta: undefined;
+  Sono: undefined;
+  Pumping: undefined;
 };
 
 export type PerfilStackParamList = {

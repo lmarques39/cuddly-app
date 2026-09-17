@@ -53,6 +53,20 @@ export function RegistarScreen() {
               foreground={colors.domain.diapers.ink}
               onPress={() => navigation.navigate('Fraldas')}
             />
+            <BigButton
+              style={styles.gridItem}
+              label="Sono"
+              background={colors.domain.sleep.bg}
+              foreground={colors.domain.sleep.ink}
+              onPress={() => navigation.navigate('Sono')}
+            />
+            <BigButton
+              style={styles.gridItem}
+              label="Extração"
+              background={colors.domain.pumping.bg}
+              foreground={colors.domain.pumping.ink}
+              onPress={() => navigation.navigate('Pumping')}
+            />
           </>
         )}
         <BigButton
