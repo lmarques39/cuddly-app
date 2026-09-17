@@ -21,6 +21,8 @@ import { CreateAccountScreen } from './src/features/auth/CreateAccountScreen';
 import { LoginScreen } from './src/features/auth/LoginScreen';
 import { RecoverPasswordScreen } from './src/features/auth/RecoverPasswordScreen';
 import { ParentInfo, RegisterParentScreen } from './src/features/auth/RegisterParentScreen';
+import { acceptInvite, getPendingInvitesForEmail, PendingInvite } from './src/features/caregivers/acceptInvite';
+import { AcceptInviteScreen } from './src/features/caregivers/AcceptInviteScreen';
 import { createFamilyForUser } from './src/features/family/createFamily';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -29,7 +31,7 @@ import { migrateLocalDataToFirestore } from './src/storage/migrate';
 import { clearAllLocalData } from './src/storage/storage';
 import { colors } from './src/theme/tokens';
 
-type AuthStep = 'login' | 'createAccount' | 'recoverPassword' | 'registerParent' | 'registerBaby' | 'app';
+type AuthStep = 'login' | 'createAccount' | 'recoverPassword' | 'registerParent' | 'registerBaby' | 'acceptInvite' | 'app';
 
 // react-native-web's Alert.alert() is a no-op (no popup, no console log) —
 // errors must be shown inline instead, and Firebase's raw error codes need
@@ -70,6 +72,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authStep, setAuthStep] = useState<AuthStep>('login');
   const [authError, setAuthError] = useState<string | null>(null);
+  const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const { save: saveBabyProfile } = useBabyProfile();
 
   useEffect(() => {
@@ -109,6 +112,25 @@ export default function App() {
     }
   };
 
+  /**
+   * Runs right after a brand new account is created (either sign-up path).
+   * A pending invite for this email routes to accepting it instead of the
+   * normal "create your own family" onboarding — otherwise the invite would
+   * sit forever un-accepted while the person builds an unrelated family.
+   * Only handles *new* sign-ups; an existing account invited to a second
+   * family isn't handled here (this app's data model assumes one family per
+   * user) — deliberately out of scope, see #61's discussion.
+   */
+  const routeNewUser = async (email: string) => {
+    const invites = await getPendingInvitesForEmail(email).catch(() => []);
+    if (invites.length > 0) {
+      setPendingInvite(invites[0]);
+      setAuthStep('acceptInvite');
+    } else {
+      setAuthStep('registerParent');
+    }
+  };
+
   const handleCreateAccount = async (email: string, password: string) => {
     setAuthError(null);
     try {
@@ -119,7 +141,7 @@ export default function App() {
       // trackers/baby profile. Best-effort: the account already exists at
       // this point, so a storage hiccup here shouldn't block sign-up.
       await clearAllLocalData().catch(() => {});
-      setAuthStep('registerParent');
+      await routeNewUser(email);
     } catch (err) {
       setAuthError(describeAuthError(err));
     }
@@ -133,7 +155,7 @@ export default function App() {
       if (getAdditionalUserInfo(result)?.isNewUser) {
         // Same per-device AsyncStorage caveat as handleCreateAccount below.
         await clearAllLocalData().catch(() => {});
-        setAuthStep('registerParent');
+        await routeNewUser(result.user.email ?? '');
       } else {
         setAuthStep('app');
       }
@@ -150,6 +172,24 @@ export default function App() {
       setAuthError(describeAuthError(err));
       throw err; // let RecoverPasswordScreen know not to show its "sent" confirmation
     }
+  };
+
+  const handleAcceptInvite = async (name: string) => {
+    setAuthError(null);
+    if (!pendingInvite || !auth.currentUser) return;
+    try {
+      await acceptInvite(pendingInvite, auth.currentUser.uid, name);
+      setPendingInvite(null);
+      setAuthStep('app');
+    } catch (err) {
+      setAuthError(describeAuthError(err));
+    }
+  };
+
+  const handleDeclineInvite = () => {
+    setAuthError(null);
+    setPendingInvite(null);
+    setAuthStep('registerParent');
   };
 
   const handleParentContinue = async (parent: ParentInfo) => {
@@ -222,6 +262,15 @@ export default function App() {
             setAuthError(null);
             setAuthStep('login');
           }}
+          error={authError}
+        />
+      )}
+      {authStep === 'acceptInvite' && pendingInvite && (
+        <AcceptInviteScreen
+          inviterName={pendingInvite.invitedByName}
+          defaultName={auth.currentUser?.displayName ?? ''}
+          onAccept={handleAcceptInvite}
+          onDecline={handleDeclineInvite}
           error={authError}
         />
       )}

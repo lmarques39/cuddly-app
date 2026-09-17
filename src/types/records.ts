@@ -96,6 +96,10 @@ export type Invite = {
   id: string;
   email: string;
   invitedBy: string; // uid of the family member who sent it
+  // Denormalized from the inviter's own member doc at creation time — the
+  // invitee can read this invite (email match) long before they're a family
+  // member, so they can't look up members/{invitedBy} themselves to get a name.
+  invitedByName: string | null;
   invitedAt: number; // epoch ms
   status: InviteStatus;
 };

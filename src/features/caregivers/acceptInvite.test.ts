@@ -33,6 +33,7 @@ describe('acceptInvite', () => {
     id: 'inv1',
     email: 'bob@x.com',
     invitedBy: 'alice',
+    invitedByName: 'Alice',
     invitedAt: 1,
     status: 'pending',
     familyId: 'famA',
