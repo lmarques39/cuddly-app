@@ -40,6 +40,13 @@ export function useSono() {
     });
   }, []);
 
+  /** Logs a sleep the timer never ran for (e.g. noticed only after waking up). */
+  const addManual = useCallback((startedAt: number, endedAt: number) => {
+    const entry: SonoEntry = { id: makeId(), startedAt, endedAt };
+    addToList(STORAGE_KEYS.sono, entry).then(setEntries);
+    syncEntry('sono', entry.id, entry);
+  }, []);
+
   const remove = useCallback((id: string) => {
     removeFromList<SonoEntry>(STORAGE_KEYS.sono, id).then(setEntries);
     syncEntry('sono', id, null);
@@ -50,5 +57,5 @@ export function useSono() {
     syncEntry('sono', updated.id, updated);
   }, []);
 
-  return { entries, runningSince, start, stop, remove, update, loaded };
+  return { entries, runningSince, start, stop, addManual, remove, update, loaded };
 }

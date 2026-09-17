@@ -35,6 +35,13 @@ export function useBreastfeeding() {
     });
   }, []);
 
+  /** Logs a feed the timer never ran for. */
+  const addManual = useCallback((side: 'left' | 'right', startedAt: number, endedAt: number) => {
+    const entry: BreastfeedingEntry = { id: makeId(), side, startedAt, endedAt };
+    addToList(STORAGE_KEYS.breastfeeding, entry).then(setEntries);
+    syncEntry('breastfeeding', entry.id, entry);
+  }, []);
+
   const todayEntries = useMemo(() => entries.filter((e) => isToday(e.startedAt)), [entries]);
   const todayDurationMs = useMemo(
     () => todayEntries.reduce((sum, e) => sum + (e.endedAt - e.startedAt), 0),
@@ -55,5 +62,5 @@ export function useBreastfeeding() {
     syncEntry('breastfeeding', updated.id, updated);
   }, []);
 
-  return { entries, todayEntries, todayDurationMs, running, start, stop, remove, update, suggestedSide };
+  return { entries, todayEntries, todayDurationMs, running, start, stop, addManual, remove, update, suggestedSide };
 }

@@ -3,6 +3,7 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, spacing, type } from '../../theme/tokens';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -16,7 +17,7 @@ import { useSono } from './useSono';
  * useSono.ts.
  */
 export function SonoScreen() {
-  const { entries, runningSince, start, stop, remove } = useSono();
+  const { entries, runningSince, start, stop, addManual, remove } = useSono();
   const now = useNow(1000, runningSince != null);
 
   const elapsed = runningSince != null ? now - runningSince : 0;
@@ -37,6 +38,8 @@ export function SonoScreen() {
         onPress={runningSince == null ? start : stop}
         full
       />
+
+      {runningSince == null && <ManualEntryToggle onSave={addManual} />}
 
       <Text style={[type.caption, styles.listTitle]}>Últimos registos</Text>
       <FlatList

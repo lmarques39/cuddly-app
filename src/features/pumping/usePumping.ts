@@ -40,6 +40,13 @@ export function usePumping() {
     });
   }, []);
 
+  /** Logs an extraction the timer never ran for. */
+  const addManual = useCallback((startedAt: number, endedAt: number, amountMl: number) => {
+    const entry: PumpingEntry = { id: makeId(), startedAt, endedAt, amountMl };
+    addToList(STORAGE_KEYS.pumping, entry).then(setEntries);
+    syncEntry('pumping', entry.id, entry);
+  }, []);
+
   const remove = useCallback((id: string) => {
     removeFromList<PumpingEntry>(STORAGE_KEYS.pumping, id).then(setEntries);
     syncEntry('pumping', id, null);
@@ -50,5 +57,5 @@ export function usePumping() {
     syncEntry('pumping', updated.id, updated);
   }, []);
 
-  return { entries, runningSince, start, stop, remove, update, loaded };
+  return { entries, runningSince, start, stop, addManual, remove, update, loaded };
 }

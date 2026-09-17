@@ -77,6 +77,20 @@ describe('useSono', () => {
     expect(result.current.entries[0].startedAt).toBe(secondStart);
   });
 
+  it('logs a manual entry with explicit start/end times, without touching runningSince', async () => {
+    const { result } = await renderHook(() => useSono());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    await act(async () => result.current.addManual(1_700_000_000_000, 1_700_028_800_000));
+
+    expect(result.current.runningSince).toBeNull();
+    expect(result.current.entries).toHaveLength(1);
+    expect(result.current.entries[0]).toMatchObject({
+      startedAt: 1_700_000_000_000,
+      endedAt: 1_700_028_800_000,
+    });
+  });
+
   it('removes and updates an entry', async () => {
     const { result } = await renderHook(() => useSono());
     await waitFor(() => expect(result.current.loaded).toBe(true));

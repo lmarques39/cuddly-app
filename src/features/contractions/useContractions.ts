@@ -45,6 +45,13 @@ export function useContractions() {
     });
   }, []);
 
+  /** Logs a contraction the timer never ran for. */
+  const addManual = useCallback((startedAt: number, endedAt: number) => {
+    const entry: ContractionEntry = { id: makeId(), startedAt, endedAt };
+    addToList(STORAGE_KEYS.contractions, entry).then(setEntries);
+    syncEntry('contractions', entry.id, entry);
+  }, []);
+
   const remove = useCallback((id: string) => {
     removeFromList<ContractionEntry>(STORAGE_KEYS.contractions, id).then(setEntries);
     syncEntry('contractions', id, null);
@@ -57,7 +64,7 @@ export function useContractions() {
 
   const fiveOneOne = useMemo(() => matchesFiveOneOne(entries), [entries]);
 
-  return { entries, runningSince, start, stop, remove, update, loaded, fiveOneOne };
+  return { entries, runningSince, start, stop, addManual, remove, update, loaded, fiveOneOne };
 }
 
 function matchesFiveOneOne(entries: ContractionEntry[]): boolean {

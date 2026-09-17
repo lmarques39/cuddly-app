@@ -58,6 +58,21 @@ describe('usePumping', () => {
     expect(result.current.entries).toEqual([]);
   });
 
+  it('logs a manual extraction with explicit start/end times and amount', async () => {
+    const { result } = await renderHook(() => usePumping());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    await act(async () => result.current.addManual(1_700_000_000_000, 1_700_000_900_000, 90));
+
+    expect(result.current.runningSince).toBeNull();
+    expect(result.current.entries).toHaveLength(1);
+    expect(result.current.entries[0]).toMatchObject({
+      startedAt: 1_700_000_000_000,
+      endedAt: 1_700_000_900_000,
+      amountMl: 90,
+    });
+  });
+
   it('removes an entry by id', async () => {
     const { result } = await renderHook(() => usePumping());
     await waitFor(() => expect(result.current.loaded).toBe(true));

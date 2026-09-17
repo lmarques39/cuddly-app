@@ -3,6 +3,7 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, spacing, type } from '../../theme/tokens';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -10,7 +11,7 @@ import { useNow } from '../../utils/useNow';
 import { useContractions } from './useContractions';
 
 export function ContractionsScreen() {
-  const { entries, runningSince, start, stop, remove, fiveOneOne } = useContractions();
+  const { entries, runningSince, start, stop, addManual, remove, fiveOneOne } = useContractions();
   const now = useNow(1000, runningSince != null);
 
   const elapsed = runningSince != null ? now - runningSince : 0;
@@ -46,6 +47,8 @@ export function ContractionsScreen() {
           </Text>
         </Card>
       )}
+
+      {runningSince == null && <ManualEntryToggle onSave={addManual} />}
 
       <Text style={[type.caption, styles.listTitle]}>Histórico</Text>
       <FlatList

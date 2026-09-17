@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { rescheduleBreastfeedingReminder } from '../notifications/reminderScheduling';
@@ -14,7 +15,7 @@ import { useBreastfeeding } from './useBreastfeeding';
 const SIDE_LABEL = { left: 'Esquerda', right: 'Direita' } as const;
 
 export function BreastfeedingScreen() {
-  const { todayEntries, todayDurationMs, running, start, stop, remove, suggestedSide } = useBreastfeeding();
+  const { todayEntries, todayDurationMs, running, start, stop, addManual, remove, suggestedSide } = useBreastfeeding();
   const { preferences } = useNotificationPreferences();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right'>(suggestedSide);
   const now = useNow(1000, running != null);
@@ -80,6 +81,10 @@ export function BreastfeedingScreen() {
         }}
         full
       />
+
+      {running == null && (
+        <ManualEntryToggle onSave={(startedAt, endedAt) => addManual(selectedSide, startedAt, endedAt)} />
+      )}
 
       <Text style={type.caption}>
         Hoje: {todayEntries.length} mamada{todayEntries.length === 1 ? '' : 's'} · {formatDuration(todayDurationMs)}

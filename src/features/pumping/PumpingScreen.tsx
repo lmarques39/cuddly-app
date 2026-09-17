@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -15,11 +16,12 @@ import { usePumping } from './usePumping';
  * styling later without touching usePumping.ts.
  */
 export function PumpingScreen() {
-  const { entries, runningSince, start, stop, remove, update } = usePumping();
+  const { entries, runningSince, start, stop, addManual, remove, update } = usePumping();
   const now = useNow(1000, runningSince != null);
   const [amountMl, setAmountMl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
+  const [manualAmountMl, setManualAmountMl] = useState('');
 
   const elapsed = runningSince != null ? now - runningSince : 0;
   const parsedAmount = Number(amountMl);
@@ -38,6 +40,14 @@ export function PumpingScreen() {
     if (!canSaveEdit) return;
     update({ ...entry, amountMl: parsedEditAmount });
     setEditingId(null);
+  };
+
+  const parsedManualAmount = Number(manualAmountMl);
+  const canSaveManual = manualAmountMl.trim().length > 0 && !Number.isNaN(parsedManualAmount) && parsedManualAmount > 0;
+
+  const saveManual = (startedAt: number, endedAt: number) => {
+    addManual(startedAt, endedAt, parsedManualAmount);
+    setManualAmountMl('');
   };
 
   return (
@@ -70,6 +80,26 @@ export function PumpingScreen() {
         onPress={runningSince == null ? start : handleStop}
         full
       />
+
+      {runningSince == null && (
+        <ManualEntryToggle
+          onSave={saveManual}
+          extraValid={canSaveManual}
+          extraFields={
+            <View>
+              <Text style={type.caption}>Quantidade (ml)</Text>
+              <TextInput
+                value={manualAmountMl}
+                onChangeText={setManualAmountMl}
+                placeholder="120"
+                placeholderTextColor={colors.inkMuted}
+                keyboardType="numeric"
+                style={styles.input}
+              />
+            </View>
+          }
+        />
+      )}
 
       <Text style={[type.caption, styles.listTitle]}>Últimos registos</Text>
       <FlatList

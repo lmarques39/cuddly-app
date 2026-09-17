@@ -25,6 +25,20 @@ describe('useBreastfeeding', () => {
     expect(result.current.entries[0]).toMatchObject({ side: 'left' });
   });
 
+  it('logs a manual feed with an explicit side and start/end times', async () => {
+    const { result } = await renderHook(() => useBreastfeeding());
+    await waitFor(() => expect(result.current.entries).toEqual([]));
+
+    await act(async () => result.current.addManual('right', 1_700_000_000_000, 1_700_000_600_000));
+
+    expect(result.current.entries).toHaveLength(1);
+    expect(result.current.entries[0]).toMatchObject({
+      side: 'right',
+      startedAt: 1_700_000_000_000,
+      endedAt: 1_700_000_600_000,
+    });
+  });
+
   it('removes and updates an entry, e.g. correcting the side after the fact', async () => {
     const { result } = await renderHook(() => useBreastfeeding());
     await act(async () => result.current.start('left'));
