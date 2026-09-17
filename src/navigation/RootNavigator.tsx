@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { CommonActions } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
@@ -111,12 +112,27 @@ export function RootNavigator() {
         name="Registar"
         component={RegistarNavigator}
         options={{ tabBarIcon: makeTabBarIcon('Registar'), tabBarActiveTintColor: TAB_COLOR.Registar, tabBarInactiveTintColor: TAB_COLOR.Registar }}
-        listeners={({ navigation }) => ({
+        listeners={({ navigation, route }) => ({
           // Leaving the tab resets its nested stack back to the hub screen —
           // otherwise React Navigation keeps you exactly where you were
           // (e.g. still on Notificações) the next time you tap this tab,
           // which reads as a stuck/broken back button.
-          blur: () => navigation.reset({ index: 0, routes: [{ name: 'Registar' }] }),
+          //
+          // IMPORTANT: navigation.reset() here would reset the *tab*
+          // navigator itself (collapsing it to a single route and breaking
+          // the other tabs) — dispatch() with an explicit `target` set to
+          // the nested stack's own state key routes the action to that
+          // stack instead, leaving the tab navigator's own state untouched.
+          blur: () => {
+            const state = navigation.getState();
+            const tabRoute = state.routes.find((r) => r.key === route.key);
+            if (tabRoute?.state && tabRoute.state.index !== 0) {
+              navigation.dispatch({
+                ...CommonActions.reset({ index: 0, routes: [{ name: 'RegistarHub' }] }),
+                target: tabRoute.state.key,
+              });
+            }
+          },
         })}
       />
       <Tab.Screen
@@ -128,8 +144,17 @@ export function RootNavigator() {
         name="Perfil"
         component={PerfilNavigator}
         options={{ tabBarIcon: makeTabBarIcon('Perfil'), tabBarActiveTintColor: TAB_COLOR.Perfil, tabBarInactiveTintColor: TAB_COLOR.Perfil }}
-        listeners={({ navigation }) => ({
-          blur: () => navigation.reset({ index: 0, routes: [{ name: 'Perfil' }] }),
+        listeners={({ navigation, route }) => ({
+          blur: () => {
+            const state = navigation.getState();
+            const tabRoute = state.routes.find((r) => r.key === route.key);
+            if (tabRoute?.state && tabRoute.state.index !== 0) {
+              navigation.dispatch({
+                ...CommonActions.reset({ index: 0, routes: [{ name: 'PerfilHub' }] }),
+                target: tabRoute.state.key,
+              });
+            }
+          },
         })}
       />
     </Tab.Navigator>
