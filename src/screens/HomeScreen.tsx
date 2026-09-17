@@ -10,6 +10,7 @@ import { useBreastfeeding } from '../features/breastfeeding/useBreastfeeding';
 import { useContractions } from '../features/contractions/useContractions';
 import { useDiapers } from '../features/diapers/useDiapers';
 import { useBabyProfile } from '../features/profile/useBabyProfile';
+import { useCurrentMember } from '../features/profile/useCurrentMember';
 import { RootTabParamList } from '../navigation/types';
 import { colors, spacing, type } from '../theme/tokens';
 import { Appointment } from '../types/records';
@@ -57,6 +58,8 @@ function NextAppointmentCard({ appointment, onPress }: { appointment: Appointmen
 export function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { profile, mode } = useBabyProfile();
+  const { member } = useCurrentMember();
+  const firstName = member?.name?.trim().split(/\s+/)[0];
   const { entries: contractions } = useContractions();
   const { entries: breastfeeding } = useBreastfeeding();
   const { entries: bottle } = useBottle();
@@ -87,7 +90,7 @@ export function HomeScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={{ gap: spacing.md, paddingBottom: spacing.xl }}>
-        <Text style={type.h1}>Olá 👋</Text>
+        <Text style={type.h1}>{firstName ? `Olá, ${firstName} 👋` : 'Olá 👋'}</Text>
 
         {mode === 'gravida' ? (
           <>
