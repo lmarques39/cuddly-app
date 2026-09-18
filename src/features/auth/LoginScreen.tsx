@@ -1,10 +1,11 @@
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { isGoogleSignInAvailable, PLACEHOLDER_ANDROID_CLIENT_ID } from './googleAuthAvailability';
 
 // Dismisses the in-app browser once the OAuth redirect completes — the
 // standard expo-auth-session pattern, needs to run once at module load.
@@ -22,8 +23,17 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const googleSignInAvailable = isGoogleSignInAvailable(Platform.OS, { android: androidClientId, web: webClientId });
+
   const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useIdTokenAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    webClientId,
+    // Always truthy, even when unconfigured — expo-auth-session throws
+    // synchronously (crashing this whole screen, not just the button) if
+    // the current platform's own client id is missing. googleSignInAvailable
+    // is what actually gates whether the button below can be pressed.
+    androidClientId: androidClientId ?? PLACEHOLDER_ANDROID_CLIENT_ID,
   });
 
   useEffect(() => {
@@ -95,8 +105,8 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
 
           <Pressable
             onPress={() => promptGoogleSignIn()}
-            disabled={!googleRequest}
-            style={[styles.googleButton, !googleRequest && { opacity: 0.5 }]}
+            disabled={!googleRequest || !googleSignInAvailable}
+            style={[styles.googleButton, (!googleRequest || !googleSignInAvailable) && { opacity: 0.5 }]}
           >
             <Text style={styles.googleLabel}>Continuar com Google</Text>
           </Pressable>
