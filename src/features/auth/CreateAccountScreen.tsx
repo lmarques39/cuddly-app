@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
+import { PasswordField } from '../../components/PasswordField';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 
 type Props = {
@@ -55,27 +56,13 @@ export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
 
           <View>
             <Text style={type.caption}>Password</Text>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Pelo menos 6 caracteres"
-              placeholderTextColor={colors.inkMuted}
-              secureTextEntry
-              style={styles.input}
-            />
+            <PasswordField value={password} onChangeText={setPassword} placeholder="Pelo menos 6 caracteres" />
             {passwordTooShort && <Text style={styles.mismatchText}>Precisa de ter pelo menos 6 caracteres.</Text>}
           </View>
 
           <View>
             <Text style={type.caption}>Confirmar password</Text>
-            <TextInput
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Repete a password"
-              placeholderTextColor={colors.inkMuted}
-              secureTextEntry
-              style={styles.input}
-            />
+            <PasswordField value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Repete a password" />
             {password.length > 0 && confirmPassword.length > 0 && !passwordsMatch && (
               <Text style={styles.mismatchText}>As passwords não coincidem.</Text>
             )}

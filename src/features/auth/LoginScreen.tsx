@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
+import { PasswordField } from '../../components/PasswordField';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { isGoogleSignInAvailable, PLACEHOLDER_ANDROID_CLIENT_ID } from './googleAuthAvailability';
 
@@ -78,14 +79,7 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
                 <Text style={[type.caption, styles.link]}>Esqueci-me</Text>
               </Pressable>
             </View>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor={colors.inkMuted}
-              secureTextEntry
-              style={styles.input}
-            />
+            <PasswordField value={password} onChangeText={setPassword} placeholder="••••••••" />
           </View>
 
           <BigButton
