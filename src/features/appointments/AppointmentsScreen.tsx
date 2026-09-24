@@ -123,86 +123,84 @@ export function AppointmentsScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={type.h1}>Consultas médicas</Text>
 
+        <MonthCalendar
+          markedDates={markedDates}
+          selectedKey={selectedKey}
+          onSelectDate={(key) => setSelectedKey((prev) => (prev === key ? null : key))}
+        />
+
+        {selectedKey && (
+          <Pressable onPress={() => setSelectedKey(null)} style={styles.clearFilter}>
+            <Text style={styles.clearFilterLabel}>« Ver todas as consultas</Text>
+          </Pressable>
+        )}
+
         {formOpen ? (
-          <>
-            <MonthCalendar
-              markedDates={markedDates}
-              selectedKey={selectedKey}
-              onSelectDate={(key) => setSelectedKey((prev) => (prev === key ? null : key))}
-            />
-
-            {selectedKey && (
-              <Pressable onPress={() => setSelectedKey(null)} style={styles.clearFilter}>
-                <Text style={styles.clearFilterLabel}>« Ver todas as consultas</Text>
+          <Card style={{ gap: spacing.md }}>
+            <View style={styles.editingBanner}>
+              <Text style={styles.editingBannerLabel}>{editingId != null ? 'A editar consulta' : 'Nova consulta'}</Text>
+              <Pressable onPress={resetForm} hitSlop={8}>
+                <Text style={styles.editingBannerCancel}>Cancelar</Text>
               </Pressable>
-            )}
+            </View>
 
-            <Card style={{ gap: spacing.md }}>
-              <View style={styles.editingBanner}>
-                <Text style={styles.editingBannerLabel}>{editingId != null ? 'A editar consulta' : 'Nova consulta'}</Text>
-                <Pressable onPress={resetForm} hitSlop={8}>
-                  <Text style={styles.editingBannerCancel}>Cancelar</Text>
+            <Text style={[type.caption, styles.formTarget]}>
+              A marcar para <Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
+              {!selectedKey && ' (hoje — toca num dia no calendário para escolher outro)'}
+            </Text>
+
+            <View>
+              <Text style={type.caption}>Título</Text>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Ecografia"
+                placeholderTextColor={colors.inkMuted}
+                style={styles.input}
+              />
+            </View>
+
+            <View>
+              <Text style={type.caption}>Hora</Text>
+              <View style={styles.timeGrid}>
+                {QUICK_TIMES.map((t) => (
+                  <Pressable
+                    key={t}
+                    onPress={() => {
+                      setTime(t);
+                      setCustomTime(false);
+                    }}
+                    style={[styles.timePill, !customTime && time === t && styles.timePillOn]}
+                  >
+                    <Text style={[styles.timePillLabel, !customTime && time === t && styles.timePillLabelOn]}>{t}</Text>
+                  </Pressable>
+                ))}
+                <Pressable
+                  onPress={() => setCustomTime(true)}
+                  style={[styles.timePill, customTime && styles.timePillOn]}
+                >
+                  <Text style={[styles.timePillLabel, customTime && styles.timePillLabelOn]}>Outra</Text>
                 </Pressable>
               </View>
-
-              <Text style={[type.caption, styles.formTarget]}>
-                A marcar para <Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
-                {!selectedKey && ' (hoje — toca num dia no calendário para escolher outro)'}
-              </Text>
-
-              <View>
-                <Text style={type.caption}>Título</Text>
+              {customTime && (
                 <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="Ecografia"
+                  value={time}
+                  onChangeText={setTime}
+                  placeholder="HH:MM"
                   placeholderTextColor={colors.inkMuted}
-                  style={styles.input}
+                  style={[styles.input, { marginTop: spacing.sm }]}
                 />
-              </View>
+              )}
+            </View>
 
-              <View>
-                <Text style={type.caption}>Hora</Text>
-                <View style={styles.timeGrid}>
-                  {QUICK_TIMES.map((t) => (
-                    <Pressable
-                      key={t}
-                      onPress={() => {
-                        setTime(t);
-                        setCustomTime(false);
-                      }}
-                      style={[styles.timePill, !customTime && time === t && styles.timePillOn]}
-                    >
-                      <Text style={[styles.timePillLabel, !customTime && time === t && styles.timePillLabelOn]}>{t}</Text>
-                    </Pressable>
-                  ))}
-                  <Pressable
-                    onPress={() => setCustomTime(true)}
-                    style={[styles.timePill, customTime && styles.timePillOn]}
-                  >
-                    <Text style={[styles.timePillLabel, customTime && styles.timePillLabelOn]}>Outra</Text>
-                  </Pressable>
-                </View>
-                {customTime && (
-                  <TextInput
-                    value={time}
-                    onChangeText={setTime}
-                    placeholder="HH:MM"
-                    placeholderTextColor={colors.inkMuted}
-                    style={[styles.input, { marginTop: spacing.sm }]}
-                  />
-                )}
-              </View>
-
-              <BigButton
-                label={editingId != null ? 'Guardar alterações' : 'Marcar consulta'}
-                background={canSave ? colors.primary : colors.surfaceSunken}
-                foreground={canSave ? colors.primaryInk : colors.inkMuted}
-                onPress={save}
-                full
-              />
-            </Card>
-          </>
+            <BigButton
+              label={editingId != null ? 'Guardar alterações' : 'Marcar consulta'}
+              background={canSave ? colors.primary : colors.surfaceSunken}
+              foreground={canSave ? colors.primaryInk : colors.inkMuted}
+              onPress={save}
+              full
+            />
+          </Card>
         ) : (
           <BigButton
             label="+ Marcar nova consulta"
