@@ -18,6 +18,13 @@ describe('AppointmentsScreen', () => {
     await render(<AppointmentsScreen />);
 
     expect(await screen.findByText('Ainda sem consultas marcadas.')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('Ecografia')).toBeNull(); // form collapsed by default (#80)
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: '+ Marcar nova consulta' }));
+    });
+
+    expect(screen.getByText('Nova consulta')).toBeTruthy();
 
     await act(async () => {
       fireEvent.changeText(screen.getByPlaceholderText('Ecografia'), 'Ecografia');
@@ -28,6 +35,7 @@ describe('AppointmentsScreen', () => {
 
     expect(screen.getByText(/toca para editar/)).toBeTruthy();
     expect(screen.getAllByText('Ecografia').length).toBeGreaterThan(0);
+    expect(screen.queryByPlaceholderText('Ecografia')).toBeNull(); // form collapses again after saving
 
     await act(async () => {
       fireEvent.press(screen.getByText(/toca para editar/));

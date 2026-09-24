@@ -47,6 +47,7 @@ export function AppointmentsScreen() {
   const [time, setTime] = useState('09:00');
   const [customTime, setCustomTime] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   const now = useNow(60000);
   const todayKey = dateKey(now);
@@ -74,6 +75,7 @@ export function AppointmentsScreen() {
     setTime('09:00');
     setCustomTime(false);
     setEditingId(null);
+    setFormOpen(false);
   };
 
   const save = async () => {
@@ -107,6 +109,7 @@ export function AppointmentsScreen() {
     const label = timeLabel(appointment.scheduledAt);
     setTime(label);
     setCustomTime(!QUICK_TIMES.includes(label));
+    setFormOpen(true);
   };
 
   const removeAppointmentAndReminder = (id: string) => {
@@ -120,85 +123,95 @@ export function AppointmentsScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={type.h1}>Consultas médicas</Text>
 
-        <MonthCalendar
-          markedDates={markedDates}
-          selectedKey={selectedKey}
-          onSelectDate={(key) => setSelectedKey((prev) => (prev === key ? null : key))}
-        />
-
-        {selectedKey && (
-          <Pressable onPress={() => setSelectedKey(null)} style={styles.clearFilter}>
-            <Text style={styles.clearFilterLabel}>« Ver todas as consultas</Text>
-          </Pressable>
-        )}
-
-        <Card style={{ gap: spacing.md }}>
-          {editingId != null ? (
-            <View style={styles.editingBanner}>
-              <Text style={styles.editingBannerLabel}>A editar consulta</Text>
-              <Pressable onPress={resetForm} hitSlop={8}>
-                <Text style={styles.editingBannerCancel}>Cancelar</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <Text style={[type.caption, styles.formTarget]}>
-              A marcar para <Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
-              {!selectedKey && ' (hoje — toca num dia no calendário para escolher outro)'}
-            </Text>
-          )}
-
-          <View>
-            <Text style={type.caption}>Título</Text>
-            <TextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Ecografia"
-              placeholderTextColor={colors.inkMuted}
-              style={styles.input}
+        {formOpen ? (
+          <>
+            <MonthCalendar
+              markedDates={markedDates}
+              selectedKey={selectedKey}
+              onSelectDate={(key) => setSelectedKey((prev) => (prev === key ? null : key))}
             />
-          </View>
 
-          <View>
-            <Text style={type.caption}>Hora</Text>
-            <View style={styles.timeGrid}>
-              {QUICK_TIMES.map((t) => (
-                <Pressable
-                  key={t}
-                  onPress={() => {
-                    setTime(t);
-                    setCustomTime(false);
-                  }}
-                  style={[styles.timePill, !customTime && time === t && styles.timePillOn]}
-                >
-                  <Text style={[styles.timePillLabel, !customTime && time === t && styles.timePillLabelOn]}>{t}</Text>
-                </Pressable>
-              ))}
-              <Pressable
-                onPress={() => setCustomTime(true)}
-                style={[styles.timePill, customTime && styles.timePillOn]}
-              >
-                <Text style={[styles.timePillLabel, customTime && styles.timePillLabelOn]}>Outra</Text>
+            {selectedKey && (
+              <Pressable onPress={() => setSelectedKey(null)} style={styles.clearFilter}>
+                <Text style={styles.clearFilterLabel}>« Ver todas as consultas</Text>
               </Pressable>
-            </View>
-            {customTime && (
-              <TextInput
-                value={time}
-                onChangeText={setTime}
-                placeholder="HH:MM"
-                placeholderTextColor={colors.inkMuted}
-                style={[styles.input, { marginTop: spacing.sm }]}
-              />
             )}
-          </View>
 
+            <Card style={{ gap: spacing.md }}>
+              <View style={styles.editingBanner}>
+                <Text style={styles.editingBannerLabel}>{editingId != null ? 'A editar consulta' : 'Nova consulta'}</Text>
+                <Pressable onPress={resetForm} hitSlop={8}>
+                  <Text style={styles.editingBannerCancel}>Cancelar</Text>
+                </Pressable>
+              </View>
+
+              <Text style={[type.caption, styles.formTarget]}>
+                A marcar para <Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
+                {!selectedKey && ' (hoje — toca num dia no calendário para escolher outro)'}
+              </Text>
+
+              <View>
+                <Text style={type.caption}>Título</Text>
+                <TextInput
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Ecografia"
+                  placeholderTextColor={colors.inkMuted}
+                  style={styles.input}
+                />
+              </View>
+
+              <View>
+                <Text style={type.caption}>Hora</Text>
+                <View style={styles.timeGrid}>
+                  {QUICK_TIMES.map((t) => (
+                    <Pressable
+                      key={t}
+                      onPress={() => {
+                        setTime(t);
+                        setCustomTime(false);
+                      }}
+                      style={[styles.timePill, !customTime && time === t && styles.timePillOn]}
+                    >
+                      <Text style={[styles.timePillLabel, !customTime && time === t && styles.timePillLabelOn]}>{t}</Text>
+                    </Pressable>
+                  ))}
+                  <Pressable
+                    onPress={() => setCustomTime(true)}
+                    style={[styles.timePill, customTime && styles.timePillOn]}
+                  >
+                    <Text style={[styles.timePillLabel, customTime && styles.timePillLabelOn]}>Outra</Text>
+                  </Pressable>
+                </View>
+                {customTime && (
+                  <TextInput
+                    value={time}
+                    onChangeText={setTime}
+                    placeholder="HH:MM"
+                    placeholderTextColor={colors.inkMuted}
+                    style={[styles.input, { marginTop: spacing.sm }]}
+                  />
+                )}
+              </View>
+
+              <BigButton
+                label={editingId != null ? 'Guardar alterações' : 'Marcar consulta'}
+                background={canSave ? colors.primary : colors.surfaceSunken}
+                foreground={canSave ? colors.primaryInk : colors.inkMuted}
+                onPress={save}
+                full
+              />
+            </Card>
+          </>
+        ) : (
           <BigButton
-            label={editingId != null ? 'Guardar alterações' : 'Marcar consulta'}
-            background={canSave ? colors.primary : colors.surfaceSunken}
-            foreground={canSave ? colors.primaryInk : colors.inkMuted}
-            onPress={save}
+            label="+ Marcar nova consulta"
+            background={colors.primary}
+            foreground={colors.primaryInk}
+            onPress={() => setFormOpen(true)}
             full
           />
-        </Card>
+        )}
 
         {visible.length === 0 ? (
           <Text style={type.caption}>
