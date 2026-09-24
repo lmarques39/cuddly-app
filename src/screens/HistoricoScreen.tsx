@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { useBottle } from '../features/bottle/useBottle';
@@ -34,6 +34,17 @@ function startOfDay(epochMs: number): number {
   const d = new Date(epochMs);
   d.setHours(0, 0, 0, 0);
   return d.getTime();
+}
+
+/** "Hoje, 24/09" / "Ontem, 23/09" / "Terça-feira, 22/09" for older days. */
+function formatDayLabel(dayStart: number, todayStart: number): string {
+  const d = new Date(dayStart);
+  const dateLabel = d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' });
+  const diffDays = Math.round((todayStart - dayStart) / (24 * 60 * 60 * 1000));
+  if (diffDays === 0) return `Hoje, ${dateLabel}`;
+  if (diffDays === 1) return `Ontem, ${dateLabel}`;
+  const weekday = d.toLocaleDateString('pt-PT', { weekday: 'long' });
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${dateLabel}`;
 }
 
 export function HistoricoScreen() {
@@ -84,6 +95,21 @@ export function HistoricoScreen() {
   const filtered = useMemo(() => (filter === 'todos' ? items : items.filter((i) => i.kind === filter)), [items, filter]);
 
   const now = useNow(60000);
+
+  const sections = useMemo(() => {
+    const today = startOfDay(now);
+    const groups = new Map<number, TimelineItem[]>();
+    filtered.forEach((item) => {
+      const day = startOfDay(item.at);
+      const bucket = groups.get(day);
+      if (bucket) bucket.push(item);
+      else groups.set(day, [item]);
+    });
+    return Array.from(groups.entries())
+      .sort((a, b) => b[0] - a[0])
+      .map(([day, data]) => ({ title: formatDayLabel(day, today), data }));
+  }, [filtered, now]);
+
   const last7Days = useMemo(() => items.filter((i) => now - i.at <= SEVEN_DAYS_MS), [items, now]);
   const totals = useMemo(() => {
     const counts: Record<Kind, number> = { contraction: 0, breastfeeding: 0, bottle: 0, diaper: 0 };
@@ -149,11 +175,13 @@ export function HistoricoScreen() {
             ))}
           </View>
 
-          <FlatList
-            data={filtered}
+          <SectionList
+            sections={sections}
             keyExtractor={(item) => `${item.kind}-${item.id}`}
             contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
+            stickySectionHeadersEnabled={false}
             ListEmptyComponent={<Text style={type.caption}>Ainda sem registos.</Text>}
+            renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
             renderItem={({ item }) => (
               <Card style={styles.row}>
                 <View style={[styles.dot, { backgroundColor: KIND_COLOR[item.kind] }]} />
@@ -216,6 +244,14 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: 'row', gap: spacing.sm },
   toggleChip: { flex: 1, paddingVertical: 10, borderRadius: radii.pill, alignItems: 'center' },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  sectionHeader: {
+    fontFamily: fontFamily.bodyBold,
+    fontSize: 13,
+    color: colors.inkSecondary,
+    backgroundColor: colors.paper,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
   filterChip: { paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   chartRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 110, paddingTop: spacing.sm },
