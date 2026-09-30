@@ -24,6 +24,7 @@ import { ParentInfo, RegisterParentScreen } from './src/features/auth/RegisterPa
 import { acceptInvite, getPendingInvitesForEmail, PendingInvite } from './src/features/caregivers/acceptInvite';
 import { AcceptInviteScreen } from './src/features/caregivers/AcceptInviteScreen';
 import { createFamilyForUser } from './src/features/family/createFamily';
+import { resolveOnboardingStep } from './src/features/family/resolveOnboarding';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
 import { CurrentMemberProvider } from './src/features/profile/useCurrentMember';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -61,6 +62,35 @@ function describeAuthError(err: unknown): string {
   }
 }
 
+type Route = { step: AuthStep; invite: PendingInvite | null };
+
+/**
+ * Where a brand new account goes (either sign-up path). A pending invite for
+ * this email routes to accepting it instead of the normal "create your own
+ * family" onboarding — otherwise the invite would sit forever un-accepted
+ * while the person builds an unrelated family. An existing account invited
+ * to a second family isn't handled (this app's data model assumes one family
+ * per user) — deliberately out of scope, see #61's discussion.
+ */
+async function routeNewUser(email: string): Promise<Route> {
+  const invites = await getPendingInvitesForEmail(email).catch(() => []);
+  return invites.length > 0 ? { step: 'acceptInvite', invite: invites[0] } : { step: 'registerParent', invite: null };
+}
+
+/**
+ * Where an account that already existed goes — login, a returning Google
+ * user, reopening the app. It can still be missing its family or baby
+ * profile (see resolveOnboarding.ts), so it's sent to whichever onboarding
+ * step is missing instead of straight into an empty app.
+ */
+async function routeExistingUser(uid: string, email: string): Promise<Route> {
+  const step = await resolveOnboardingStep(uid);
+  if (step !== 'registerParent') return { step, invite: null };
+  // Whatever's cached on this device belonged to a family this account no longer has.
+  await clearAllLocalData().catch(() => {});
+  return routeNewUser(email);
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     Fredoka_500Medium,
@@ -81,12 +111,17 @@ export default function App() {
     // already-signed-in user — later callbacks are driven by the handlers
     // below (e.g. sign-up must still visit RegisterParent, not jump to app).
     let isInitialCheck = true;
-    return onAuthStateChanged(auth, (nextUser) => {
+    return onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser);
       if (isInitialCheck) {
         isInitialCheck = false;
+        // Keep the loading spinner up until we know where this account belongs.
+        if (nextUser) {
+          const { step, invite } = await routeExistingUser(nextUser.uid, nextUser.email ?? '');
+          setPendingInvite(invite);
+          setAuthStep(step);
+        }
         setAuthChecked(true);
-        if (nextUser) setAuthStep('app');
       } else if (!nextUser) {
         // signed out from within the app (Perfil > Terminar sessão)
         setAuthStep('login');
@@ -106,30 +141,16 @@ export default function App() {
   const handleLogin = async (email: string, password: string) => {
     setAuthError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      setAuthStep('app');
+      const { user: signedIn } = await signInWithEmailAndPassword(auth, email, password);
+      applyRoute(await routeExistingUser(signedIn.uid, email));
     } catch (err) {
       setAuthError(describeAuthError(err));
     }
   };
 
-  /**
-   * Runs right after a brand new account is created (either sign-up path).
-   * A pending invite for this email routes to accepting it instead of the
-   * normal "create your own family" onboarding — otherwise the invite would
-   * sit forever un-accepted while the person builds an unrelated family.
-   * Only handles *new* sign-ups; an existing account invited to a second
-   * family isn't handled here (this app's data model assumes one family per
-   * user) — deliberately out of scope, see #61's discussion.
-   */
-  const routeNewUser = async (email: string) => {
-    const invites = await getPendingInvitesForEmail(email).catch(() => []);
-    if (invites.length > 0) {
-      setPendingInvite(invites[0]);
-      setAuthStep('acceptInvite');
-    } else {
-      setAuthStep('registerParent');
-    }
+  const applyRoute = ({ step, invite }: Route) => {
+    setPendingInvite(invite);
+    setAuthStep(step);
   };
 
   const handleCreateAccount = async (email: string, password: string) => {
@@ -142,7 +163,7 @@ export default function App() {
       // trackers/baby profile. Best-effort: the account already exists at
       // this point, so a storage hiccup here shouldn't block sign-up.
       await clearAllLocalData().catch(() => {});
-      await routeNewUser(email);
+      applyRoute(await routeNewUser(email));
     } catch (err) {
       setAuthError(describeAuthError(err));
     }
@@ -156,9 +177,9 @@ export default function App() {
       if (getAdditionalUserInfo(result)?.isNewUser) {
         // Same per-device AsyncStorage caveat as handleCreateAccount below.
         await clearAllLocalData().catch(() => {});
-        await routeNewUser(result.user.email ?? '');
+        applyRoute(await routeNewUser(result.user.email ?? ''));
       } else {
-        setAuthStep('app');
+        applyRoute(await routeExistingUser(result.user.uid, result.user.email ?? ''));
       }
     } catch (err) {
       setAuthError(describeAuthError(err));

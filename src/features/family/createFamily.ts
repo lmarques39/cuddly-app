@@ -1,6 +1,7 @@
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { ParentInfo } from '../auth/RegisterParentScreen';
 import { db } from '../../services/firebase';
+import { resetFamilyIdCache } from '../../storage/sync';
 
 /**
  * Creates the family/member structure firestore.rules already expects
@@ -23,6 +24,8 @@ export async function createFamilyForUser(uid: string, parent: ParentInfo): Prom
   });
 
   await setDoc(doc(db, 'users', uid), { familyId }, { merge: true });
+  // getFamilyId() may still hold a family this account used to belong to.
+  resetFamilyIdCache();
 
   return familyId;
 }
