@@ -43,7 +43,7 @@ describe('acceptInvite', () => {
     await acceptInvite(invite, 'bob', 'Bob');
 
     expect(mockSetDoc).toHaveBeenCalledTimes(2);
-    expect(mockSetDoc.mock.calls[0][1]).toMatchObject({ name: 'Bob', role: 'cuidador', email: 'bob@x.com' });
+    expect(mockSetDoc.mock.calls[0][1]).toMatchObject({ name: 'Bob', role: 'cuidador', email: 'bob@x.com', inviteId: 'inv1' });
     expect(mockSetDoc.mock.calls[1][1]).toEqual({ familyId: 'famA' });
 
     expect(mockUpdateDoc).toHaveBeenCalledTimes(1);

@@ -16,6 +16,20 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid));
     }
 
+    // Who may create their own members/{uid} doc (#87): the family's founder
+    // (createdBy, set once by createFamily.ts), or someone holding a pending
+    // invite to this family for their own email — the member doc must name
+    // that invite in inviteId. Anyone else, including a caregiver removed
+    // via #55 who still knows the familyId, can't (re)join on their own.
+    function isFounder(familyId) {
+      return get(/databases/$(database)/documents/families/$(familyId)).data.get('createdBy', null) == request.auth.uid;
+    }
+
+    function holdsPendingInvite(familyId) {
+      let invite = get(/databases/$(database)/documents/families/$(familyId)/invites/$(request.resource.data.inviteId)).data;
+      return invite.email == request.auth.token.email && invite.status == 'pending';
+    }
+
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
@@ -30,16 +44,23 @@ service cloud.firestore {
     }
 
     match /families/{familyId} {
-      allow read, update, delete: if isFamilyMember(familyId);
-      allow create: if isSignedIn();
+      allow read, delete: if isFamilyMember(familyId);
+      // createdBy decides who may bootstrap the first member doc (isFounder
+      // above), so it's set by the creator and can never change afterwards —
+      // otherwise a caregiver could make themselves "founder" before being
+      // removed, then rejoin.
+      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isFamilyMember(familyId) &&
+        request.resource.data.get('createdBy', null) == resource.data.get('createdBy', null);
 
       match /members/{memberId} {
         allow read: if isFamilyMember(familyId);
-        // create is intentionally not gated on isFamilyMember: that check
-        // requires the member doc to already exist, so the very first
-        // member of a new family could never be added otherwise. Creating
-        // your own member doc (uid == memberId) is safe regardless.
-        allow create: if isSignedIn() && request.auth.uid == memberId;
+        // create can't be gated on isFamilyMember: that check requires the
+        // member doc to already exist. Instead: only your own doc, and only
+        // as the founder or with a pending invite (#87 — see isFounder /
+        // holdsPendingInvite above).
+        allow create: if isSignedIn() && request.auth.uid == memberId &&
+          (isFounder(familyId) || holdsPendingInvite(familyId));
         allow update: if isFamilyMember(familyId) && request.auth.uid == memberId;
         // Removing a caregiver (#55) is done by another current family
         // member, not by the removed member themselves — so delete can't be
@@ -64,6 +85,9 @@ service cloud.firestore {
         // Accepting an invite (#53): only the invitee can update it, and only
         // to flip status to accepted — not to rewrite the email/invitedBy of
         // an invite that isn't theirs to redirect, or reopen an accepted one.
+        // Cancelling a pending invite, and account deletion wiping the
+        // family (#69), are both done by a member.
+        allow delete: if isFamilyMember(familyId);
         allow update: if isSignedIn() &&
           request.auth.token.email == resource.data.email &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
@@ -72,8 +96,12 @@ service cloud.firestore {
 
       // BabyProfile, Activity (contractions/breastfeeding/pumping/diapers),
       // FoodIntroduction, Appointment — all nested under their family.
+      // members and invites are excluded (#87): Firestore grants access if
+      // *any* matching rule allows it, so without this the wildcard would
+      // override their stricter rules above for every family member (e.g.
+      // editing another member's doc, or rewriting an invite's email).
       match /{collection}/{documentId} {
-        allow read, write: if isFamilyMember(familyId);
+        allow read, write: if isFamilyMember(familyId) && !(collection in ['members', 'invites']);
       }
     }
   }

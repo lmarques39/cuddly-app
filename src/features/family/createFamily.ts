@@ -11,7 +11,8 @@ import { db } from '../../services/firebase';
 export async function createFamilyForUser(uid: string, parent: ParentInfo): Promise<string> {
   const familyId = doc(collection(db, 'families')).id;
 
-  await setDoc(doc(db, 'families', familyId), { createdAt: serverTimestamp() });
+  // createdBy is what lets firestore.rules accept this user's first member doc below (#87).
+  await setDoc(doc(db, 'families', familyId), { createdAt: serverTimestamp(), createdBy: uid });
 
   await setDoc(doc(db, 'families', familyId, 'members', uid), {
     name: parent.name,

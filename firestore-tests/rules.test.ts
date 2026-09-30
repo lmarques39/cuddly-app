@@ -28,7 +28,7 @@ describe('bootstrap: first member of a new family', () => {
     const alice = testEnv.authenticatedContext('alice');
     const db = alice.firestore();
 
-    await assertSucceeds(setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now() }));
+    await assertSucceeds(setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now(), createdBy: 'alice' }));
     await assertSucceeds(
       setDoc(doc(db, 'families', 'famA', 'members', 'alice'), { name: 'Alice', role: 'mae', email: 'a@x.com' }),
     );
@@ -37,7 +37,7 @@ describe('bootstrap: first member of a new family', () => {
   it('does not let a user create a member doc for someone else', async () => {
     const alice = testEnv.authenticatedContext('alice');
     const db = alice.firestore();
-    await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now(), createdBy: 'alice' });
 
     await assertFails(setDoc(doc(db, 'families', 'famA', 'members', 'bob'), { name: 'Bob' }));
   });
@@ -47,7 +47,7 @@ describe('a family member can use their own family', () => {
   it('can read and write their own family activity data', async () => {
     const alice = testEnv.authenticatedContext('alice');
     const db = alice.firestore();
-    await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now(), createdBy: 'alice' });
     await setDoc(doc(db, 'families', 'famA', 'members', 'alice'), { name: 'Alice' });
 
     await assertSucceeds(setDoc(doc(db, 'families', 'famA', 'contractions', 'entry1'), { startedAt: 1, endedAt: 2 }));
@@ -59,7 +59,7 @@ describe('cross-family isolation', () => {
   async function makeFamily(uid: string, familyId: string) {
     const ctx = testEnv.authenticatedContext(uid);
     const db = ctx.firestore();
-    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now(), createdBy: uid });
     await setDoc(doc(db, 'families', familyId, 'members', uid), { name: uid });
     return ctx;
   }
@@ -102,7 +102,7 @@ describe('families/{familyId}/invites/{inviteId}', () => {
   async function makeFamily(uid: string, familyId: string, email: string) {
     const ctx = testEnv.authenticatedContext(uid, { email });
     const db = ctx.firestore();
-    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now(), createdBy: uid });
     await setDoc(doc(db, 'families', familyId, 'members', uid), { name: uid, email });
     return ctx;
   }
@@ -193,7 +193,7 @@ describe('accepting an invite (#53)', () => {
   async function makeFamily(uid: string, familyId: string, email: string) {
     const ctx = testEnv.authenticatedContext(uid, { email });
     const db = ctx.firestore();
-    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now(), createdBy: uid });
     await setDoc(doc(db, 'families', familyId, 'members', uid), { name: uid, email });
     return ctx;
   }
@@ -208,14 +208,17 @@ describe('accepting an invite (#53)', () => {
     });
 
     const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' });
-    await assertSucceeds(updateDoc(doc(bob.firestore(), 'families', 'famA', 'invites', 'inv1'), { status: 'accepted' }));
-
-    // Accepting also lets them create their own member doc — same rule that
-    // already allows the first member of a new family, unconditional on
-    // isFamilyMember, applies equally to joining an existing one.
+    // Same order as acceptInvite.ts: the member doc first (it must point at a
+    // still-pending invite, #87), then flip the invite to accepted.
     await assertSucceeds(
-      setDoc(doc(bob.firestore(), 'families', 'famA', 'members', 'bob'), { name: 'Bob', role: 'cuidador', email: 'bob@x.com' }),
+      setDoc(doc(bob.firestore(), 'families', 'famA', 'members', 'bob'), {
+        name: 'Bob',
+        role: 'cuidador',
+        email: 'bob@x.com',
+        inviteId: 'inv1',
+      }),
     );
+    await assertSucceeds(updateDoc(doc(bob.firestore(), 'families', 'famA', 'invites', 'inv1'), { status: 'accepted' }));
   });
 
   it('does not let the invitee change any other field while accepting', async () => {
@@ -271,14 +274,21 @@ describe('removing a caregiver (#55)', () => {
   async function makeFamily(uid: string, familyId: string) {
     const ctx = testEnv.authenticatedContext(uid);
     const db = ctx.firestore();
-    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now() });
+    await setDoc(doc(db, 'families', familyId), { createdAt: Date.now(), createdBy: uid });
     await setDoc(doc(db, 'families', familyId, 'members', uid), { name: uid });
     return ctx;
   }
 
+  // Bob joined via an invite in real life; seeding him directly keeps these
+  // tests about removal. (Alice writing his doc herself only used to work
+  // through the {collection} wildcard — the #87 hole.)
+  async function addMember(familyId: string, uid: string) {
+    await testEnv.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'families', familyId, 'members', uid), { name: uid }));
+  }
+
   it("lets a family member delete another member's doc", async () => {
     const alice = await makeFamily('alice', 'famA');
-    await setDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob'), { name: 'Bob' });
+    await addMember('famA', 'bob');
 
     await assertSucceeds(deleteDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob')));
   });
@@ -286,7 +296,7 @@ describe('removing a caregiver (#55)', () => {
   it('revokes access immediately: a removed member can no longer read family data', async () => {
     const alice = await makeFamily('alice', 'famA');
     const bob = testEnv.authenticatedContext('bob');
-    await setDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob'), { name: 'Bob' });
+    await addMember('famA', 'bob');
     await assertSucceeds(getDoc(doc(bob.firestore(), 'families', 'famA')));
 
     await deleteDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob'));
@@ -295,11 +305,79 @@ describe('removing a caregiver (#55)', () => {
   });
 
   it("does not let someone outside the family delete one of its members", async () => {
-    const alice = await makeFamily('alice', 'famA');
-    await setDoc(doc(alice.firestore(), 'families', 'famA', 'members', 'bob'), { name: 'Bob' });
+    await makeFamily('alice', 'famA');
+    await addMember('famA', 'bob');
     const carol = await makeFamily('carol', 'famB');
 
     await assertFails(deleteDoc(doc(carol.firestore(), 'families', 'famA', 'members', 'bob')));
+  });
+});
+
+describe('members and invites keep their own rules (#87)', () => {
+  async function seedFamily() {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now(), createdBy: 'alice' });
+      await setDoc(doc(db, 'families', 'famA', 'members', 'alice'), { name: 'Alice', role: 'mae', email: 'alice@x.com' });
+      await setDoc(doc(db, 'families', 'famA', 'members', 'bob'), { name: 'Bob', role: 'cuidador', email: 'bob@x.com' });
+      await setDoc(doc(db, 'families', 'famA', 'invites', 'pending1'), { email: 'carol@x.com', invitedBy: 'alice', status: 'pending' });
+      await setDoc(doc(db, 'families', 'famA', 'invites', 'used1'), { email: 'dave@x.com', invitedBy: 'alice', status: 'accepted' });
+    });
+  }
+
+  it("does not let a member edit another member's doc", async () => {
+    await seedFamily();
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' }).firestore();
+
+    await assertFails(setDoc(doc(bob, 'families', 'famA', 'members', 'alice'), { name: 'Hacked', role: 'mae', email: 'alice@x.com' }));
+    await assertSucceeds(setDoc(doc(bob, 'families', 'famA', 'members', 'bob'), { name: 'Bobby', role: 'cuidador', email: 'bob@x.com' }));
+  });
+
+  it("does not let a member rewrite an invite's email, but does let them cancel it", async () => {
+    await seedFamily();
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' }).firestore();
+
+    await assertFails(updateDoc(doc(bob, 'families', 'famA', 'invites', 'pending1'), { email: 'eve@x.com' }));
+    await assertSucceeds(deleteDoc(doc(bob, 'families', 'famA', 'invites', 'pending1')));
+  });
+
+  it('does not let a signed-in stranger join a family just by knowing its id', async () => {
+    await seedFamily();
+    const eve = testEnv.authenticatedContext('eve', { email: 'eve@x.com' }).firestore();
+
+    await assertFails(setDoc(doc(eve, 'families', 'famA', 'members', 'eve'), { name: 'Eve', role: 'cuidador', email: 'eve@x.com' }));
+    // ...nor by pointing at someone else's invite.
+    await assertFails(
+      setDoc(doc(eve, 'families', 'famA', 'members', 'eve'), { name: 'Eve', role: 'cuidador', email: 'eve@x.com', inviteId: 'pending1' }),
+    );
+  });
+
+  it('does not let a removed caregiver rejoin on their own', async () => {
+    await seedFamily();
+    const alice = testEnv.authenticatedContext('alice', { email: 'alice@x.com' }).firestore();
+    await assertSucceeds(deleteDoc(doc(alice, 'families', 'famA', 'members', 'bob')));
+
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' }).firestore();
+    await assertFails(setDoc(doc(bob, 'families', 'famA', 'members', 'bob'), { name: 'Bob', role: 'cuidador', email: 'bob@x.com' }));
+  });
+
+  it('does not let an already-accepted invite be used again', async () => {
+    await seedFamily();
+    const dave = testEnv.authenticatedContext('dave', { email: 'dave@x.com' }).firestore();
+
+    await assertFails(
+      setDoc(doc(dave, 'families', 'famA', 'members', 'dave'), { name: 'Dave', role: 'cuidador', email: 'dave@x.com', inviteId: 'used1' }),
+    );
+  });
+
+  it("only lets a family be created with its creator as createdBy, and never changed afterwards", async () => {
+    await seedFamily();
+    const bob = testEnv.authenticatedContext('bob', { email: 'bob@x.com' }).firestore();
+
+    await assertFails(setDoc(doc(bob, 'families', 'famB'), { createdAt: Date.now(), createdBy: 'alice' }));
+    await assertSucceeds(setDoc(doc(bob, 'families', 'famC'), { createdAt: Date.now(), createdBy: 'bob' }));
+    // A member making themselves "founder" before being removed, to rejoin later.
+    await assertFails(updateDoc(doc(bob, 'families', 'famA'), { createdBy: 'bob' }));
   });
 });
 
@@ -307,7 +385,7 @@ describe('deleting your own account (#69)', () => {
   async function seedFamily(members: string[]) {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       const db = ctx.firestore();
-      await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now() });
+      await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now(), createdBy: 'alice' });
       for (const uid of members) await setDoc(doc(db, 'families', 'famA', 'members', uid), { name: uid });
       await setDoc(doc(db, 'families', 'famA', 'diapers', 'd1'), { type: 'xixi', at: 1 });
       await setDoc(doc(db, 'families', 'famA', 'profile', 'baby'), { name: 'Bia' });

@@ -29,6 +29,10 @@ export async function acceptInvite(invite: PendingInvite, uid: string, name: str
     name,
     role: 'cuidador',
     email: invite.email,
+    // firestore.rules only lets a non-founder create their member doc by
+    // pointing at a pending invite for their own email (#87) — which is also
+    // why this has to happen before the invite is flipped to accepted below.
+    inviteId: invite.id,
     joinedAt: serverTimestamp(),
   });
 
