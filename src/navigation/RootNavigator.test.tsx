@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { auth } from '../services/firebase';
+import { CurrentMemberProvider } from '../features/profile/useCurrentMember';
 import { RootNavigator } from './RootNavigator';
 
 const mockGetDoc = getDoc as jest.Mock;
@@ -15,9 +16,11 @@ beforeEach(() => {
 
 function renderApp() {
   return render(
-    <NavigationContainer>
-      <RootNavigator />
-    </NavigationContainer>,
+    <CurrentMemberProvider>
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+    </CurrentMemberProvider>,
   );
 }
 

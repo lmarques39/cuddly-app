@@ -25,6 +25,7 @@ import { acceptInvite, getPendingInvitesForEmail, PendingInvite } from './src/fe
 import { AcceptInviteScreen } from './src/features/caregivers/AcceptInviteScreen';
 import { createFamilyForUser } from './src/features/family/createFamily';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
+import { CurrentMemberProvider } from './src/features/profile/useCurrentMember';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { auth } from './src/services/firebase';
 import { migrateLocalDataToFirestore } from './src/storage/migrate';
@@ -279,9 +280,11 @@ export default function App() {
       )}
       {authStep === 'registerBaby' && <RegisterBabyScreen onFinish={handleBabyFinish} />}
       {authStep === 'app' && (
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
+        <CurrentMemberProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </CurrentMemberProvider>
       )}
       <StatusBar style="dark" />
     </SafeAreaProvider>

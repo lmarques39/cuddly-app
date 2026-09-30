@@ -1,11 +1,14 @@
 import { getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import React from 'react';
 import { auth } from '../../services/firebase';
-import { useCurrentMember } from './useCurrentMember';
+import { CurrentMemberProvider, useCurrentMember } from './useCurrentMember';
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockOnSnapshot = onSnapshot as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
+
+const wrapper = ({ children }: { children: React.ReactNode }) => <CurrentMemberProvider>{children}</CurrentMemberProvider>;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -15,7 +18,7 @@ beforeEach(() => {
 });
 
 it('starts with no member and not loaded until the subscription reports back', async () => {
-  const { result } = await renderHook(() => useCurrentMember());
+  const { result } = await renderHook(() => useCurrentMember(), { wrapper });
   expect(result.current.member).toBeNull();
 });
 
@@ -25,7 +28,7 @@ it("exposes the caller's own member doc, with the uid merged in as id", async ()
     return () => {};
   });
 
-  const { result } = await renderHook(() => useCurrentMember());
+  const { result } = await renderHook(() => useCurrentMember(), { wrapper });
   await waitFor(() => expect(result.current.loaded).toBe(true));
 
   expect(result.current.member).toEqual({ id: 'alice', name: 'Alice', role: 'mae', email: 'alice@x.com' });
@@ -37,7 +40,7 @@ it('updateName writes the full member doc back with just the name changed', asyn
     return () => {};
   });
 
-  const { result } = await renderHook(() => useCurrentMember());
+  const { result } = await renderHook(() => useCurrentMember(), { wrapper });
   await waitFor(() => expect(result.current.loaded).toBe(true));
 
   await act(async () => result.current.updateName('Alicia'));
@@ -45,5 +48,25 @@ it('updateName writes the full member doc back with just the name changed', asyn
   expect(mockSetDoc).toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({ name: 'Alicia', role: 'mae', email: 'alice@x.com' }),
+  );
+});
+
+it('updateName shows the new name immediately, before the snapshot comes back', async () => {
+  mockOnSnapshot.mockImplementation((_ref, cb) => {
+    cb({ exists: () => true, data: () => ({ name: 'Alice', role: 'mae', email: 'alice@x.com' }) });
+    return () => {};
+  });
+
+  const { result } = await renderHook(() => useCurrentMember(), { wrapper });
+  await waitFor(() => expect(result.current.loaded).toBe(true));
+
+  await act(async () => result.current.updateName('Alicia'));
+
+  expect(result.current.member?.name).toBe('Alicia');
+});
+
+it('throws when used outside a CurrentMemberProvider', async () => {
+  await expect(renderHook(() => useCurrentMember())).rejects.toThrow(
+    'useCurrentMember must be used within a CurrentMemberProvider',
   );
 });

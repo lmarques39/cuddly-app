@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { auth } from '../../services/firebase';
 import { PerfilScreen } from './PerfilScreen';
+import { CurrentMemberProvider } from './useCurrentMember';
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockOnSnapshot = onSnapshot as jest.Mock;
@@ -11,9 +12,11 @@ const mockSetDoc = setDoc as jest.Mock;
 
 function renderPerfil() {
   return render(
-    <NavigationContainer>
-      <PerfilScreen />
-    </NavigationContainer>,
+    <CurrentMemberProvider>
+      <NavigationContainer>
+        <PerfilScreen />
+      </NavigationContainer>
+    </CurrentMemberProvider>,
   );
 }
 
