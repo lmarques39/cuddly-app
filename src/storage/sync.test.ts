@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { deleteDoc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { auth } from '../services/firebase';
 import { loadList } from './storage';
-import { clearFamilyData, flushOutbox, syncEntry } from './sync';
+import { clearFamilyData, flushOutbox, getFamilyId, resetFamilyIdCache, syncEntry } from './sync';
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
@@ -18,9 +18,6 @@ beforeEach(async () => {
   mockGetDoc.mockResolvedValue({ data: () => ({ familyId: 'fam1' }) });
 });
 
-// This test must run before any test that successfully resolves a familyId:
-// sync.ts caches it in a module-level variable for the life of the process,
-// so once it's cached, changing auth.currentUser afterwards has no effect.
 it('queues the entry locally but never calls Firestore without a signed-in family', async () => {
   Object.assign(auth, { currentUser: null });
 
@@ -84,5 +81,29 @@ describe('clearFamilyData', () => {
 
     // 7 tracker collections x 2 docs each (from the mock above) + 1 profile doc
     expect(mockDeleteDoc).toHaveBeenCalledTimes(15);
+  });
+});
+
+describe('getFamilyId', () => {
+  it("re-reads users/{uid} when another account signs in, instead of reusing the previous account's family (#86)", async () => {
+    Object.assign(auth, { currentUser: { uid: 'alice' } });
+    mockGetDoc.mockResolvedValueOnce({ data: () => ({ familyId: 'famAlice' }) });
+    expect(await getFamilyId()).toBe('famAlice');
+    expect(await getFamilyId()).toBe('famAlice'); // cached for the same uid
+
+    Object.assign(auth, { currentUser: { uid: 'bob' } });
+    mockGetDoc.mockResolvedValueOnce({ data: () => ({ familyId: 'famBob' }) });
+    expect(await getFamilyId()).toBe('famBob');
+    expect(mockGetDoc).toHaveBeenCalledTimes(2);
+  });
+
+  it('re-reads users/{uid} after resetFamilyIdCache()', async () => {
+    Object.assign(auth, { currentUser: { uid: 'carol' } });
+    mockGetDoc.mockResolvedValueOnce({ data: () => ({ familyId: 'famOld' }) });
+    expect(await getFamilyId()).toBe('famOld');
+
+    resetFamilyIdCache();
+    mockGetDoc.mockResolvedValueOnce({ data: () => ({}) });
+    expect(await getFamilyId()).toBeNull();
   });
 });

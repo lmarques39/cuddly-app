@@ -13,17 +13,24 @@ export const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', '
  * easy to unit-test without a Firestore mock.
  */
 
-let cachedFamilyId: string | null = null;
+// Keyed by uid: signing out and into another account on the same device
+// (no app restart) must not keep reusing the previous account's family (#86).
+let cachedFamily: { uid: string; familyId: string } | null = null;
 
 /** Exported for one-shot direct-write features (e.g. invites) that need the caller's familyId but aren't trackers. */
 export async function getFamilyId(): Promise<string | null> {
-  if (cachedFamilyId) return cachedFamilyId;
   const uid = auth.currentUser?.uid;
   if (!uid) return null;
+  if (cachedFamily?.uid === uid) return cachedFamily.familyId;
   const snap = await getDoc(doc(db, 'users', uid));
   const familyId = (snap.data()?.familyId as string | undefined) ?? null;
-  cachedFamilyId = familyId;
+  cachedFamily = familyId ? { uid, familyId } : null;
   return familyId;
+}
+
+/** For when the family itself goes away (account deletion, #69) — the next getFamilyId() re-reads users/{uid}. */
+export function resetFamilyIdCache(): void {
+  cachedFamily = null;
 }
 
 type OutboxEntry = {

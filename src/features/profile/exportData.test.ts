@@ -21,7 +21,6 @@ it('builds a local-date file name', () => {
   expect(exportFileName(new Date(2026, 8, 5, 23, 30))).toBe('cuddly-dados-2026-09-05.json');
 });
 
-// Must run before any test that resolves a familyId — sync.ts caches it for the module's lifetime.
 it('refuses to export when the account has no family', async () => {
   mockGetDoc.mockResolvedValue({ exists: () => false, data: () => undefined });
 
