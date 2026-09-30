@@ -6,13 +6,12 @@ import { Card } from '../../components/Card';
 import { dateKey, MonthCalendar } from '../../components/MonthCalendar';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
-import { Appointment } from '../../types/records';
+import { Appointment, AppointmentType } from '../../types/records';
 import { useNow } from '../../utils/useNow';
 import { cancelAppointmentReminder, scheduleAppointmentReminder } from '../notifications/reminderScheduling';
 import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
+import { APPOINTMENT_TYPES, appointmentTypeLabel } from './appointmentTypes';
 import { useAppointments } from './useAppointments';
-
-const QUICK_TIMES = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
 
 /** Builds a local-time timestamp from a "YYYY-MM-DD" key and a "HH:MM" label. */
 function combineDateAndTime(key: string, time: string): number | undefined {
@@ -42,10 +41,12 @@ function timeLabel(epochMs: number): string {
 export function AppointmentsScreen() {
   const { appointments, save: saveAppointment, remove: removeAppointment, update: updateAppointment } = useAppointments();
   const { preferences } = useNotificationPreferences();
-  const [title, setTitle] = useState('');
+  const [appointmentType, setAppointmentType] = useState<AppointmentType | null>(null);
+  const [typeMenuOpen, setTypeMenuOpen] = useState(false);
+  const [customTitle, setCustomTitle] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [time, setTime] = useState('09:00');
-  const [customTime, setCustomTime] = useState(false);
+  const [time, setTime] = useState('');
+  const [notes, setNotes] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
@@ -68,21 +69,30 @@ export function AppointmentsScreen() {
   const past = visible.filter((a) => a.scheduledAt < now).reverse();
 
   const scheduledAt = combineDateAndTime(formDateKey, time);
-  const canSave = title.trim().length > 0 && scheduledAt != null;
+  // 'outra' needs its own free-text title; any other type's label *is* the title.
+  const title = appointmentType === 'outra' ? customTitle.trim() : appointmentType ? appointmentTypeLabel(appointmentType) : '';
+  const canSave = title.length > 0 && scheduledAt != null;
+  const timeInvalid = time.trim().length > 0 && scheduledAt == null;
 
   const resetForm = () => {
-    setTitle('');
-    setTime('09:00');
-    setCustomTime(false);
+    setAppointmentType(null);
+    setTypeMenuOpen(false);
+    setCustomTitle('');
+    setTime('');
+    setNotes('');
     setEditingId(null);
     setFormOpen(false);
   };
 
   const save = async () => {
-    if (!canSave || scheduledAt == null) return;
+    if (!canSave || scheduledAt == null || appointmentType == null) return;
+    const trimmedNotes = notes.trim();
+    const fields = { title, type: appointmentType, scheduledAt, ...(trimmedNotes ? { notes: trimmedNotes } : {}) };
 
     if (editingId != null) {
-      const updated: Appointment = { id: editingId, title: title.trim(), scheduledAt };
+      // Keep anything this form doesn't edit (e.g. location) instead of dropping it.
+      const { notes: _oldNotes, ...existing } = appointments.find((a) => a.id === editingId) ?? { id: editingId };
+      const updated: Appointment = { ...existing, id: editingId, ...fields };
       updateAppointment(updated);
       // Not awaited — like the scheduleAppointmentReminder call below,
       // expo-notifications throws UnavailabilityError on web, and this must
@@ -95,7 +105,7 @@ export function AppointmentsScreen() {
       return;
     }
 
-    const created = await saveAppointment({ title: title.trim(), scheduledAt });
+    const created = await saveAppointment(fields);
     if (preferences.appointment.enabled) {
       scheduleAppointmentReminder(created, preferences.appointment.daysBefore);
     }
@@ -104,11 +114,14 @@ export function AppointmentsScreen() {
 
   const startEdit = (appointment: Appointment) => {
     setEditingId(appointment.id);
-    setTitle(appointment.title);
+    // Entries from before #82 have no type — reopen them as 'outra' with their title as the free text.
+    const existingType = appointment.type ?? 'outra';
+    setAppointmentType(existingType);
+    setCustomTitle(existingType === 'outra' ? appointment.title : '');
+    setTypeMenuOpen(false);
     setSelectedKey(dateKey(appointment.scheduledAt));
-    const label = timeLabel(appointment.scheduledAt);
-    setTime(label);
-    setCustomTime(!QUICK_TIMES.includes(label));
+    setTime(timeLabel(appointment.scheduledAt));
+    setNotes(appointment.notes ?? '');
     setFormOpen(true);
   };
 
@@ -150,47 +163,72 @@ export function AppointmentsScreen() {
             </Text>
 
             <View>
-              <Text style={type.caption}>Título</Text>
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder="Ecografia"
-                placeholderTextColor={colors.inkMuted}
-                style={styles.input}
-              />
-            </View>
-
-            <View>
-              <Text style={type.caption}>Hora</Text>
-              <View style={styles.timeGrid}>
-                {QUICK_TIMES.map((t) => (
-                  <Pressable
-                    key={t}
-                    onPress={() => {
-                      setTime(t);
-                      setCustomTime(false);
-                    }}
-                    style={[styles.timePill, !customTime && time === t && styles.timePillOn]}
-                  >
-                    <Text style={[styles.timePillLabel, !customTime && time === t && styles.timePillLabelOn]}>{t}</Text>
-                  </Pressable>
-                ))}
-                <Pressable
-                  onPress={() => setCustomTime(true)}
-                  style={[styles.timePill, customTime && styles.timePillOn]}
-                >
-                  <Text style={[styles.timePillLabel, customTime && styles.timePillLabelOn]}>Outra</Text>
-                </Pressable>
-              </View>
-              {customTime && (
+              <Text style={type.caption}>Tipo de consulta</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Tipo de consulta"
+                onPress={() => setTypeMenuOpen((open) => !open)}
+                style={[styles.input, styles.select]}
+              >
+                <Text style={appointmentType ? styles.selectValue : styles.selectPlaceholder}>
+                  {appointmentType ? appointmentTypeLabel(appointmentType) : 'Escolher…'}
+                </Text>
+                <Text style={styles.selectValue}>{typeMenuOpen ? '▴' : '▾'}</Text>
+              </Pressable>
+              {typeMenuOpen && (
+                <View style={styles.menu}>
+                  {APPOINTMENT_TYPES.map((option) => (
+                    <Pressable
+                      key={option.value}
+                      accessibilityRole="menuitem"
+                      onPress={() => {
+                        setAppointmentType(option.value);
+                        setTypeMenuOpen(false);
+                      }}
+                      style={[styles.menuItem, appointmentType === option.value && styles.menuItemOn]}
+                    >
+                      <Text style={[styles.menuItemLabel, appointmentType === option.value && styles.menuItemLabelOn]}>
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+              {appointmentType === 'outra' && (
                 <TextInput
-                  value={time}
-                  onChangeText={setTime}
-                  placeholder="HH:MM"
+                  value={customTitle}
+                  onChangeText={setCustomTitle}
+                  placeholder="Qual? (ex: Fisioterapia)"
                   placeholderTextColor={colors.inkMuted}
                   style={[styles.input, { marginTop: spacing.sm }]}
                 />
               )}
+            </View>
+
+            <View>
+              <Text style={type.caption}>Hora</Text>
+              <TextInput
+                value={time}
+                onChangeText={setTime}
+                placeholder="HH:MM"
+                placeholderTextColor={colors.inkMuted}
+                keyboardType="numbers-and-punctuation"
+                maxLength={5}
+                style={styles.input}
+              />
+              {timeInvalid && <Text style={styles.fieldError}>Hora inválida — usa o formato HH:MM (ex: 09:30).</Text>}
+            </View>
+
+            <View>
+              <Text style={type.caption}>Observações (opcional)</Text>
+              <TextInput
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Levar exames anteriores, perguntas para o médico…"
+                placeholderTextColor={colors.inkMuted}
+                multiline
+                style={[styles.input, styles.notesInput]}
+              />
             </View>
 
             <BigButton
@@ -222,6 +260,11 @@ export function AppointmentsScreen() {
                 <Pressable style={styles.rowText} onPress={() => startEdit(item)}>
                   <Text style={type.body}>{item.title}</Text>
                   <Text style={type.caption}>{formatAppointment(item.scheduledAt)} · toca para editar</Text>
+                  {item.notes ? (
+                    <Text style={type.caption} numberOfLines={2}>
+                      {item.notes}
+                    </Text>
+                  ) : null}
                 </Pressable>
                 <RemoveEntryButton onRemove={() => removeAppointmentAndReminder(item.id)} />
               </Card>
@@ -264,16 +307,21 @@ const styles = StyleSheet.create({
   editingBannerLabel: { fontFamily: fontFamily.bodyBold, fontSize: 12.5, color: colors.ink },
   editingBannerCancel: { fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: colors.coral },
   formTargetBold: { fontFamily: fontFamily.bodyBold, color: colors.ink },
-  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
-  timePill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
+  select: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  selectValue: { fontFamily: fontFamily.bodyMedium, fontSize: 15, color: colors.ink },
+  selectPlaceholder: { fontFamily: fontFamily.bodyMedium, fontSize: 15, color: colors.inkMuted },
+  menu: {
+    marginTop: spacing.xs,
     borderWidth: 1.5,
     borderColor: colors.border,
+    borderRadius: radii.sm,
     backgroundColor: colors.surface,
+    overflow: 'hidden',
   },
-  timePillOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  timePillLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: colors.inkSecondary },
-  timePillLabelOn: { color: colors.primaryInk, fontFamily: fontFamily.bodyBold },
+  menuItem: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  menuItemOn: { backgroundColor: colors.primary },
+  menuItemLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 14, color: colors.ink },
+  menuItemLabelOn: { color: colors.primaryInk, fontFamily: fontFamily.bodyBold },
+  notesInput: { minHeight: 72, textAlignVertical: 'top' },
+  fieldError: { fontFamily: fontFamily.bodyMedium, fontSize: 12, color: colors.coral, marginTop: spacing.xs },
 });

@@ -42,9 +42,23 @@ export type DiaperEntry = {
   note?: string;
 };
 
+export type AppointmentType =
+  | 'obstetricia'
+  | 'ecografia'
+  | 'analises'
+  | 'enfermagem'
+  | 'pediatria'
+  | 'vacinacao'
+  | 'amamentacao'
+  | 'outra';
+
 export type Appointment = {
   id: string;
+  // What every list/Home/reminder shows: the chosen type's label, or the
+  // free text typed when type is 'outra'. Older entries have no type at
+  // all — treat those as 'outra' (#82).
   title: string;
+  type?: AppointmentType;
   scheduledAt: number; // epoch ms
   location?: string;
   notes?: string;
