@@ -3,7 +3,7 @@ import { collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, setDoc } from 
 import { auth, db } from '../services/firebase';
 import { loadList, makeId, saveList } from './storage';
 
-const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments', 'sono', 'pumping'];
+export const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments', 'sono', 'pumping'];
 
 /**
  * Firestore sync: entry-per-document under families/{familyId}/{collectionName}/{entryId},
@@ -153,6 +153,32 @@ export async function clearFamilyData(): Promise<void> {
   }
 
   await deleteDoc(doc(db, 'families', familyId, 'profile', 'baby'));
+}
+
+/**
+ * One-shot read of everything this account's family has in Firestore —
+ * every tracker collection, the baby profile and the member list — for the
+ * "Exportar os meus dados" button in Privacidade (#67). Pending invites are
+ * left out on purpose: they're other people's email addresses, not this
+ * family's data. Returns null if the account has no family yet.
+ */
+export async function readFamilyData(): Promise<Record<string, unknown> | null> {
+  const familyId = await getFamilyId();
+  if (!familyId) return null;
+
+  const readCollection = async (collectionName: string) => {
+    const snap = await getDocs(collection(db, 'families', familyId, collectionName));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  };
+
+  const data: Record<string, unknown> = { familyId };
+  const babySnap = await getDoc(doc(db, 'families', familyId, 'profile', 'baby'));
+  data.babyProfile = babySnap.exists() ? babySnap.data() : null;
+  data.members = await readCollection('members');
+  for (const collectionName of TRACKER_COLLECTIONS) {
+    data[collectionName] = await readCollection(collectionName);
+  }
+  return data;
 }
 
 /**
