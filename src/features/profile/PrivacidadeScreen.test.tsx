@@ -1,52 +1,103 @@
-import { signOut } from 'firebase/auth';
-import { setDoc } from 'firebase/firestore';
+import { getDoc, onSnapshot } from 'firebase/firestore';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { auth } from '../../services/firebase';
 import { confirmDestructive } from '../../utils/confirm';
+import { AccountDeletionError, deleteMyAccount } from './deleteAccount';
 import { exportMyData } from './exportData';
 import { PrivacidadeScreen } from './PrivacidadeScreen';
 
 jest.mock('../../utils/confirm');
 jest.mock('./exportData');
+jest.mock('./deleteAccount', () => ({
+  ...jest.requireActual('./deleteAccount'),
+  deleteMyAccount: jest.fn(),
+}));
 
 const mockExportMyData = exportMyData as jest.MockedFunction<typeof exportMyData>;
-
-const mockSetDoc = setDoc as jest.Mock;
-const mockSignOut = signOut as jest.Mock;
+const mockDeleteMyAccount = deleteMyAccount as jest.MockedFunction<typeof deleteMyAccount>;
 const mockConfirmDestructive = confirmDestructive as jest.MockedFunction<typeof confirmDestructive>;
+const mockOnSnapshot = onSnapshot as jest.Mock;
+const mockGetDoc = getDoc as jest.Mock;
+
+function familyMembers(ids: string[]) {
+  mockOnSnapshot.mockImplementation((ref: { segments: unknown[] }, cb: (snap: unknown) => void) => {
+    const isMembers = ref.segments[ref.segments.length - 1] === 'members';
+    cb({ docs: (isMembers ? ids : []).map((id) => ({ id, data: () => ({ name: id }) })) });
+    return () => {};
+  });
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
-  Object.assign(auth, { currentUser: { uid: 'alice', email: 'alice@x.com' } });
+  Object.assign(auth, {
+    currentUser: { uid: 'alice', email: 'alice@x.com', providerData: [{ providerId: 'password' }] },
+  });
+  mockGetDoc.mockResolvedValue({ exists: () => true, data: () => ({ familyId: 'famA' }) });
+  familyMembers(['alice']);
 });
 
-it('marks the account for deletion and signs out after confirming', async () => {
+async function startDeletion(password?: string) {
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: 'Eliminar conta e dados' }));
+  });
+  if (password != null) {
+    await act(async () => {
+      fireEvent.changeText(screen.getByPlaceholderText('Password'), password);
+    });
+  }
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: 'Eliminar definitivamente' }));
+  });
+}
+
+it('deletes the account with the typed password after confirming', async () => {
   mockConfirmDestructive.mockResolvedValue(true);
+  mockDeleteMyAccount.mockResolvedValue();
   await render(<PrivacidadeScreen />);
 
-  await act(async () => {
-    fireEvent.press(screen.getByText('Eliminar conta e dados'));
-  });
+  await startDeletion('segredo');
 
-  expect(mockSetDoc).toHaveBeenCalledWith(
-    expect.anything(),
-    expect.objectContaining({ deletionRequestedAt: expect.any(Number) }),
-    expect.objectContaining({ merge: true }),
-  );
-  expect(mockSignOut).toHaveBeenCalledTimes(1);
+  expect(mockDeleteMyAccount).toHaveBeenCalledWith('segredo');
 });
 
 it('does nothing when the confirmation is cancelled', async () => {
   mockConfirmDestructive.mockResolvedValue(false);
   await render(<PrivacidadeScreen />);
 
-  await act(async () => {
-    fireEvent.press(screen.getByText('Eliminar conta e dados'));
-  });
+  await startDeletion('segredo');
 
-  expect(mockSetDoc).not.toHaveBeenCalled();
-  expect(mockSignOut).not.toHaveBeenCalled();
+  expect(mockDeleteMyAccount).not.toHaveBeenCalled();
+});
+
+it('shows why the deletion was refused', async () => {
+  mockConfirmDestructive.mockResolvedValue(true);
+  mockDeleteMyAccount.mockRejectedValue(new AccountDeletionError('Password incorreta.'));
+  await render(<PrivacidadeScreen />);
+
+  await startDeletion('errada');
+
+  expect(screen.getByText('Password incorreta.')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Eliminar definitivamente' })).toBeTruthy(); // can retry
+});
+
+it('explains that the records stay with the other caregivers in a shared family', async () => {
+  familyMembers(['alice', 'bob']);
+  await render(<PrivacidadeScreen />);
+
+  expect(await screen.findByText(/Os registos do bebé ficam com o outro cuidador/)).toBeTruthy();
+});
+
+it('does not ask Google accounts for a password', async () => {
+  Object.assign(auth, { currentUser: { uid: 'alice', email: 'alice@x.com', providerData: [{ providerId: 'google.com' }] } });
+  mockConfirmDestructive.mockResolvedValue(true);
+  mockDeleteMyAccount.mockResolvedValue();
+  await render(<PrivacidadeScreen />);
+
+  await startDeletion();
+
+  expect(screen.queryByPlaceholderText('Password')).toBeNull();
+  expect(mockDeleteMyAccount).toHaveBeenCalledWith(undefined);
 });
 
 it('exports the data when the export button is pressed', async () => {

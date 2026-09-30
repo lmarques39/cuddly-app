@@ -303,6 +303,49 @@ describe('removing a caregiver (#55)', () => {
   });
 });
 
+describe('deleting your own account (#69)', () => {
+  async function seedFamily(members: string[]) {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now() });
+      for (const uid of members) await setDoc(doc(db, 'families', 'famA', 'members', uid), { name: uid });
+      await setDoc(doc(db, 'families', 'famA', 'diapers', 'd1'), { type: 'xixi', at: 1 });
+      await setDoc(doc(db, 'families', 'famA', 'profile', 'baby'), { name: 'Bia' });
+      await setDoc(doc(db, 'families', 'famA', 'invites', 'inv1'), { email: 'x@x.com', status: 'pending' });
+      await setDoc(doc(db, 'users', 'alice'), { familyId: 'famA' });
+    });
+  }
+
+  it("lets the family's last member delete everything, in deleteAccount.ts's order", async () => {
+    await seedFamily(['alice']);
+    const db = testEnv.authenticatedContext('alice').firestore();
+
+    await assertSucceeds(deleteDoc(doc(db, 'families', 'famA', 'diapers', 'd1')));
+    await assertSucceeds(deleteDoc(doc(db, 'families', 'famA', 'profile', 'baby')));
+    await assertSucceeds(deleteDoc(doc(db, 'families', 'famA', 'invites', 'inv1')));
+    await assertSucceeds(deleteDoc(doc(db, 'families', 'famA')));
+    await assertSucceeds(deleteDoc(doc(db, 'families', 'famA', 'members', 'alice')));
+    await assertSucceeds(deleteDoc(doc(db, 'users', 'alice')));
+  });
+
+  it('locks you out of the rest once your own member doc is gone — which is why it goes last', async () => {
+    await seedFamily(['alice']);
+    const db = testEnv.authenticatedContext('alice').firestore();
+
+    await assertSucceeds(deleteDoc(doc(db, 'families', 'famA', 'members', 'alice')));
+    await assertFails(deleteDoc(doc(db, 'families', 'famA')));
+  });
+
+  it("lets a member leave a shared family without touching the others' data", async () => {
+    await seedFamily(['alice', 'bob']);
+    const db = testEnv.authenticatedContext('alice').firestore();
+
+    await assertSucceeds(deleteDoc(doc(db, 'families', 'famA', 'members', 'alice')));
+    const bobDb = testEnv.authenticatedContext('bob').firestore();
+    await assertSucceeds(getDoc(doc(bobDb, 'families', 'famA', 'diapers', 'd1')));
+  });
+});
+
 describe('unauthenticated access', () => {
   it('denies reads and writes without sign-in', async () => {
     const anon = testEnv.unauthenticatedContext();

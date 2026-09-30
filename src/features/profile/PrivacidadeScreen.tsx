@@ -1,16 +1,17 @@
-import { signOut } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { auth, db } from '../../services/firebase';
+import { PasswordField } from '../../components/PasswordField';
+import { auth } from '../../services/firebase';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { confirmDestructive } from '../../utils/confirm';
+import { useCuidadores } from '../caregivers/useCuidadores';
+import { AccountDeletionError, deleteMyAccount, usesPassword } from './deleteAccount';
 import { exportMyData } from './exportData';
 
 /**
- * Data export (#67) and account deletion (#68). The static Figma
- * privacy-policy text is still a separate, unbuilt piece of this screen.
+ * Data export (#67) and immediate account deletion (#68, #69). The static
+ * Figma privacy-policy text is still a separate, unbuilt piece of this screen.
  */
 export function PrivacidadeScreen() {
   const [exporting, setExporting] = useState(false);
@@ -28,21 +29,42 @@ export function PrivacidadeScreen() {
     }
   };
 
-  const requestAccountDeletion = async () => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
+  const { members } = useCuidadores();
+  const uid = auth.currentUser?.uid;
+  const otherMembers = members.filter((m) => m.id !== uid).length;
+  const needsPassword = auth.currentUser ? usesPassword(auth.currentUser) : false;
 
+  const [confirmingDeletion, setConfirmingDeletion] = useState(false);
+  const [password, setPassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const cancelDeletion = () => {
+    setConfirmingDeletion(false);
+    setPassword('');
+    setDeleteError(null);
+  };
+
+  const deleteAccount = async () => {
     const confirmed = await confirmDestructive(
       'Eliminar conta',
-      'Isto marca a tua conta e todos os dados da família para eliminação, e termina a sessão já. Não é possível desfazer.'
+      otherMembers > 0
+        ? 'A tua conta é eliminada já e sais da família. Os registos do bebé ficam com os outros cuidadores. Não é possível desfazer.'
+        : 'A tua conta e todos os dados da família são eliminados já. Não é possível desfazer.'
     );
     if (!confirmed) return;
 
-    // Marks the account for deletion — a backend job does the actual purge
-    // (see #69, still pending an infra decision on the 30-day window). The
-    // client never deletes the family's Firestore data directly here.
-    await setDoc(doc(db, 'users', uid), { deletionRequestedAt: Date.now() }, { merge: true });
-    await signOut(auth);
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteMyAccount(needsPassword ? password : undefined);
+      // Success signs the user out — App.tsx swaps this screen for the login flow.
+    } catch (e) {
+      setDeleteError(
+        e instanceof AccountDeletionError ? e.message : 'Não foi possível eliminar a conta. Verifica a ligação e tenta outra vez.'
+      );
+      setDeleting(false);
+    }
   };
 
   return (
@@ -73,11 +95,40 @@ export function PrivacidadeScreen() {
       <View style={styles.dangerZone}>
         <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>Eliminar conta</Text>
         <Text style={type.caption}>
-          Pede a eliminação da tua conta e de todos os dados da família. A sessão termina de imediato.
+          {otherMembers > 0
+            ? `Elimina a tua conta de imediato e sais da família. Os registos do bebé ficam com ${otherMembers === 1 ? 'o outro cuidador' : `os outros ${otherMembers} cuidadores`}.`
+            : 'Elimina de imediato a tua conta e todos os dados da família (registos, perfil do bebé, convites). A sessão termina logo.'}
         </Text>
-        <Pressable onPress={requestAccountDeletion} style={styles.deleteButton}>
-          <Text style={styles.deleteLabel}>Eliminar conta e dados</Text>
-        </Pressable>
+
+        {confirmingDeletion ? (
+          <>
+            {needsPassword && (
+              <View>
+                <Text style={type.caption}>Escreve a tua password para confirmar</Text>
+                <PasswordField value={password} onChangeText={setPassword} placeholder="Password" />
+              </View>
+            )}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: deleting, busy: deleting }}
+              disabled={deleting}
+              onPress={deleteAccount}
+              style={styles.deleteButton}
+            >
+              {deleting ? <ActivityIndicator color={colors.paper} /> : <Text style={styles.deleteLabel}>Eliminar definitivamente</Text>}
+            </Pressable>
+            {!deleting && (
+              <Pressable accessibilityRole="button" onPress={cancelDeletion} hitSlop={8} style={styles.cancel}>
+                <Text style={styles.cancelLabel}>Cancelar</Text>
+              </Pressable>
+            )}
+          </>
+        ) : (
+          <Pressable accessibilityRole="button" onPress={() => setConfirmingDeletion(true)} style={styles.deleteButton}>
+            <Text style={styles.deleteLabel}>Eliminar conta e dados</Text>
+          </Pressable>
+        )}
+        {deleteError && <Text style={styles.error}>{deleteError}</Text>}
       </View>
     </SafeAreaView>
   );
@@ -118,5 +169,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: spacing.xs,
   },
+  cancel: { alignSelf: 'center' },
+  cancelLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.inkSecondary },
   deleteLabel: { fontFamily: fontFamily.bodyBold, fontSize: 14.5, color: colors.paper },
 });

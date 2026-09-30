@@ -51,6 +51,11 @@ async function pushToOutbox(entry: OutboxEntry): Promise<void> {
   await saveList(OUTBOX_KEY, [...current, entry]);
 }
 
+/** Drops every queued write — for account deletion (#69), so nothing queued offline gets replayed into a deleted family. */
+export async function clearOutbox(): Promise<void> {
+  await saveList(OUTBOX_KEY, []);
+}
+
 async function removeFromOutbox(id: string): Promise<void> {
   const current = await loadOutbox();
   await saveList(

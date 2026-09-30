@@ -9,4 +9,7 @@ module.exports = {
   // needs to simulate a real auth state change firing.
   onAuthStateChanged: jest.fn(() => () => {}),
   signOut: jest.fn(() => Promise.resolve()),
+  deleteUser: jest.fn(() => Promise.resolve()),
+  reauthenticateWithCredential: jest.fn(() => Promise.resolve()),
+  EmailAuthProvider: { credential: jest.fn((email, password) => ({ email, password })) },
 };
