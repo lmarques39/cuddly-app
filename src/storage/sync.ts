@@ -3,7 +3,11 @@ import { collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, setDoc } from 
 import { auth, db } from '../services/firebase';
 import { loadList, makeId, saveList } from './storage';
 
-export const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments', 'sono', 'pumping'];
+// Every per-family collection of entries — what clearFamilyData() wipes,
+// account deletion (#69) removes and the JSON export (#67) includes.
+// activeSessions holds running timers (#97), not finished entries, but it's
+// family data all the same.
+export const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments', 'sono', 'pumping', 'activeSessions'];
 
 /**
  * Firestore sync: entry-per-document under families/{familyId}/{collectionName}/{entryId},

@@ -24,6 +24,21 @@ export type BreastfeedingEntry = {
   endedAt: number;
 };
 
+/** Trackers with a live timer — see ActiveSession. */
+export type ActiveSessionKind = 'sono' | 'breastfeeding' | 'pumping' | 'contractions';
+
+// A timer that's currently running, at families/{familyId}/activeSessions/{kind}
+// (#97). One doc per kind, so a family can only ever have one sleep/feed/
+// pumping/contraction running at a time — two caregivers pressing "Iniciar"
+// together overwrite the same doc instead of creating two. Elapsed time is
+// always now - startedAt: nothing has to keep running in the background.
+export type ActiveSession = {
+  kind: ActiveSessionKind;
+  startedAt: number; // epoch ms
+  startedBy: string; // uid
+  side?: 'left' | 'right'; // breastfeeding only
+};
+
 export type BottleType = 'breastmilk' | 'formula' | 'mixed';
 
 export type BottleEntry = {

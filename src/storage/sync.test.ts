@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { deleteDoc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { auth } from '../services/firebase';
 import { loadList } from './storage';
-import { clearFamilyData, flushOutbox, getFamilyId, resetFamilyIdCache, syncEntry } from './sync';
+import { clearFamilyData, flushOutbox, getFamilyId, resetFamilyIdCache, syncEntry, TRACKER_COLLECTIONS } from './sync';
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
@@ -79,8 +79,8 @@ describe('clearFamilyData', () => {
 
     await clearFamilyData();
 
-    // 7 tracker collections x 2 docs each (from the mock above) + 1 profile doc
-    expect(mockDeleteDoc).toHaveBeenCalledTimes(15);
+    // every tracker collection x 2 docs each (from the mock above) + 1 profile doc
+    expect(mockDeleteDoc).toHaveBeenCalledTimes(TRACKER_COLLECTIONS.length * 2 + 1);
   });
 });
 

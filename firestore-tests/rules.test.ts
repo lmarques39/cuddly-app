@@ -313,6 +313,37 @@ describe('removing a caregiver (#55)', () => {
   });
 });
 
+describe('active sessions (#97)', () => {
+  async function seedFamily() {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'families', 'famA'), { createdAt: Date.now(), createdBy: 'alice' });
+      await setDoc(doc(db, 'families', 'famA', 'members', 'alice'), { name: 'Alice' });
+      await setDoc(doc(db, 'families', 'famA', 'members', 'bob'), { name: 'Bob' });
+    });
+  }
+
+  it('lets any family member start, see and stop a running timer', async () => {
+    await seedFamily();
+    const alice = testEnv.authenticatedContext('alice').firestore();
+    const bob = testEnv.authenticatedContext('bob').firestore();
+    const session = doc(alice, 'families', 'famA', 'activeSessions', 'sono');
+
+    await assertSucceeds(setDoc(session, { kind: 'sono', startedAt: 1, startedBy: 'alice' }));
+    // The other caregiver sees it and can stop it — that's the point of sharing it.
+    await assertSucceeds(getDoc(doc(bob, 'families', 'famA', 'activeSessions', 'sono')));
+    await assertSucceeds(deleteDoc(doc(bob, 'families', 'famA', 'activeSessions', 'sono')));
+  });
+
+  it("does not let someone outside the family see or touch the family's timers", async () => {
+    await seedFamily();
+    const eve = testEnv.authenticatedContext('eve').firestore();
+
+    await assertFails(getDoc(doc(eve, 'families', 'famA', 'activeSessions', 'sono')));
+    await assertFails(setDoc(doc(eve, 'families', 'famA', 'activeSessions', 'sono'), { kind: 'sono', startedAt: 1, startedBy: 'eve' }));
+  });
+});
+
 describe('members and invites keep their own rules (#87)', () => {
   async function seedFamily() {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
