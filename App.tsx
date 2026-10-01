@@ -22,6 +22,7 @@ import { LoginScreen } from './src/features/auth/LoginScreen';
 import { RecoverPasswordScreen } from './src/features/auth/RecoverPasswordScreen';
 import { ParentInfo, RegisterParentScreen } from './src/features/auth/RegisterParentScreen';
 import { acceptInvite, getPendingInvitesForEmail, PendingInvite } from './src/features/caregivers/acceptInvite';
+import { ActiveSessionsProvider } from './src/features/activeSessions/ActiveSessionsProvider';
 import { AcceptInviteScreen } from './src/features/caregivers/AcceptInviteScreen';
 import { createFamilyForUser } from './src/features/family/createFamily';
 import { resolveOnboardingStep } from './src/features/family/resolveOnboarding';
@@ -302,9 +303,11 @@ export default function App() {
       {authStep === 'registerBaby' && <RegisterBabyScreen onFinish={handleBabyFinish} />}
       {authStep === 'app' && (
         <CurrentMemberProvider>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
+          <ActiveSessionsProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </ActiveSessionsProvider>
         </CurrentMemberProvider>
       )}
       <StatusBar style="dark" />
