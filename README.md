@@ -36,27 +36,24 @@ Cada área de registo vive na sua própria pasta em `src/features/`, com um hook
 
 ## Correr o projeto
 
+A app **já não corre no Expo Go**: usa módulos nativos (`expo-notifications`, `expo-file-system`, `expo-sharing`) que o Expo Go não inclui. É preciso um build nativo.
+
 ```bash
 npm install
-npx expo start
+npm run android        # = npx expo run:android — compila, instala no emulador/telemóvel e arranca o Metro
 ```
 
-Depois, abre no telemóvel com a app **Expo Go** (Android) a ler o QR code, ou corre num emulador Android com `npm run android`.
+Requisitos para o build local: Android Studio com um emulador (AVD) e o **JDK 17** (`JAVA_HOME` a apontar para ele — o JDK 25 que vem com o Android Studio falha no passo de CMake). Alternativa sem build local: um APK do EAS (`eas build --platform android --profile preview`).
+
+Para a web: `npm run web`.
 
 ## Estado atual
 
-- [x] Projeto Expo/TypeScript, navegação e design system
-- [x] Contrações — cronómetro, alerta 5-1-1, histórico
-- [x] Amamentação — cronómetro por lado, sugestão de lado seguinte
-- [x] Biberão — registo de ml e tipo
-- [x] Fraldas — registo rápido com "tempo desde a última"
-- [ ] Testar em dispositivo Android real
-- [ ] Polish visual final contra o moodboard
-- [ ] Gravar demo + preparar apresentação para 18 de setembro
+O planeamento vive no [board do projeto](https://github.com/users/lmarques39/projects/3) e no milestone **v2 — entrega 31 out**.
 
 ## Trabalho futuro (depois da entrega)
 
-Pumping, sono, múltiplos bebés/perfis, partilha entre cuidadores em tempo real, painel de estatísticas, exportação PDF/CSV e modo noturno — ver a secção "Depois da entrega" na proposta de projeto.
+Issues com a label `pós-v2` no board: publicação na Play Store, gráfico de percentis de crescimento (OMS), testes E2E com Maestro. Ideias ainda sem issue: múltiplos bebés/perfis, exportação PDF/CSV, modo noturno.
 
 ## Contribuir
 

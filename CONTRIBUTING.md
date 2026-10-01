@@ -27,8 +27,9 @@ Cuddly is a 4-person capstone project for IEFP UC00507. This guide covers how we
 
 ```bash
 npm install
-npm run start        # Expo dev server
-npm run android       # or: npm run ios / npm run web
+npm run android      # native build + install + Metro (Expo Go no longer works — see README)
+npm run web          # web version
+npm run start        # Metro only, for an already-installed native build
 npm run typecheck
 npm run lint
 npm test

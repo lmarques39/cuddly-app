@@ -45,3 +45,6 @@ firebase-debug.log
 # generated native folders
 /ios
 /android
+
+# Playwright MCP browser-session logs (local tooling)
+/.playwright-mcp/
