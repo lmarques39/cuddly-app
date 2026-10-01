@@ -1,8 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CommonActions } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, BottomTabBarProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
+import { View } from 'react-native';
+import { ActiveSessionsBar } from '../features/activeSessions/ActiveSessionsBar';
 import { AppointmentsScreen } from '../features/appointments/AppointmentsScreen';
 import { BottleScreen } from '../features/bottle/BottleScreen';
 import { BreastfeedingScreen } from '../features/breastfeeding/BreastfeedingScreen';
@@ -19,6 +21,7 @@ import { HistoricoScreen } from '../screens/HistoricoScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { RegistarScreen } from '../screens/RegistarScreen';
 import { colors, fontFamily } from '../theme/tokens';
+import { ActiveSessionKind } from '../types/records';
 import { PerfilStackParamList, RegistarStackParamList, RootTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -94,9 +97,36 @@ function PerfilNavigator() {
   );
 }
 
+// Which Registar screen each running timer lives on (#100).
+const SESSION_ROUTE: Record<ActiveSessionKind, keyof RegistarStackParamList> = {
+  sono: 'Sono',
+  breastfeeding: 'Amamentação',
+  pumping: 'Pumping',
+  contractions: 'Contrações',
+};
+
+/** The default tab bar with the "a decorrer" strip on top of it, so running timers show on every tab. */
+function TabBarWithActiveSessions(props: BottomTabBarProps) {
+  const focusedTab = props.state.routes[props.state.index];
+  const nested = focusedTab.state;
+  const focusedScreen = focusedTab.name === 'Registar' && nested?.index != null ? nested.routes[nested.index]?.name : null;
+  const hideKind = (Object.keys(SESSION_ROUTE) as ActiveSessionKind[]).find((kind) => SESSION_ROUTE[kind] === focusedScreen) ?? null;
+
+  return (
+    <View>
+      <ActiveSessionsBar
+        hideKind={hideKind}
+        onOpen={(kind) => props.navigation.navigate('Registar', { screen: SESSION_ROUTE[kind] })}
+      />
+      <BottomTabBar {...props} />
+    </View>
+  );
+}
+
 export function RootNavigator() {
   return (
     <Tab.Navigator
+      tabBar={(props) => <TabBarWithActiveSessions {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.inkBorder, borderTopWidth: 2 },

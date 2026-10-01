@@ -83,3 +83,29 @@ it('does not break switching to every other tab after the Perfil reset-on-blur f
   });
   expect(await screen.findByText('Marcar consulta')).toBeTruthy();
 });
+
+it('shows a running timer on every tab, and tapping it goes back to the timer (#100)', async () => {
+  await renderApp();
+
+  await act(async () => {
+    fireEvent.press(screen.getByText('Registar'));
+  });
+  await act(async () => {
+    fireEvent.press(await screen.findByText('Contração'));
+  });
+  await act(async () => {
+    fireEvent.press(await screen.findByRole('button', { name: 'Iniciar contração' }));
+  });
+  // Already on the timer's own screen — the bar doesn't repeat it.
+  expect(screen.queryByRole('button', { name: 'Contração a decorrer, abrir' })).toBeNull();
+
+  await act(async () => {
+    fireEvent.press(screen.getByText('Início'));
+  });
+  const chip = await screen.findByRole('button', { name: 'Contração a decorrer, abrir' });
+
+  await act(async () => {
+    fireEvent.press(chip);
+  });
+  expect(await screen.findByRole('button', { name: 'Parar contração' })).toBeTruthy();
+});
