@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useBreastfeeding } from './useBreastfeeding';
+import { ActiveSessionsWrapper } from '../../testUtils/ActiveSessionsWrapper';
 
 function useControlledClock(startAt = 1_700_000_000_000) {
   let now = startAt;
@@ -14,7 +15,7 @@ describe('useBreastfeeding', () => {
 
   it('records a feed with the side given to start()', async () => {
     const clock = useControlledClock();
-    const { result } = await renderHook(() => useBreastfeeding());
+    const { result } = await renderHook(() => useBreastfeeding(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.entries).toEqual([]));
 
     await act(async () => result.current.start('left'));
@@ -26,7 +27,7 @@ describe('useBreastfeeding', () => {
   });
 
   it('logs a manual feed with an explicit side and start/end times', async () => {
-    const { result } = await renderHook(() => useBreastfeeding());
+    const { result } = await renderHook(() => useBreastfeeding(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.entries).toEqual([]));
 
     await act(async () => result.current.addManual('right', 1_700_000_000_000, 1_700_000_600_000));
@@ -40,7 +41,7 @@ describe('useBreastfeeding', () => {
   });
 
   it('removes and updates an entry, e.g. correcting the side after the fact', async () => {
-    const { result } = await renderHook(() => useBreastfeeding());
+    const { result } = await renderHook(() => useBreastfeeding(), { wrapper: ActiveSessionsWrapper });
     await act(async () => result.current.start('left'));
     await act(async () => result.current.stop());
     const [entry] = result.current.entries;

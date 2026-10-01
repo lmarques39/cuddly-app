@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useContractions } from './useContractions';
+import { ActiveSessionsWrapper } from '../../testUtils/ActiveSessionsWrapper';
 
 /** Controls Date.now() precisely instead of faking timers — the hook only ever reads Date.now(), never setTimeout/setInterval. */
 function useControlledClock(startAt = 1_700_000_000_000) {
@@ -21,7 +22,7 @@ describe('useContractions', () => {
   });
 
   it('starts with nothing running and an empty history', async () => {
-    const { result } = await renderHook(() => useContractions());
+    const { result } = await renderHook(() => useContractions(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     expect(result.current.runningSince).toBeNull();
@@ -31,7 +32,7 @@ describe('useContractions', () => {
 
   it('records a contraction with the timestamps it started and stopped at', async () => {
     const clock = useControlledClock();
-    const { result } = await renderHook(() => useContractions());
+    const { result } = await renderHook(() => useContractions(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     const startedAt = Date.now();
@@ -48,7 +49,7 @@ describe('useContractions', () => {
 
   it('does not flag the 5-1-1 pattern for a single short contraction', async () => {
     const clock = useControlledClock();
-    const { result } = await renderHook(() => useContractions());
+    const { result } = await renderHook(() => useContractions(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.start());
@@ -61,7 +62,7 @@ describe('useContractions', () => {
 
   it('flags the 5-1-1 pattern after three consecutive matching contractions', async () => {
     const clock = useControlledClock();
-    const { result } = await renderHook(() => useContractions());
+    const { result } = await renderHook(() => useContractions(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     // 3 contractions, each 70s long, 4min apart start-to-start (the "1" and "5" of 5-1-1).
@@ -78,7 +79,7 @@ describe('useContractions', () => {
   });
 
   it('logs a manual entry with explicit start/end times, without touching runningSince', async () => {
-    const { result } = await renderHook(() => useContractions());
+    const { result } = await renderHook(() => useContractions(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.addManual(1_700_000_000_000, 1_700_000_070_000));
@@ -93,7 +94,7 @@ describe('useContractions', () => {
 
   it('removes and updates an entry', async () => {
     const clock = useControlledClock();
-    const { result } = await renderHook(() => useContractions());
+    const { result } = await renderHook(() => useContractions(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.start());

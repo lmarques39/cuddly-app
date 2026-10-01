@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { usePumping } from './usePumping';
+import { ActiveSessionsWrapper } from '../../testUtils/ActiveSessionsWrapper';
 
 /** Controls Date.now() precisely — the hook only ever reads Date.now(), never setTimeout/setInterval. */
 function useControlledClock(startAt = 1_700_000_000_000) {
@@ -21,7 +22,7 @@ describe('usePumping', () => {
   });
 
   it('starts with nothing running and an empty history', async () => {
-    const { result } = await renderHook(() => usePumping());
+    const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     expect(result.current.runningSince).toBeNull();
@@ -30,7 +31,7 @@ describe('usePumping', () => {
 
   it('records a pumping session with the amount given to stop()', async () => {
     const clock = useControlledClock();
-    const { result } = await renderHook(() => usePumping());
+    const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     const startedAt = Date.now();
@@ -50,7 +51,7 @@ describe('usePumping', () => {
   });
 
   it('does nothing when stop is called without a running session', async () => {
-    const { result } = await renderHook(() => usePumping());
+    const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.stop(120));
@@ -59,7 +60,7 @@ describe('usePumping', () => {
   });
 
   it('logs a manual extraction with explicit start/end times and amount', async () => {
-    const { result } = await renderHook(() => usePumping());
+    const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.addManual(1_700_000_000_000, 1_700_000_900_000, 90));
@@ -74,7 +75,7 @@ describe('usePumping', () => {
   });
 
   it('removes an entry by id', async () => {
-    const { result } = await renderHook(() => usePumping());
+    const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.start());
@@ -87,7 +88,7 @@ describe('usePumping', () => {
   });
 
   it('updates an entry, e.g. correcting a mistyped amount', async () => {
-    const { result } = await renderHook(() => usePumping());
+    const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.start());

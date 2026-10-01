@@ -4,6 +4,7 @@ import React from 'react';
 import { STORAGE_KEYS } from '../storage/storage';
 import { ContractionEntry, DiaperEntry } from '../types/records';
 import { HistoricoScreen } from './HistoricoScreen';
+import { ActiveSessionsWrapper } from '../testUtils/ActiveSessionsWrapper';
 
 describe('HistoricoScreen', () => {
   beforeEach(() => AsyncStorage.clear());
@@ -26,7 +27,7 @@ describe('HistoricoScreen', () => {
     await AsyncStorage.setItem(STORAGE_KEYS.contractions, JSON.stringify([todayContraction]));
     await AsyncStorage.setItem(STORAGE_KEYS.diapers, JSON.stringify([yesterdayDiaper]));
 
-    await render(<HistoricoScreen />);
+    await render(<HistoricoScreen />, { wrapper: ActiveSessionsWrapper });
 
     expect(await screen.findByText('Hoje, 24/09')).toBeTruthy();
     expect(screen.getByText('Ontem, 23/09')).toBeTruthy();

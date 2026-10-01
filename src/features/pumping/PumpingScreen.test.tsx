@@ -2,12 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { PumpingScreen } from './PumpingScreen';
+import { ActiveSessionsWrapper } from '../../testUtils/ActiveSessionsWrapper';
 
 describe('PumpingScreen', () => {
   beforeEach(() => AsyncStorage.clear());
 
   it('does not let stop happen without a valid amount, and records it when given one', async () => {
-    await render(<PumpingScreen />);
+    await render(<PumpingScreen />, { wrapper: ActiveSessionsWrapper });
 
     expect(await screen.findByText('Ainda sem registos.')).toBeTruthy();
 

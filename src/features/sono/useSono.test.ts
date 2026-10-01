@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useSono } from './useSono';
+import { ActiveSessionsWrapper } from '../../testUtils/ActiveSessionsWrapper';
 
 /** Controls Date.now() precisely — the hook only ever reads Date.now(), never setTimeout/setInterval. */
 function useControlledClock(startAt = 1_700_000_000_000) {
@@ -21,7 +22,7 @@ describe('useSono', () => {
   });
 
   it('starts with nothing running and an empty history', async () => {
-    const { result } = await renderHook(() => useSono());
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     expect(result.current.runningSince).toBeNull();
@@ -30,7 +31,7 @@ describe('useSono', () => {
 
   it('records a sleep session with the timestamps it started and stopped at', async () => {
     const clock = useControlledClock();
-    const { result } = await renderHook(() => useSono());
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     const startedAt = Date.now();
@@ -49,7 +50,7 @@ describe('useSono', () => {
   });
 
   it('does nothing when stop is called without a running session', async () => {
-    const { result } = await renderHook(() => useSono());
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.stop());
@@ -59,7 +60,7 @@ describe('useSono', () => {
 
   it('sorts entries newest-first across multiple sessions', async () => {
     const clock = useControlledClock();
-    const { result } = await renderHook(() => useSono());
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.start());
@@ -78,7 +79,7 @@ describe('useSono', () => {
   });
 
   it('logs a manual entry with explicit start/end times, without touching runningSince', async () => {
-    const { result } = await renderHook(() => useSono());
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.addManual(1_700_000_000_000, 1_700_028_800_000));
@@ -92,7 +93,7 @@ describe('useSono', () => {
   });
 
   it('removes and updates an entry', async () => {
-    const { result } = await renderHook(() => useSono());
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     await act(async () => result.current.start());

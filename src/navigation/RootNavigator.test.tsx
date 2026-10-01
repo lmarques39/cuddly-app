@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import React from 'react';
 import { auth } from '../services/firebase';
 import { CurrentMemberProvider } from '../features/profile/useCurrentMember';
+import { ActiveSessionsWrapper } from '../testUtils/ActiveSessionsWrapper';
 import { RootNavigator } from './RootNavigator';
 
 const mockGetDoc = getDoc as jest.Mock;
@@ -17,9 +18,11 @@ beforeEach(() => {
 function renderApp() {
   return render(
     <CurrentMemberProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
+      <ActiveSessionsWrapper>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </ActiveSessionsWrapper>
     </CurrentMemberProvider>,
   );
 }

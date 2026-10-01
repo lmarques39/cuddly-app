@@ -2,10 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { addToList, isToday, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { BreastfeedingEntry } from '../../types/records';
+import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
 
 export function useBreastfeeding() {
   const [entries, setEntries] = useState<BreastfeedingEntry[]>([]);
-  const [running, setRunning] = useState<{ side: 'left' | 'right'; startedAt: number } | null>(null);
+  // The running timer lives in ActiveSessionsProvider (#99), not in this
+  // hook — so it survives leaving the screen and the other caregiver sees it.
+  const { session, start: startSession, stop: stopSession } = useActiveSession('breastfeeding');
+  const running = useMemo(
+    () => (session ? { side: session.side ?? ('left' as const), startedAt: session.startedAt } : null),
+    [session],
+  );
 
   useEffect(() => {
     // Cold-start cache: show what's already on-device instantly, before the
@@ -21,19 +28,15 @@ export function useBreastfeeding() {
     });
   }, []);
 
-  const start = useCallback((side: 'left' | 'right') => {
-    setRunning({ side, startedAt: Date.now() });
-  }, []);
+  const start = useCallback((side: 'left' | 'right') => startSession(side), [startSession]);
 
   const stop = useCallback(async () => {
-    setRunning((current) => {
-      if (current == null) return current;
-      const entry: BreastfeedingEntry = { id: makeId(), side: current.side, startedAt: current.startedAt, endedAt: Date.now() };
-      addToList(STORAGE_KEYS.breastfeeding, entry).then(setEntries);
-      syncEntry('breastfeeding', entry.id, entry);
-      return null;
-    });
-  }, []);
+    const finished = stopSession();
+    if (!finished) return;
+    const entry: BreastfeedingEntry = { id: makeId(), side: finished.side ?? 'left', startedAt: finished.startedAt, endedAt: finished.endedAt };
+    addToList(STORAGE_KEYS.breastfeeding, entry).then(setEntries);
+    syncEntry('breastfeeding', entry.id, entry);
+  }, [stopSession]);
 
   /** Logs a feed the timer never ran for. */
   const addManual = useCallback((side: 'left' | 'right', startedAt: number, endedAt: number) => {

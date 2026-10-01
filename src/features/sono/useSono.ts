@@ -2,10 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { SonoEntry } from '../../types/records';
+import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
 
 export function useSono() {
   const [entries, setEntries] = useState<SonoEntry[]>([]);
-  const [runningSince, setRunningSince] = useState<number | null>(null);
+  // The running timer lives in ActiveSessionsProvider (#99), not in this
+  // hook — so it survives leaving the screen and the other caregiver sees it.
+  const { session, start: startSession, stop: stopSession } = useActiveSession('sono');
+  const runningSince = session?.startedAt ?? null;
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -26,19 +30,15 @@ export function useSono() {
     });
   }, []);
 
-  const start = useCallback(() => {
-    setRunningSince(Date.now());
-  }, []);
+  const start = useCallback(() => startSession(), [startSession]);
 
   const stop = useCallback(async () => {
-    setRunningSince((current) => {
-      if (current == null) return current;
-      const entry: SonoEntry = { id: makeId(), startedAt: current, endedAt: Date.now() };
-      addToList(STORAGE_KEYS.sono, entry).then(setEntries);
-      syncEntry('sono', entry.id, entry);
-      return null;
-    });
-  }, []);
+    const finished = stopSession();
+    if (!finished) return;
+    const entry: SonoEntry = { id: makeId(), startedAt: finished.startedAt, endedAt: finished.endedAt };
+    addToList(STORAGE_KEYS.sono, entry).then(setEntries);
+    syncEntry('sono', entry.id, entry);
+  }, [stopSession]);
 
   /** Logs a sleep the timer never ran for (e.g. noticed only after waking up). */
   const addManual = useCallback((startedAt: number, endedAt: number) => {

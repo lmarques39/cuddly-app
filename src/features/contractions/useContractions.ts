@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { ContractionEntry } from '../../types/records';
+import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
 
 const FIVE_ONE_ONE_WINDOW_MS = 60 * 60 * 1000; // pattern must hold for the last hour
 const FIVE_ONE_ONE_MAX_INTERVAL_MS = 5 * 60 * 1000;
@@ -10,7 +11,10 @@ const FIVE_ONE_ONE_MIN_STREAK = 3; // 3+ contractions matching the pattern back-
 
 export function useContractions() {
   const [entries, setEntries] = useState<ContractionEntry[]>([]);
-  const [runningSince, setRunningSince] = useState<number | null>(null);
+  // The running timer lives in ActiveSessionsProvider (#99), not in this
+  // hook — so it survives leaving the screen and the other caregiver sees it.
+  const { session, start: startSession, stop: stopSession } = useActiveSession('contractions');
+  const runningSince = session?.startedAt ?? null;
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -31,19 +35,15 @@ export function useContractions() {
     });
   }, []);
 
-  const start = useCallback(() => {
-    setRunningSince(Date.now());
-  }, []);
+  const start = useCallback(() => startSession(), [startSession]);
 
   const stop = useCallback(async () => {
-    setRunningSince((current) => {
-      if (current == null) return current;
-      const entry: ContractionEntry = { id: makeId(), startedAt: current, endedAt: Date.now() };
-      addToList(STORAGE_KEYS.contractions, entry).then(setEntries);
-      syncEntry('contractions', entry.id, entry);
-      return null;
-    });
-  }, []);
+    const finished = stopSession();
+    if (!finished) return;
+    const entry: ContractionEntry = { id: makeId(), startedAt: finished.startedAt, endedAt: finished.endedAt };
+    addToList(STORAGE_KEYS.contractions, entry).then(setEntries);
+    syncEntry('contractions', entry.id, entry);
+  }, [stopSession]);
 
   /** Logs a contraction the timer never ran for. */
   const addManual = useCallback((startedAt: number, endedAt: number) => {
