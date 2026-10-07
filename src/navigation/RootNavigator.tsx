@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { View } from 'react-native';
 import { ActiveSessionsBar } from '../features/activeSessions/ActiveSessionsBar';
-import { useSessionNotificationTaps } from '../features/activeSessions/sessionNotification';
+import { useSessionNotificationTaps } from '../features/activeSessions/useSessionNotificationTaps';
 import { AppointmentsScreen } from '../features/appointments/AppointmentsScreen';
 import { BottleScreen } from '../features/bottle/BottleScreen';
 import { BreastfeedingScreen } from '../features/breastfeeding/BreastfeedingScreen';
