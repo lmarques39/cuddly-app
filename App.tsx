@@ -202,7 +202,15 @@ export default function App() {
         applyRoute(await routeExistingUser(result.user.uid, result.user.email ?? ''));
       }
     } catch (err) {
-      setAuthError(describeAuthError(err));
+      const code = err && typeof err === 'object' && 'code' in err ? (err as { code: unknown }).code : '';
+      // With an idToken there's no password involved — invalid-credential
+      // here means Firebase didn't accept the Google client that issued it
+      // (see #78), not a typo, so describeAuthError's message would mislead.
+      setAuthError(
+        code === 'auth/invalid-credential'
+          ? 'A conta Google não foi aceite. Tenta novamente ou entra com email e password.'
+          : describeAuthError(err),
+      );
     }
   };
 
