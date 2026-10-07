@@ -41,6 +41,7 @@ export const colors = {
     pumping: { bg: '#93C1E6', ink: '#1C1712' },
     diapers: { bg: '#EFA9BE', ink: '#1C1712' },
     sleep: { bg: '#C9A6D6', ink: '#1C1712' },
+    foods: { bg: '#A9D4A0', ink: '#1C1712' },
   },
 
 } as const;
