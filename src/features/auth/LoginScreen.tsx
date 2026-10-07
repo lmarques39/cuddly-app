@@ -1,16 +1,10 @@
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
-import React, { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { PasswordField } from '../../components/PasswordField';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
-import { isGoogleSignInAvailable, PLACEHOLDER_ANDROID_CLIENT_ID } from './googleAuthAvailability';
-
-// Dismisses the in-app browser once the OAuth redirect completes — the
-// standard expo-auth-session pattern, needs to run once at module load.
-WebBrowser.maybeCompleteAuthSession();
+import { useGoogleSignIn } from './useGoogleSignIn';
 
 type Props = {
   onLogin: (email: string, password: string) => void;
@@ -24,24 +18,8 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
-  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-  const googleSignInAvailable = isGoogleSignInAvailable(Platform.OS, { android: androidClientId, web: webClientId });
-
-  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useIdTokenAuthRequest({
-    webClientId,
-    // Always truthy, even when unconfigured — expo-auth-session throws
-    // synchronously (crashing this whole screen, not just the button) if
-    // the current platform's own client id is missing. googleSignInAvailable
-    // is what actually gates whether the button below can be pressed.
-    androidClientId: androidClientId ?? PLACEHOLDER_ANDROID_CLIENT_ID,
-  });
-
-  useEffect(() => {
-    if (googleResponse?.type === 'success' && googleResponse.params.id_token) {
-      onContinueWithGoogle(googleResponse.params.id_token);
-    }
-  }, [googleResponse, onContinueWithGoogle]);
+  const google = useGoogleSignIn(onContinueWithGoogle);
+  const shownError = error ?? google.error;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -53,9 +31,9 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
         </View>
 
         <View style={{ gap: spacing.md }}>
-          {error && (
+          {shownError && (
             <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>{shownError}</Text>
             </View>
           )}
 
@@ -98,9 +76,9 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
           </View>
 
           <Pressable
-            onPress={() => promptGoogleSignIn()}
-            disabled={!googleRequest || !googleSignInAvailable}
-            style={[styles.googleButton, (!googleRequest || !googleSignInAvailable) && { opacity: 0.5 }]}
+            onPress={google.start}
+            disabled={!google.available}
+            style={[styles.googleButton, !google.available && { opacity: 0.5 }]}
           >
             <Text style={styles.googleLabel}>Continuar com Google</Text>
           </Pressable>

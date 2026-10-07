@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.cuddlyapp.mobile",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -26,7 +27,8 @@
     "plugins": [
       "expo-font",
       "expo-web-browser",
-      "expo-sharing"
+      "expo-sharing",
+      "react-native-nitro-google-signin"
     ],
     "extra": {
       "eas": {

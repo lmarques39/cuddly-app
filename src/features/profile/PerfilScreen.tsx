@@ -11,6 +11,7 @@ import { clearAllLocalData } from '../../storage/storage';
 import { clearFamilyData } from '../../storage/sync';
 import { auth } from '../../services/firebase';
 import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { signOutOfGoogle } from '../auth/useGoogleSignIn';
 import { useSavedFlash } from '../../utils/useSavedFlash';
 import { useCurrentMember } from './useCurrentMember';
 
@@ -94,7 +95,13 @@ export function PerfilScreen() {
         ))}
       </View>
 
-      <Pressable onPress={() => signOut(auth)} style={styles.logoutButton}>
+      <Pressable
+        onPress={async () => {
+          await signOutOfGoogle();
+          await signOut(auth);
+        }}
+        style={styles.logoutButton}
+      >
         <Text style={styles.logoutLabel}>Terminar sessão</Text>
       </Pressable>
 

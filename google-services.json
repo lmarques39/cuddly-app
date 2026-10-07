@@ -1,0 +1,52 @@
+{
+  "project_info": {
+    "project_number": "753146010921",
+    "firebase_url": "https://cuddly-app-9b0f7-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "cuddly-app-9b0f7",
+    "storage_bucket": "cuddly-app-9b0f7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:753146010921:android:617ea17382a5aeb0682b38",
+        "android_client_info": {
+          "package_name": "com.cuddlyapp.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "753146010921-cpriuif7k6i903kg1ef9mpquvnbsrire.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cuddlyapp.mobile",
+            "certificate_hash": "03f94dfcc301896a66259dcd3b7c06b78c5802e8"
+          }
+        },
+        {
+          "client_id": "753146010921-rg0gia7nn8dfrq1vens5a146su3mkjs9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cuddlyapp.mobile",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyJpWSuE0SxozZTLyI8EWcJGhDIXDUELE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "753146010921-2evddv13bbqvco0vu54887r3sj4c6gig.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
