@@ -21,6 +21,10 @@ it('builds a local-date file name', () => {
   expect(exportFileName(new Date(2026, 8, 5, 23, 30))).toBe('cuddly-dados-2026-09-05.json');
 });
 
+it('names the CSV file with a .csv extension', () => {
+  expect(exportFileName(new Date(2026, 8, 5), 'csv')).toBe('cuddly-dados-2026-09-05.csv');
+});
+
 it('refuses to export when the account has no family', async () => {
   mockGetDoc.mockResolvedValue({ exists: () => false, data: () => undefined });
 
@@ -47,7 +51,7 @@ it("exports every tracker collection, the baby profile and members of the caller
     return { docs: [] };
   });
 
-  await exportMyData(new Date(2026, 8, 30, 10, 0));
+  await exportMyData('json', new Date(2026, 8, 30, 10, 0));
 
   expect(mockSaveExportFile).toHaveBeenCalledTimes(1);
   const [fileName, contents] = mockSaveExportFile.mock.calls[0];
@@ -66,4 +70,18 @@ it("exports every tracker collection, the baby profile and members of the caller
   expect(exported).not.toHaveProperty('invites');
   // Every read stays inside the caller's own family.
   mockGetDocs.mock.calls.forEach(([ref]: [Ref]) => expect(ref.segments.slice(1, 3)).toEqual(['families', 'famA']));
+});
+
+it('exports the CSV as a .csv file', async () => {
+  mockGetDoc.mockResolvedValue({ exists: () => true, data: () => ({ familyId: 'famA' }) });
+  mockGetDocs.mockImplementation(async (ref: Ref) =>
+    lastSegment(ref) === 'diapers' ? { docs: [{ id: 'd1', data: () => ({ type: 'wet', at: new Date(2026, 9, 7, 9, 5).getTime() }) }] } : { docs: [] },
+  );
+
+  await exportMyData('csv', new Date(2026, 9, 7));
+
+  const [fileName, contents, format] = mockSaveExportFile.mock.calls[0];
+  expect(fileName).toBe('cuddly-dados-2026-10-07.csv');
+  expect(format).toBe('csv');
+  expect(contents).toContain('Fralda;07/10/2026 09:05;;;Xixi;');
 });

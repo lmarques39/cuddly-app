@@ -108,8 +108,19 @@ it('exports the data when the export button is pressed', async () => {
     fireEvent.press(screen.getByRole('button', { name: 'Exportar dados (JSON)' }));
   });
 
-  expect(mockExportMyData).toHaveBeenCalledTimes(1);
+  expect(mockExportMyData).toHaveBeenCalledWith('json');
   expect(screen.getByRole('button', { name: 'Exportar dados (JSON)' })).toBeTruthy(); // back to idle
+});
+
+it('exports the records as CSV from its own button', async () => {
+  mockExportMyData.mockResolvedValue();
+  await render(<PrivacidadeScreen />);
+
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: 'Exportar registos (CSV)' }));
+  });
+
+  expect(mockExportMyData).toHaveBeenCalledWith('csv');
 });
 
 it('shows the error when the export fails', async () => {

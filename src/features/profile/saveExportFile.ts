@@ -7,7 +7,12 @@ import * as Sharing from 'expo-sharing';
  * The web version lives in saveExportFile.web.ts — expo-file-system doesn't
  * run on web, and expo-sharing can't share local files there.
  */
-export async function saveExportFile(fileName: string, contents: string): Promise<void> {
+const FILE_TYPE = {
+  json: { mimeType: 'application/json', UTI: 'public.json' },
+  csv: { mimeType: 'text/csv', UTI: 'public.comma-separated-values-text' },
+} as const;
+
+export async function saveExportFile(fileName: string, contents: string, format: keyof typeof FILE_TYPE): Promise<void> {
   const file = new File(Paths.cache, fileName);
   file.create({ overwrite: true });
   file.write(contents);
@@ -15,5 +20,5 @@ export async function saveExportFile(fileName: string, contents: string): Promis
   if (!(await Sharing.isAvailableAsync())) {
     throw new Error('A partilha de ficheiros não está disponível neste dispositivo.');
   }
-  await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Exportar os meus dados', UTI: 'public.json' });
+  await Sharing.shareAsync(file.uri, { ...FILE_TYPE[format], dialogTitle: 'Exportar os meus dados' });
 }

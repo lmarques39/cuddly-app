@@ -7,25 +7,25 @@ import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
 import { confirmDestructive } from '../../utils/confirm';
 import { useCuidadores } from '../caregivers/useCuidadores';
 import { AccountDeletionError, deleteMyAccount, usesPassword } from './deleteAccount';
-import { exportMyData } from './exportData';
+import { ExportFormat, exportMyData } from './exportData';
 
 /**
  * Data export (#67) and immediate account deletion (#68, #69). The static
  * Figma privacy-policy text is still a separate, unbuilt piece of this screen.
  */
 export function PrivacidadeScreen() {
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const exportData = async () => {
-    setExporting(true);
+  const exportData = async (format: ExportFormat) => {
+    setExporting(format);
     setExportError(null);
     try {
-      await exportMyData();
+      await exportMyData(format);
     } catch (e) {
       setExportError(e instanceof Error ? e.message : 'Não foi possível exportar os dados.');
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   };
 
@@ -78,17 +78,27 @@ export function PrivacidadeScreen() {
       <View style={styles.section}>
         <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>Exportar os meus dados</Text>
         <Text style={type.caption}>
-          Descarrega uma cópia de todos os registos, do perfil do bebé e dos cuidadores da família, num ficheiro JSON.
+          Descarrega uma cópia de todos os registos, do perfil do bebé e dos cuidadores da família, num ficheiro JSON — ou só os
+          registos numa tabela (CSV) para abrir no Excel ou no Google Sheets.
         </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: exporting, busy: exporting }}
-          disabled={exporting}
-          onPress={exportData}
-          style={styles.exportButton}
-        >
-          {exporting ? <ActivityIndicator color={colors.primaryInk} /> : <Text style={styles.exportLabel}>Exportar dados (JSON)</Text>}
-        </Pressable>
+        {(
+          [
+            { format: 'json', label: 'Exportar dados (JSON)' },
+            { format: 'csv', label: 'Exportar registos (CSV)' },
+          ] as const
+        ).map(({ format, label }) => (
+          <Pressable
+            key={format}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: exporting != null, busy: exporting === format }}
+            disabled={exporting != null}
+            onPress={() => exportData(format)}
+            style={styles.exportButton}
+          >
+            {exporting === format ? <ActivityIndicator color={colors.primaryInk} /> : <Text style={styles.exportLabel}>{label}</Text>}
+          </Pressable>
+        ))}
         {exportError && <Text style={styles.error}>{exportError}</Text>}
       </View>
 
