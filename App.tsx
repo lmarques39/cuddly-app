@@ -23,14 +23,17 @@ import { RecoverPasswordScreen } from './src/features/auth/RecoverPasswordScreen
 import { ParentInfo, RegisterParentScreen } from './src/features/auth/RegisterParentScreen';
 import { acceptInvite, getPendingInvitesForEmail, PendingInvite } from './src/features/caregivers/acceptInvite';
 import { ActiveSessionsProvider } from './src/features/activeSessions/ActiveSessionsProvider';
+import { setUpSessionNotifications } from './src/features/activeSessions/sessionNotification';
 import { AcceptInviteScreen } from './src/features/caregivers/AcceptInviteScreen';
 import { createFamilyForUser } from './src/features/family/createFamily';
 import { resolveOnboardingStep } from './src/features/family/resolveOnboarding';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
 import { CurrentMemberProvider } from './src/features/profile/useCurrentMember';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { initNotifications } from './src/notifications/setup';
 import { auth } from './src/services/firebase';
 import { migrateLocalDataToFirestore } from './src/storage/migrate';
+import { flushOutbox, watchConnectivity } from './src/storage/sync';
 import { clearAllLocalData } from './src/storage/storage';
 import { colors } from './src/theme/tokens';
 
@@ -108,6 +111,14 @@ export default function App() {
   const { save: saveBabyProfile } = useBabyProfile();
 
   useEffect(() => {
+    // Foreground display rules + Android channels/buttons — reminders (#14)
+    // and running timers (#101) both need these before posting anything.
+    initNotifications()
+      .then(setUpSessionNotifications)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     // Only the very first callback (app boot) should auto-skip Login for an
     // already-signed-in user — later callbacks are driven by the handlers
     // below (e.g. sign-up must still visit RegisterParent, not jump to app).
@@ -129,6 +140,14 @@ export default function App() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    // Replays writes queued while offline (#56) — on entering the app and
+    // every time the connection comes back (#107).
+    if (authStep !== 'app' || !user) return;
+    flushOutbox();
+    return watchConnectivity();
+  }, [authStep, user]);
 
   useEffect(() => {
     // One-time push of pre-existing local data into this account's family —
