@@ -87,6 +87,9 @@
 
   .download-card { max-width: 480px; margin: 0 auto; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
   .download-card .btn { margin-top: 16px; }
+  .install-steps { text-align: left; margin: 24px 0 0; padding-left: 20px; color: var(--ink-secondary); font-size: 14.5px; }
+  .install-steps li { margin-bottom: 8px; }
+  .install-steps code { background: var(--surface-sunken); padding: 1px 6px; border-radius: 6px; }
 
   footer.site { padding: 40px 0; border-top: 1px solid var(--border); }
   footer.site .wrap { display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
@@ -240,8 +243,13 @@
   <div class="wrap">
     <div class="download-card">
       <h2>Download</h2>
-      <p>A versão 2.0 para Android vai estar disponível como APK na página de releases do GitHub. Basta descarregar e instalar — é preciso autorizar a instalação de apps fora da Play Store.</p>
-      <a class="btn btn-primary" href="https://github.com/lmarques39/cuddly-app/releases">Ver releases no GitHub</a>
+      <p>Cuddly 2.0 para Android, como APK. Não está na Play Store, por isso o telemóvel pede autorização para instalar.</p>
+      <a class="btn btn-primary" href="https://github.com/lmarques39/cuddly-app/releases/latest">Descarregar o APK</a>
+      <ol class="install-steps">
+        <li>No telemóvel Android, abre o link e descarrega o ficheiro <code>cuddly-2.0.0.apk</code>.</li>
+        <li>Abre o ficheiro. Se o Android avisar, toca em <strong>Definições</strong> e ativa <strong>Permitir desta fonte</strong> para o browser ou para a app de ficheiros.</li>
+        <li>Volta atrás e toca em <strong>Instalar</strong>. Se já tinhas uma versão anterior, é atualizada sem perder dados.</li>
+      </ol>
     </div>
   </div>
 </section>
