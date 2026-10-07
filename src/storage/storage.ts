@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
   babyProfile: '@cuddly/baby-profile',
   sono: '@cuddly/sono',
   pumping: '@cuddly/pumping',
+  foods: '@cuddly/foods',
   // Offline cache of families/{familyId}/activeSessions (#97) — a running
   // timer must still show after a cold start without network.
   activeSessions: '@cuddly/active-sessions',
@@ -95,6 +96,7 @@ export async function clearAllLocalData(): Promise<void> {
     saveList(STORAGE_KEYS.appointments, []),
     saveList(STORAGE_KEYS.sono, []),
     saveList(STORAGE_KEYS.pumping, []),
+    saveList(STORAGE_KEYS.foods, []),
     saveList(STORAGE_KEYS.activeSessions, []),
   ]);
 }

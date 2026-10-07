@@ -7,7 +7,7 @@ import { loadList, makeId, saveList } from './storage';
 // account deletion (#69) removes and the JSON export (#67) includes.
 // activeSessions holds running timers (#97), not finished entries, but it's
 // family data all the same.
-export const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments', 'sono', 'pumping', 'activeSessions'];
+export const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', 'diapers', 'appointments', 'sono', 'pumping', 'foods', 'activeSessions'];
 
 /**
  * Firestore sync: entry-per-document under families/{familyId}/{collectionName}/{entryId},

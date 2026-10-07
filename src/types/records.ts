@@ -57,6 +57,20 @@ export type DiaperEntry = {
   note?: string;
 };
 
+export type FoodReaction = 'nenhuma' | 'ligeira' | 'forte';
+
+// One food tried for the first time during introdução alimentar (#11) —
+// the point is spotting which food caused a reaction, so it's one entry
+// per food introduced, not a meal log.
+export type FoodEntry = {
+  id: string;
+  food: string; // e.g. "Cenoura"
+  introducedAt: number; // epoch ms
+  preparation?: string; // e.g. puré, papa, pedaços
+  reaction: FoodReaction;
+  reactionNotes?: string;
+};
+
 export type AppointmentType =
   | 'obstetricia'
   | 'ecografia'

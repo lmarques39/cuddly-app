@@ -24,6 +24,7 @@ it('puts every tracker in one table, oldest first, with its own detail', () => {
     bottle: [{ id: 'bo1', amountMl: 90, type: 'formula', at: at(7, 9, 0) }],
     diapers: [{ id: 'd1', type: 'both', at: at(7, 9, 5), note: 'muda de fralda' }],
     appointments: [{ id: 'a1', title: 'Pediatria', location: 'Centro de Saúde', scheduledAt: at(9, 10, 0), notes: 'levar boletim' }],
+    foods: [{ id: 'f1', food: 'Cenoura', preparation: 'puré', introducedAt: at(8, 12, 0), reaction: 'ligeira', reactionNotes: 'manchas na cara' }],
     contractions: [{ id: 'c1', startedAt: at(5, 10, 0), endedAt: at(5, 10, 0) + 45_000 }],
   });
 
@@ -34,6 +35,7 @@ it('puts every tracker in one table, oldest first, with its own detail', () => {
     'Extração;07/10/2026 08:00;07/10/2026 08:20;20,0;120 ml;',
     'Biberão;07/10/2026 09:00;;;90 ml · Fórmula;',
     'Fralda;07/10/2026 09:05;;;Ambos;muda de fralda',
+    'Alimento novo;08/10/2026 12:00;;;Cenoura · puré · Reação ligeira;manchas na cara',
     'Consulta;09/10/2026 10:00;;;Pediatria · Centro de Saúde;levar boletim',
   ]);
 });

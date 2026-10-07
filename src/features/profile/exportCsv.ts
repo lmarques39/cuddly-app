@@ -6,6 +6,8 @@ import {
   ContractionEntry,
   DiaperEntry,
   DiaperType,
+  FoodEntry,
+  FoodReaction,
   PumpingEntry,
   SonoEntry,
 } from '../../types/records';
@@ -13,6 +15,7 @@ import {
 const HEADER = ['Tipo', 'Início', 'Fim', 'Duração (min)', 'Detalhe', 'Observações'];
 
 const DIAPER_LABEL: Record<DiaperType, string> = { wet: 'Xixi', dirty: 'Cocó', both: 'Ambos' };
+const REACTION_LABEL: Record<FoodReaction, string> = { nenhuma: 'Sem reação', ligeira: 'Reação ligeira', forte: 'Reação forte' };
 const BOTTLE_LABEL: Record<BottleType, string> = { breastmilk: 'Leite materno', formula: 'Fórmula', mixed: 'Misto' };
 
 type Row = { at: number; cells: [string, number, number | null, string, string] };
@@ -63,6 +66,16 @@ export function familyDataToCsv(data: Record<string, unknown>): string {
     ...list<DiaperEntry>(data, 'diapers').map((e) => ({
       at: e.at,
       cells: ['Fralda', e.at, null, DIAPER_LABEL[e.type] ?? e.type, e.note ?? ''] as Row['cells'],
+    })),
+    ...list<FoodEntry>(data, 'foods').map((e) => ({
+      at: e.introducedAt,
+      cells: [
+        'Alimento novo',
+        e.introducedAt,
+        null,
+        [e.food, e.preparation, REACTION_LABEL[e.reaction] ?? e.reaction].filter(Boolean).join(' · '),
+        e.reactionNotes ?? '',
+      ] as Row['cells'],
     })),
     ...list<Appointment>(data, 'appointments').map((e) => ({
       at: e.scheduledAt,
