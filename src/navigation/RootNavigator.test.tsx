@@ -1,8 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDoc } from 'firebase/firestore';
 import { NavigationContainer } from '@react-navigation/native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { auth } from '../services/firebase';
+import { STORAGE_KEYS } from '../storage/storage';
 import { CurrentMemberProvider } from '../features/profile/useCurrentMember';
 import { ActiveSessionsWrapper } from '../testUtils/ActiveSessionsWrapper';
 import { RootNavigator } from './RootNavigator';
@@ -108,4 +110,31 @@ it('shows a running timer on every tab, and tapping it goes back to the timer (#
     fireEvent.press(chip);
   });
   expect(await screen.findByRole('button', { name: 'Parar contração' })).toBeTruthy();
+});
+
+it('opens Introdução alimentar from the Registar hub in Pós-parto mode (#105)', async () => {
+  await AsyncStorage.setItem(STORAGE_KEYS.babyProfile, JSON.stringify({ birthDate: Date.now() - 200 * 24 * 60 * 60 * 1000 }));
+  await renderApp();
+
+  await act(async () => {
+    fireEvent.press(screen.getByText('Registar'));
+  });
+  await act(async () => {
+    fireEvent.press(await screen.findByText('Alimento novo'));
+  });
+
+  expect(await screen.findByText('Introdução alimentar')).toBeTruthy();
+  await AsyncStorage.clear();
+});
+
+it('hides Introdução alimentar from the Registar hub during pregnancy', async () => {
+  await AsyncStorage.clear();
+  await renderApp();
+
+  await act(async () => {
+    fireEvent.press(screen.getByText('Registar'));
+  });
+
+  expect(await screen.findByText('Marcar consulta')).toBeTruthy();
+  expect(screen.queryByText('Alimento novo')).toBeNull();
 });

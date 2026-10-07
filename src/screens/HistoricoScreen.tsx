@@ -6,18 +6,23 @@ import { useBottle } from '../features/bottle/useBottle';
 import { useBreastfeeding } from '../features/breastfeeding/useBreastfeeding';
 import { useContractions } from '../features/contractions/useContractions';
 import { useDiapers } from '../features/diapers/useDiapers';
+import { useFoods } from '../features/foods/useFoods';
 import { colors, fontFamily, radii, spacing, type } from '../theme/tokens';
 import { formatClock, formatDuration } from '../utils/time';
 import { useNow } from '../utils/useNow';
 
-type Kind = 'contraction' | 'breastfeeding' | 'bottle' | 'diaper';
-type TimelineItem = { id: string; kind: Kind; label: string; detail: string; at: number };
+type Kind = 'contraction' | 'breastfeeding' | 'bottle' | 'diaper' | 'food';
+// allDay: only the day is known (a food tried "today"), so no clock time is shown.
+type TimelineItem = { id: string; kind: Kind; label: string; detail: string; at: number; allDay?: boolean };
+
+const REACTION_DETAIL = { nenhuma: 'sem reação', ligeira: 'reação ligeira', forte: 'reação forte' } as const;
 
 const KIND_LABEL: Record<Kind, string> = {
   contraction: 'Contração',
   breastfeeding: 'Amamentação',
   bottle: 'Biberão',
   diaper: 'Fralda',
+  food: 'Alimento novo',
 };
 
 const KIND_COLOR: Record<Kind, string> = {
@@ -25,6 +30,7 @@ const KIND_COLOR: Record<Kind, string> = {
   breastfeeding: colors.domain.breastfeeding.bg,
   bottle: colors.domain.bottle.bg,
   diaper: colors.domain.diapers.bg,
+  food: colors.domain.foods.bg,
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -55,6 +61,7 @@ export function HistoricoScreen() {
   const { entries: breastfeeding } = useBreastfeeding();
   const { entries: bottle } = useBottle();
   const { entries: diapers } = useDiapers();
+  const { entries: foods } = useFoods();
 
   // Each of these hooks already stays live via its own Firestore
   // subscription — no refetch-on-focus needed, just derive the view.
@@ -88,9 +95,17 @@ export function HistoricoScreen() {
         detail: e.type === 'wet' ? 'Xixi' : e.type === 'dirty' ? 'Cocó' : 'Ambos',
         at: e.at,
       })),
+      ...foods.map((e) => ({
+        id: e.id,
+        kind: 'food' as const,
+        label: `Alimento novo · ${e.food}`,
+        detail: [e.preparation?.toLowerCase(), REACTION_DETAIL[e.reaction] ?? e.reaction].filter(Boolean).join(' · '),
+        at: e.introducedAt,
+        allDay: true,
+      })),
     ];
     return merged.sort((a, b) => b.at - a.at);
-  }, [contractions, breastfeeding, bottle, diapers]);
+  }, [contractions, breastfeeding, bottle, diapers, foods]);
 
   const filtered = useMemo(() => (filter === 'todos' ? items : items.filter((i) => i.kind === filter)), [items, filter]);
 
@@ -112,7 +127,7 @@ export function HistoricoScreen() {
 
   const last7Days = useMemo(() => items.filter((i) => now - i.at <= SEVEN_DAYS_MS), [items, now]);
   const totals = useMemo(() => {
-    const counts: Record<Kind, number> = { contraction: 0, breastfeeding: 0, bottle: 0, diaper: 0 };
+    const counts: Record<Kind, number> = { contraction: 0, breastfeeding: 0, bottle: 0, diaper: 0, food: 0 };
     last7Days.forEach((i) => {
       counts[i.kind] += 1;
     });
@@ -159,7 +174,7 @@ export function HistoricoScreen() {
       {view === 'linha' ? (
         <>
           <View style={styles.filterRow}>
-            {(['todos', 'contraction', 'breastfeeding', 'bottle', 'diaper'] as const).map((f) => (
+            {(['todos', 'contraction', 'breastfeeding', 'bottle', 'diaper', 'food'] as const).map((f) => (
               <Pressable
                 key={f}
                 onPress={() => setFilter(f)}
@@ -188,7 +203,7 @@ export function HistoricoScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={type.body}>{item.label}</Text>
                   <Text style={type.caption}>
-                    {formatClock(item.at)} · {item.detail}
+                    {item.allDay ? item.detail : `${formatClock(item.at)} · ${item.detail}`}
                   </Text>
                 </View>
               </Card>

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { STORAGE_KEYS } from '../storage/storage';
-import { ContractionEntry, DiaperEntry } from '../types/records';
+import { ContractionEntry, DiaperEntry, FoodEntry } from '../types/records';
 import { HistoricoScreen } from './HistoricoScreen';
 import { ActiveSessionsWrapper } from '../testUtils/ActiveSessionsWrapper';
 
@@ -33,6 +33,21 @@ describe('HistoricoScreen', () => {
     expect(screen.getByText('Ontem, 23/09')).toBeTruthy();
     expect(screen.getAllByText('Contração').length).toBeGreaterThan(0); // also a filter chip label
     expect(screen.getAllByText('Fralda').length).toBeGreaterThan(0); // also a filter chip label
+
+    jest.restoreAllMocks();
+  });
+
+  it('shows new foods on the timeline with their reaction, without a clock time', async () => {
+    const now = new Date(2026, 9, 7, 15, 0, 0).getTime();
+    jest.spyOn(Date, 'now').mockReturnValue(now);
+
+    const egg: FoodEntry = { id: 'f1', food: 'Ovo', introducedAt: new Date(2026, 9, 7, 12, 0).getTime(), preparation: 'Puré', reaction: 'forte' };
+    await AsyncStorage.setItem(STORAGE_KEYS.foods, JSON.stringify([egg]));
+
+    await render(<HistoricoScreen />, { wrapper: ActiveSessionsWrapper });
+
+    expect(await screen.findByText('Alimento novo · Ovo')).toBeTruthy();
+    expect(screen.getByText('puré · reação forte')).toBeTruthy();
 
     jest.restoreAllMocks();
   });
