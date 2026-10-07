@@ -11,6 +11,21 @@ const RECENT_LOGIN_MS = 5 * 60 * 1000;
 /** A deletion that was refused before anything was deleted — the message is meant for the user. */
 export class AccountDeletionError extends Error {}
 
+const AUTH_DELETE_FAILED =
+  'Os teus dados foram apagados, mas a conta não. Entra outra vez e repete "Eliminar conta" em Privacidade e dados.';
+
+// When deleteUser() fails, Firebase may sign the user out on its own, which
+// unmounts the Privacidade screen before it can show the error (#91). The
+// login screen picks the message up from here instead.
+let pendingNotice: string | null = null;
+
+/** The deletion failure to show on the login screen, if any — returned once. */
+export function takeAccountDeletionNotice(): string | null {
+  const notice = pendingNotice;
+  pendingNotice = null;
+  return notice;
+}
+
 export function usesPassword(user: User): boolean {
   return user.providerData.some((p) => p.providerId === 'password');
 }
@@ -83,5 +98,13 @@ export async function deleteMyAccount(password?: string): Promise<void> {
   resetFamilyIdCache();
 
   // Signs the user out too — App.tsx's onAuthStateChanged takes it from here.
-  await deleteUser(user);
+  try {
+    // A fresh token first: the Firestore work above can take long enough for
+    // the one from the re-authentication to need refreshing mid-request.
+    await user.getIdToken(true);
+    await deleteUser(user);
+  } catch {
+    pendingNotice = AUTH_DELETE_FAILED;
+    throw new AccountDeletionError(AUTH_DELETE_FAILED);
+  }
 }

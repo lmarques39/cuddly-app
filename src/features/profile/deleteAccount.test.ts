@@ -4,7 +4,7 @@ import { deleteDoc, getDoc, getDocs } from 'firebase/firestore';
 import { auth } from '../../services/firebase';
 import { loadList, STORAGE_KEYS } from '../../storage/storage';
 import { TRACKER_COLLECTIONS } from '../../storage/sync';
-import { AccountDeletionError, deleteMyAccount } from './deleteAccount';
+import { AccountDeletionError, deleteMyAccount, takeAccountDeletionNotice } from './deleteAccount';
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockGetDocs = getDocs as jest.Mock;
@@ -22,6 +22,7 @@ function signInAs(providerId: 'password' | 'google.com', authTime = new Date().t
       email: 'alice@x.com',
       providerData: [{ providerId }],
       getIdTokenResult: jest.fn(async () => ({ authTime })),
+      getIdToken: jest.fn(async () => 'fresh-token'),
     },
   });
 }
@@ -119,4 +120,25 @@ it('deletes a Google account with a fresh login without asking for a password', 
 
   expect(mockReauth).not.toHaveBeenCalled();
   expect(mockDeleteUser).toHaveBeenCalledTimes(1);
+});
+
+it("leaves a notice for the login screen when the Auth account itself can't be deleted (#91)", async () => {
+  signInAs('password');
+  familyWithMembers(['alice']);
+  mockDeleteUser.mockRejectedValueOnce(Object.assign(new Error('boom'), { code: 'auth/user-token-expired' }));
+
+  await expect(deleteMyAccount('segredo')).rejects.toThrow(AccountDeletionError);
+
+  expect(takeAccountDeletionNotice()).toMatch(/a conta não/);
+  expect(takeAccountDeletionNotice()).toBeNull(); // shown once
+});
+
+it('refreshes the token right before deleting the Auth account', async () => {
+  signInAs('password');
+  familyWithMembers(['alice']);
+
+  await deleteMyAccount('segredo');
+
+  expect(auth.currentUser!.getIdToken).toHaveBeenCalledWith(true);
+  expect(takeAccountDeletionNotice()).toBeNull();
 });

@@ -50,7 +50,8 @@ export function PrivacidadeScreen() {
       'Eliminar conta',
       otherMembers > 0
         ? 'A tua conta é eliminada já e sais da família. Os registos do bebé ficam com os outros cuidadores. Não é possível desfazer.'
-        : 'A tua conta e todos os dados da família são eliminados já. Não é possível desfazer.'
+        : 'A tua conta e todos os dados da família são eliminados já. Não é possível desfazer.',
+      'Eliminar'
     );
     if (!confirmed) return;
 

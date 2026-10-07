@@ -28,6 +28,7 @@ import { AcceptInviteScreen } from './src/features/caregivers/AcceptInviteScreen
 import { createFamilyForUser } from './src/features/family/createFamily';
 import { resolveOnboardingStep } from './src/features/family/resolveOnboarding';
 import { useBabyProfile } from './src/features/profile/useBabyProfile';
+import { takeAccountDeletionNotice } from './src/features/profile/deleteAccount';
 import { CurrentMemberProvider } from './src/features/profile/useCurrentMember';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { initNotifications } from './src/notifications/setup';
@@ -135,7 +136,9 @@ export default function App() {
         }
         setAuthChecked(true);
       } else if (!nextUser) {
-        // signed out from within the app (Perfil > Terminar sessão)
+        // signed out from within the app (Perfil > Terminar sessão, or an
+        // account deletion — which leaves a notice here if it half-failed)
+        setAuthError(takeAccountDeletionNotice());
         setAuthStep('login');
       }
     });
