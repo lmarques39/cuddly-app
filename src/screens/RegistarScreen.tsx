@@ -67,6 +67,13 @@ export function RegistarScreen() {
               foreground={colors.domain.pumping.ink}
               onPress={() => navigation.navigate('Pumping')}
             />
+            <BigButton
+              style={styles.gridItem}
+              label="Alimento novo"
+              background={colors.domain.foods.bg}
+              foreground={colors.domain.foods.ink}
+              onPress={() => navigation.navigate('IntroducaoAlimentar')}
+            />
           </>
         )}
         <BigButton
