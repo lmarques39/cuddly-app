@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PasswordField } from '../../components/PasswordField';
 import { auth } from '../../services/firebase';
@@ -9,9 +9,13 @@ import { useCuidadores } from '../caregivers/useCuidadores';
 import { AccountDeletionError, deleteMyAccount, usesPassword } from './deleteAccount';
 import { ExportFormat, exportMyData } from './exportData';
 
+// Public pages in docs/ (#92) — served once GitHub Pages is switched on for the repo.
+export const PRIVACY_POLICY_URL = 'https://lmarques39.github.io/cuddly-app/privacidade.html';
+
 /**
- * Data export (#67) and immediate account deletion (#68, #69). The static
- * Figma privacy-policy text is still a separate, unbuilt piece of this screen.
+ * Data export (#67) and immediate account deletion (#68, #69). The full
+ * privacy policy lives on the website (#92) rather than inside the app, so
+ * there's one copy to keep up to date.
  */
 export function PrivacidadeScreen() {
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
@@ -75,6 +79,9 @@ export function PrivacidadeScreen() {
       <Text style={[type.body, { color: colors.inkSecondary }]}>
         Os dados da app (registos, perfil do bebé, cuidadores) ficam guardados só para a tua família, na tua conta.
       </Text>
+      <Pressable accessibilityRole="link" onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={8}>
+        <Text style={styles.policyLink}>Ler a política de privacidade</Text>
+      </Pressable>
 
       <View style={styles.section}>
         <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>Exportar os meus dados</Text>
@@ -162,6 +169,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: spacing.xs,
   },
+  policyLink: { fontFamily: fontFamily.bodyBold, fontSize: 13.5, color: colors.primary, textDecorationLine: 'underline' },
   exportLabel: { fontFamily: fontFamily.bodyBold, fontSize: 14.5, color: colors.primaryInk },
   error: { fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: colors.coral },
   dangerZone: {

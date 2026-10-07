@@ -1,11 +1,12 @@
 import { getDoc, onSnapshot } from 'firebase/firestore';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 import React from 'react';
 import { auth } from '../../services/firebase';
 import { confirmDestructive } from '../../utils/confirm';
 import { AccountDeletionError, deleteMyAccount } from './deleteAccount';
 import { exportMyData } from './exportData';
-import { PrivacidadeScreen } from './PrivacidadeScreen';
+import { PRIVACY_POLICY_URL, PrivacidadeScreen } from './PrivacidadeScreen';
 
 jest.mock('../../utils/confirm');
 jest.mock('./exportData');
@@ -132,4 +133,17 @@ it('shows the error when the export fails', async () => {
   });
 
   expect(screen.getByText('Não foi encontrada nenhuma família nesta conta.')).toBeTruthy();
+});
+
+it('opens the full privacy policy on the website (#92)', async () => {
+  const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+  await render(<PrivacidadeScreen />);
+
+  await act(async () => {
+    fireEvent.press(screen.getByRole('link', { name: 'Ler a política de privacidade' }));
+  });
+
+  expect(openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
+  expect(PRIVACY_POLICY_URL).toMatch(/privacidade\.html$/);
+  openURL.mockRestore();
 });

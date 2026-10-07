@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Política de privacidade — Cuddly</title>
+<meta name="description" content="Que dados a app Cuddly guarda, onde ficam, quem os vê e como os exportar ou eliminar." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Karla:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="wordmark" href="index.html">Cuddly<span>.</span></a>
+    <nav class="site">
+      <a href="index.html">Início</a>
+      <a href="eliminar-conta.html">Eliminar conta</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap legal">
+  <h1>Política de privacidade</h1>
+  <p class="updated">Última atualização: 7 de outubro de 2026</p>
+
+  <p class="summary">
+    <strong>Em resumo:</strong> guardamos só o que precisas de registar para acompanhar a gravidez e o bebé.
+    Esses dados são vistos apenas por ti e pelos cuidadores que convidares para a tua família. Não vendemos
+    dados, não mostramos publicidade e não usamos ferramentas de análise ou rastreio. Podes exportar ou
+    eliminar tudo a qualquer momento, a partir da própria app.
+  </p>
+
+  <h2>1. Quem somos</h2>
+  <p>
+    O Cuddly é uma app open-source desenvolvida como projeto académico (IEFP, UC00507 — Conceber páginas web
+    dinâmicas) por Luís, Sara, Eliseu e Beatriz. O código está disponível em
+    <a href="https://github.com/lmarques39/cuddly-app">github.com/lmarques39/cuddly-app</a>.
+    Para qualquer questão sobre privacidade: <span class="contact">[email do projeto — por definir]</span>.
+  </p>
+
+  <h2>2. Que dados guardamos</h2>
+  <table>
+    <thead><tr><th>Dados</th><th>Para quê</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Conta:</strong> email e password (ou, se entrares com Google, o nome e o email dessa conta)</td>
+        <td>Iniciar sessão. A password nunca chega até nós: é gerida pelo Firebase Authentication.</td>
+      </tr>
+      <tr>
+        <td><strong>Perfil:</strong> nome, papel na família (mãe, pai, cuidador) e telemóvel, se o indicares (opcional)</td>
+        <td>Mostrar quem fez cada registo e identificar os membros da família.</td>
+      </tr>
+      <tr>
+        <td><strong>Bebé:</strong> nome ou alcunha (opcional), data prevista do parto ou data de nascimento, sexo (opcional), peso e altura se os preencheres</td>
+        <td>Adaptar a app à fase (gravidez ou pós-parto) e calcular semanas e idade.</td>
+      </tr>
+      <tr>
+        <td><strong>Registos:</strong> contrações, amamentação, biberão, fraldas, sono, extração de leite, alimentos introduzidos e eventuais reações, consultas médicas e as notas que escreveres</td>
+        <td>É a função da app: registar e consultar o histórico.</td>
+      </tr>
+      <tr>
+        <td><strong>Convites:</strong> o email da pessoa que convidas como cuidador</td>
+        <td>Permitir que essa pessoa entre na tua família.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Alguns destes registos (gravidez, consultas, reações a alimentos) podem revelar informação de saúde.
+    Tratamo-los com esse cuidado: ficam acessíveis apenas à tua família e nunca são usados para outro fim.
+  </p>
+  <p><strong>O que não recolhemos:</strong> localização, contactos, fotografias, identificadores de publicidade nem estatísticas de utilização.</p>
+
+  <h2>3. Onde ficam os dados</h2>
+  <ul>
+    <li><strong>Registos, perfis e família:</strong> na base de dados Cloud Firestore (Google Firebase), em servidores da Google em Londres, Reino Unido (região <code>europe-west2</code>). O Reino Unido tem uma decisão de adequação da União Europeia em matéria de proteção de dados.</li>
+    <li><strong>Conta (email e credenciais):</strong> no Firebase Authentication, um serviço da Google que pode tratar estes dados fora da União Europeia, ao abrigo dos <a href="https://firebase.google.com/terms/data-processing-terms">termos de tratamento de dados da Google</a>.</li>
+    <li><strong>No teu telemóvel:</strong> uma cópia dos teus registos, para a app funcionar sem rede, e as tuas preferências de notificações (estas só existem no dispositivo). Os lembretes são notificações locais, criadas pelo próprio telemóvel: não enviamos notificações a partir de servidores.</li>
+  </ul>
+
+  <h2>4. Quem vê os teus dados</h2>
+  <ul>
+    <li><strong>Tu e os cuidadores que convidares</strong> para a tua família. Cada família só tem acesso aos seus próprios dados, e isto é garantido pelas regras de segurança da base de dados, não apenas pela app.</li>
+    <li><strong>A Google (Firebase)</strong>, enquanto fornecedor que aloja e processa os dados por nossa conta. Não os usa para os seus próprios fins.</li>
+    <li><strong>Ninguém mais.</strong> Não vendemos, não partilhamos e não cedemos dados a terceiros, anunciantes ou empresas de análise.</li>
+  </ul>
+
+  <h2>5. Os teus direitos</h2>
+  <ul>
+    <li><strong>Ver e levar os teus dados:</strong> em <em>Perfil → Privacidade e dados → Exportar</em>, descarregas tudo num ficheiro JSON, ou só os registos numa tabela (CSV) para abrir no Excel ou no Google Sheets.</li>
+    <li><strong>Corrigir:</strong> podes editar ou apagar qualquer registo, o teu nome e os dados do bebé na própria app.</li>
+    <li><strong>Eliminar:</strong> em <em>Perfil → Privacidade e dados → Eliminar conta</em>. A eliminação é imediata. Os detalhes estão em <a href="eliminar-conta.html">Eliminar a conta</a>.</li>
+    <li><strong>Outros pedidos ou reclamações:</strong> escreve para <span class="contact">[email do projeto — por definir]</span>. Também podes apresentar reclamação à <a href="https://www.cnpd.pt">Comissão Nacional de Proteção de Dados (CNPD)</a>.</li>
+  </ul>
+
+  <h2>6. Durante quanto tempo guardamos os dados</h2>
+  <p>
+    Enquanto a tua conta existir. Quando a eliminas, os dados são apagados de imediato, sem período de espera:
+    se fores o único membro da família, é eliminada a família inteira (registos, perfil do bebé, convites);
+    se houver outros cuidadores, sais da família e os registos do bebé ficam com eles.
+  </p>
+
+  <h2>7. Dados sobre o bebé</h2>
+  <p>
+    A app destina-se a adultos (pais e cuidadores). Os dados sobre o bebé são introduzidos por eles, que são
+    responsáveis por esses dados e os podem corrigir ou eliminar a qualquer momento.
+  </p>
+
+  <h2>8. Aviso</h2>
+  <p>
+    O Cuddly é uma ferramenta de registo e não substitui aconselhamento médico profissional. Não faz
+    diagnósticos nem recomendações clínicas.
+  </p>
+
+  <h2>9. Alterações a esta política</h2>
+  <p>
+    Se esta política mudar, atualizamos a data no topo da página. O histórico completo das alterações fica
+    público no <a href="https://github.com/lmarques39/cuddly-app/commits/main/docs/privacidade.html">repositório</a>.
+  </p>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="links">
+      <a href="index.html">Início</a>
+      <a href="eliminar-conta.html">Eliminar conta</a>
+      <a href="https://github.com/lmarques39/cuddly-app">GitHub</a>
+    </div>
+    <p>Projeto académico, IEFP UC00507. Este texto não foi revisto por um jurista.</p>
+  </div>
+</footer>
+
+</body>
+</html>
