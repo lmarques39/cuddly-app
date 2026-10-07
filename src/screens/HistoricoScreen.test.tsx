@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { STORAGE_KEYS } from '../storage/storage';
-import { ContractionEntry, DiaperEntry, FoodEntry } from '../types/records';
+import { ContractionEntry, DiaperEntry, FoodEntry, PumpingEntry, SonoEntry } from '../types/records';
 import { HistoricoScreen } from './HistoricoScreen';
 import { ActiveSessionsWrapper } from '../testUtils/ActiveSessionsWrapper';
 
@@ -48,6 +48,34 @@ describe('HistoricoScreen', () => {
 
     expect(await screen.findByText('Alimento novo · Ovo')).toBeTruthy();
     expect(screen.getByText('puré · reação forte')).toBeTruthy();
+
+    jest.restoreAllMocks();
+  });
+
+  it('shows sleep and pumping sessions on the timeline, and lets you filter by them (#112)', async () => {
+    const now = new Date(2026, 9, 7, 15, 0, 0).getTime();
+    jest.spyOn(Date, 'now').mockReturnValue(now);
+
+    const nap: SonoEntry = { id: 's1', startedAt: new Date(2026, 9, 7, 13, 0).getTime(), endedAt: new Date(2026, 9, 7, 14, 30).getTime() };
+    const pump: PumpingEntry = {
+      id: 'p1',
+      startedAt: new Date(2026, 9, 7, 10, 0).getTime(),
+      endedAt: new Date(2026, 9, 7, 10, 20).getTime(),
+      amountMl: 120,
+    };
+    await AsyncStorage.setItem(STORAGE_KEYS.sono, JSON.stringify([nap]));
+    await AsyncStorage.setItem(STORAGE_KEYS.pumping, JSON.stringify([pump]));
+
+    await render(<HistoricoScreen />, { wrapper: ActiveSessionsWrapper });
+
+    expect(await screen.findByText('14:30 · 01:30:00')).toBeTruthy();
+    expect(screen.getByText('10:20 · 20:00 · 120ml')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(screen.getAllByText('Sono')[0]); // the filter chip comes before the timeline row
+    });
+    expect(screen.getByText('14:30 · 01:30:00')).toBeTruthy();
+    expect(screen.queryByText('10:20 · 20:00 · 120ml')).toBeNull();
 
     jest.restoreAllMocks();
   });

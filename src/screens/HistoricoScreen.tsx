@@ -7,11 +7,13 @@ import { useBreastfeeding } from '../features/breastfeeding/useBreastfeeding';
 import { useContractions } from '../features/contractions/useContractions';
 import { useDiapers } from '../features/diapers/useDiapers';
 import { useFoods } from '../features/foods/useFoods';
+import { usePumping } from '../features/pumping/usePumping';
+import { useSono } from '../features/sono/useSono';
 import { colors, fontFamily, radii, spacing, type } from '../theme/tokens';
 import { formatClock, formatDuration } from '../utils/time';
 import { useNow } from '../utils/useNow';
 
-type Kind = 'contraction' | 'breastfeeding' | 'bottle' | 'diaper' | 'food';
+type Kind = 'contraction' | 'breastfeeding' | 'sono' | 'pumping' | 'bottle' | 'diaper' | 'food';
 // allDay: only the day is known (a food tried "today"), so no clock time is shown.
 type TimelineItem = { id: string; kind: Kind; label: string; detail: string; at: number; allDay?: boolean };
 
@@ -20,6 +22,8 @@ const REACTION_DETAIL = { nenhuma: 'sem reação', ligeira: 'reação ligeira', 
 const KIND_LABEL: Record<Kind, string> = {
   contraction: 'Contração',
   breastfeeding: 'Amamentação',
+  sono: 'Sono',
+  pumping: 'Extração',
   bottle: 'Biberão',
   diaper: 'Fralda',
   food: 'Alimento novo',
@@ -28,6 +32,8 @@ const KIND_LABEL: Record<Kind, string> = {
 const KIND_COLOR: Record<Kind, string> = {
   contraction: colors.domain.contractions.bg,
   breastfeeding: colors.domain.breastfeeding.bg,
+  sono: colors.domain.sleep.bg,
+  pumping: colors.domain.pumping.bg,
   bottle: colors.domain.bottle.bg,
   diaper: colors.domain.diapers.bg,
   food: colors.domain.foods.bg,
@@ -62,6 +68,8 @@ export function HistoricoScreen() {
   const { entries: bottle } = useBottle();
   const { entries: diapers } = useDiapers();
   const { entries: foods } = useFoods();
+  const { entries: sono } = useSono();
+  const { entries: pumping } = usePumping();
 
   // Each of these hooks already stays live via its own Firestore
   // subscription — no refetch-on-focus needed, just derive the view.
@@ -79,6 +87,20 @@ export function HistoricoScreen() {
         kind: 'breastfeeding' as const,
         label: `Amamentação · ${e.side === 'left' ? 'esquerdo' : 'direito'}`,
         detail: formatDuration(e.endedAt - e.startedAt),
+        at: e.endedAt,
+      })),
+      ...sono.map((e) => ({
+        id: e.id,
+        kind: 'sono' as const,
+        label: 'Sono',
+        detail: formatDuration(e.endedAt - e.startedAt),
+        at: e.endedAt,
+      })),
+      ...pumping.map((e) => ({
+        id: e.id,
+        kind: 'pumping' as const,
+        label: 'Extração',
+        detail: `${formatDuration(e.endedAt - e.startedAt)} · ${e.amountMl}ml`,
         at: e.endedAt,
       })),
       ...bottle.map((e) => ({
@@ -105,7 +127,7 @@ export function HistoricoScreen() {
       })),
     ];
     return merged.sort((a, b) => b.at - a.at);
-  }, [contractions, breastfeeding, bottle, diapers, foods]);
+  }, [contractions, breastfeeding, sono, pumping, bottle, diapers, foods]);
 
   const filtered = useMemo(() => (filter === 'todos' ? items : items.filter((i) => i.kind === filter)), [items, filter]);
 
@@ -127,7 +149,7 @@ export function HistoricoScreen() {
 
   const last7Days = useMemo(() => items.filter((i) => now - i.at <= SEVEN_DAYS_MS), [items, now]);
   const totals = useMemo(() => {
-    const counts: Record<Kind, number> = { contraction: 0, breastfeeding: 0, bottle: 0, diaper: 0, food: 0 };
+    const counts: Record<Kind, number> = { contraction: 0, breastfeeding: 0, sono: 0, pumping: 0, bottle: 0, diaper: 0, food: 0 };
     last7Days.forEach((i) => {
       counts[i.kind] += 1;
     });
@@ -174,7 +196,7 @@ export function HistoricoScreen() {
       {view === 'linha' ? (
         <>
           <View style={styles.filterRow}>
-            {(['todos', 'contraction', 'breastfeeding', 'bottle', 'diaper', 'food'] as const).map((f) => (
+            {(['todos', 'contraction', 'breastfeeding', 'sono', 'pumping', 'bottle', 'diaper', 'food'] as const).map((f) => (
               <Pressable
                 key={f}
                 onPress={() => setFilter(f)}
