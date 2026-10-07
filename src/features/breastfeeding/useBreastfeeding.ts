@@ -3,6 +3,7 @@ import { addToList, isToday, loadList, makeId, removeFromList, replaceInList, sa
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { BreastfeedingEntry } from '../../types/records';
 import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
+import { saveFinishedSession } from '../activeSessions/finishSession';
 
 export function useBreastfeeding() {
   const [entries, setEntries] = useState<BreastfeedingEntry[]>([]);
@@ -33,9 +34,8 @@ export function useBreastfeeding() {
   const stop = useCallback(async () => {
     const finished = stopSession();
     if (!finished) return;
-    const entry: BreastfeedingEntry = { id: makeId(), side: finished.side ?? 'left', startedAt: finished.startedAt, endedAt: finished.endedAt };
-    addToList(STORAGE_KEYS.breastfeeding, entry).then(setEntries);
-    syncEntry('breastfeeding', entry.id, entry);
+    const { list } = await saveFinishedSession<BreastfeedingEntry>('breastfeeding', finished);
+    setEntries(list);
   }, [stopSession]);
 
   /** Logs a feed the timer never ran for. */

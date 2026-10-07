@@ -3,6 +3,7 @@ import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, S
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { ContractionEntry } from '../../types/records';
 import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
+import { saveFinishedSession } from '../activeSessions/finishSession';
 
 const FIVE_ONE_ONE_WINDOW_MS = 60 * 60 * 1000; // pattern must hold for the last hour
 const FIVE_ONE_ONE_MAX_INTERVAL_MS = 5 * 60 * 1000;
@@ -40,9 +41,8 @@ export function useContractions() {
   const stop = useCallback(async () => {
     const finished = stopSession();
     if (!finished) return;
-    const entry: ContractionEntry = { id: makeId(), startedAt: finished.startedAt, endedAt: finished.endedAt };
-    addToList(STORAGE_KEYS.contractions, entry).then(setEntries);
-    syncEntry('contractions', entry.id, entry);
+    const { list } = await saveFinishedSession<ContractionEntry>('contractions', finished);
+    setEntries(list);
   }, [stopSession]);
 
   /** Logs a contraction the timer never ran for. */

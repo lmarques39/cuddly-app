@@ -3,6 +3,7 @@ import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, S
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { SonoEntry } from '../../types/records';
 import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
+import { saveFinishedSession } from '../activeSessions/finishSession';
 
 export function useSono() {
   const [entries, setEntries] = useState<SonoEntry[]>([]);
@@ -35,9 +36,8 @@ export function useSono() {
   const stop = useCallback(async () => {
     const finished = stopSession();
     if (!finished) return;
-    const entry: SonoEntry = { id: makeId(), startedAt: finished.startedAt, endedAt: finished.endedAt };
-    addToList(STORAGE_KEYS.sono, entry).then(setEntries);
-    syncEntry('sono', entry.id, entry);
+    const { list } = await saveFinishedSession<SonoEntry>('sono', finished);
+    setEntries(list);
   }, [stopSession]);
 
   /** Logs a sleep the timer never ran for (e.g. noticed only after waking up). */

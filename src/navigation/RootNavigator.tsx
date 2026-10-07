@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { View } from 'react-native';
 import { ActiveSessionsBar } from '../features/activeSessions/ActiveSessionsBar';
+import { useSessionNotificationTaps } from '../features/activeSessions/sessionNotification';
 import { AppointmentsScreen } from '../features/appointments/AppointmentsScreen';
 import { BottleScreen } from '../features/bottle/BottleScreen';
 import { BreastfeedingScreen } from '../features/breastfeeding/BreastfeedingScreen';
@@ -111,13 +112,13 @@ function TabBarWithActiveSessions(props: BottomTabBarProps) {
   const nested = focusedTab.state;
   const focusedScreen = focusedTab.name === 'Registar' && nested?.index != null ? nested.routes[nested.index]?.name : null;
   const hideKind = (Object.keys(SESSION_ROUTE) as ActiveSessionKind[]).find((kind) => SESSION_ROUTE[kind] === focusedScreen) ?? null;
+  const openSession = (kind: ActiveSessionKind) => props.navigation.navigate('Registar', { screen: SESSION_ROUTE[kind] });
+  // "Ver" on the Android notification (#101) lands in the same place as the bar.
+  useSessionNotificationTaps(openSession);
 
   return (
     <View>
-      <ActiveSessionsBar
-        hideKind={hideKind}
-        onOpen={(kind) => props.navigation.navigate('Registar', { screen: SESSION_ROUTE[kind] })}
-      />
+      <ActiveSessionsBar hideKind={hideKind} onOpen={openSession} />
       <BottomTabBar {...props} />
     </View>
   );

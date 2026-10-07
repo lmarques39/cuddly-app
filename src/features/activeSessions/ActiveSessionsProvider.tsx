@@ -3,8 +3,12 @@ import { auth } from '../../services/firebase';
 import { loadList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { ActiveSession, ActiveSessionKind } from '../../types/records';
+import { onSessionFinishedOutsideApp } from './finishSession';
+import { dismissSessionNotification, showSessionNotification } from './sessionNotification';
 
 type Sessions = Partial<Record<ActiveSessionKind, ActiveSession>>;
+
+const ALL_KINDS: ActiveSessionKind[] = ['sono', 'breastfeeding', 'pumping', 'contractions'];
 
 /** What stop() hands back so the tracker can save the finished entry. */
 export type FinishedSession = { startedAt: number; endedAt: number; side?: 'left' | 'right' };
@@ -37,6 +41,16 @@ export function ActiveSessionsProvider({ children }: { children: React.ReactNode
   // stop() needs the latest sessions synchronously, without doing its side
   // effects inside a setState updater (the bug the old hooks had).
   const sessionsRef = useRef<Sessions>({});
+  // Until the AsyncStorage cache is read, an empty `sessions` means "don't
+  // know yet", not "nothing running" — mustn't clear notifications on it.
+  const [cacheLoaded, setCacheLoaded] = useState(false);
+  // What each notification currently shows, so it's only re-posted on change.
+  // Starts as "unknown" for every kind: the first sync then clears whatever
+  // a previous run of the app left in the shade for timers that have since
+  // finished (e.g. on the other caregiver's phone while this app was closed).
+  const notifiedRef = useRef<Partial<Record<ActiveSessionKind, string>>>(
+    Object.fromEntries(ALL_KINDS.map((kind) => [kind, 'unknown'])),
+  );
 
   const apply = useCallback((next: Sessions) => {
     sessionsRef.current = next;
@@ -49,12 +63,50 @@ export function ActiveSessionsProvider({ children }: { children: React.ReactNode
     // straight away, before the Firestore subscription (needs network) arrives.
     loadList<ActiveSession>(STORAGE_KEYS.activeSessions).then((cached) => {
       if (Object.keys(sessionsRef.current).length === 0 && cached.length > 0) apply(toSessions(cached));
+      setCacheLoaded(true);
     });
 
-    return subscribeToCollection<ActiveSession & { id: string }>('activeSessions', (items) => {
+    // "Terminar" on the notification (#101) already saved the entry and
+    // cleared the cache — just drop the timer here too, without waiting for
+    // Firestore (which may be offline).
+    const stopListening = onSessionFinishedOutsideApp((kind) => {
+      const { [kind]: _finished, ...rest } = sessionsRef.current;
+      sessionsRef.current = rest;
+      setSessions(rest);
+    });
+
+    const unsubscribe = subscribeToCollection<ActiveSession & { id: string }>('activeSessions', (items) => {
       apply(toSessions(items.map(({ id: _id, ...session }) => session)));
     });
+    return () => {
+      stopListening();
+      unsubscribe();
+    };
   }, [apply]);
+
+  // One persistent Android notification per running timer (#101), kept in
+  // step with `sessions` whoever started or finished it — this phone, the
+  // in-app bar, the notification itself or the other caregiver's phone.
+  useEffect(() => {
+    if (!cacheLoaded) return;
+    ALL_KINDS.forEach((kind) => {
+      const session = sessions[kind];
+      const shown = notifiedRef.current[kind];
+      const wanted = session ? `${session.startedAt}:${session.side ?? ''}` : undefined;
+      if (wanted === shown) return;
+      if (session) {
+        notifiedRef.current[kind] = wanted;
+        showSessionNotification(session).catch(() => {});
+      } else {
+        delete notifiedRef.current[kind];
+        dismissSessionNotification(kind);
+      }
+    });
+  }, [sessions, cacheLoaded]);
+
+  // Signing out unmounts this provider — the next account mustn't inherit
+  // this family's "a decorrer" notifications.
+  useEffect(() => () => ALL_KINDS.forEach((kind) => dismissSessionNotification(kind)), []);
 
   const start = useCallback(
     (kind: ActiveSessionKind, side?: 'left' | 'right') => {

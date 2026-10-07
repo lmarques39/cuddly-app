@@ -4,18 +4,22 @@ import { Platform } from 'react-native';
 export const REMINDER_CHANNEL_ID = 'cuddly-reminders';
 
 /**
- * How the app displays a notification while it's in the foreground — all 3
- * reminders here are things the user asked for themselves, so always show
- * them, no silent/badge-only handling needed.
+ * How the app displays a notification while it's in the foreground — the
+ * 3 reminders are things the user asked for themselves, so always show them.
  */
 export function configureNotificationHandler(): void {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async (notification) => {
+      // A running timer's notification (#101) only belongs in the shade —
+      // the app already shows it in the "a decorrer" bar.
+      const isRunningTimer = notification.request.identifier.startsWith('active-session-');
+      return {
+        shouldShowBanner: !isRunningTimer,
+        shouldShowList: true,
+        shouldPlaySound: !isRunningTimer,
+        shouldSetBadge: false,
+      };
+    },
   });
 }
 
