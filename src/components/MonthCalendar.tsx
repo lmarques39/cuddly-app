@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fontFamily, radii, spacing } from '../theme/tokens';
+import { Pressable, Text, View } from 'react-native';
+import { fontFamily, radii, spacing } from '../theme/tokens';
+import { createStyles } from '../theme/ThemeProvider';
 import { useNow } from '../utils/useNow';
 
 const WEEKDAY_LABEL = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function MonthCalendar({ markedDates, selectedKey, onSelectDate, initialMonth }: Props) {
+  const styles = useStyles();
   const [cursor, setCursor] = useState(() => {
     const base = initialMonth ?? new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
@@ -153,7 +155,7 @@ export function MonthCalendar({ markedDates, selectedKey, onSelectDate, initialM
 
 const CELL = 40;
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
@@ -192,4 +194,4 @@ const styles = StyleSheet.create({
   jumpMonthCellOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   jumpMonthLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.inkSecondary },
   jumpMonthLabelOn: { color: colors.primaryInk, fontFamily: fontFamily.bodyBold },
-});
+}));

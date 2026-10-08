@@ -1,7 +1,7 @@
 import { Karla_400Regular, Karla_500Medium, Karla_700Bold } from '@expo-google-fonts/karla';
 import { Fredoka_500Medium, Fredoka_600SemiBold } from '@expo-google-fonts/fredoka';
 import { useFonts } from 'expo-font';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import {
   createUserWithEmailAndPassword,
@@ -13,8 +13,8 @@ import {
   signInWithEmailAndPassword,
   User,
 } from 'firebase/auth';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BabyInfo, RegisterBabyScreen } from './src/features/auth/RegisterBabyScreen';
 import { CreateAccountScreen } from './src/features/auth/CreateAccountScreen';
@@ -36,7 +36,7 @@ import { auth } from './src/services/firebase';
 import { migrateLocalDataToFirestore } from './src/storage/migrate';
 import { flushOutbox, watchConnectivity } from './src/storage/sync';
 import { clearAllLocalData } from './src/storage/storage';
-import { colors } from './src/theme/tokens';
+import { createStyles, ThemeProvider, useTheme } from './src/theme/ThemeProvider';
 
 type AuthStep = 'login' | 'createAccount' | 'recoverPassword' | 'registerParent' | 'registerBaby' | 'acceptInvite' | 'app';
 
@@ -97,6 +97,22 @@ async function routeExistingUser(uid: string, email: string): Promise<Route> {
 }
 
 export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { colors, scheme } = useTheme();
+  const styles = useStyles();
+  // Screen/card colours come from our own styles; this only keeps React
+  // Navigation's own surfaces (screen backdrop, transitions) on the same theme.
+  const navigationTheme = useMemo(() => {
+    const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+    return { ...base, colors: { ...base.colors, background: colors.paper, card: colors.surface, text: colors.ink, border: colors.inkBorder, primary: colors.primary } };
+  }, [scheme, colors]);
   const [fontsLoaded] = useFonts({
     Fredoka_500Medium,
     Fredoka_600SemiBold,
@@ -334,17 +350,17 @@ export default function App() {
       {authStep === 'app' && (
         <CurrentMemberProvider>
           <ActiveSessionsProvider>
-            <NavigationContainer>
+            <NavigationContainer theme={navigationTheme}>
               <RootNavigator />
             </NavigationContainer>
           </ActiveSessionsProvider>
         </CurrentMemberProvider>
       )}
-      <StatusBar style="dark" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
     </SafeAreaProvider>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
-});
+}));

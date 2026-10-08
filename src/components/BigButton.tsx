@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { colors, fontFamily, radii, spacing, touchTarget } from '../theme/tokens';
+import { Pressable, StyleProp, Text, View, ViewStyle } from 'react-native';
+import { fontFamily, radii, spacing, touchTarget } from '../theme/tokens';
+import { createStyles, useTheme } from '../theme/ThemeProvider';
 
 type Props = {
   label: string;
@@ -13,7 +14,10 @@ type Props = {
 };
 
 /** Large, one-hand-friendly tap target used for every primary action. */
-export function BigButton({ label, onPress, background, foreground = colors.surface, icon, full, style }: Props) {
+export function BigButton({ label, onPress, background, foreground, icon, full, style }: Props) {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const textColor = foreground ?? colors.surface;
   return (
     <Pressable
       accessibilityRole="button"
@@ -27,13 +31,13 @@ export function BigButton({ label, onPress, background, foreground = colors.surf
     >
       <View style={styles.row}>
         {icon}
-        <Text style={[styles.label, { color: foreground }]}>{label}</Text>
+        <Text style={[styles.label, { color: textColor }]}>{label}</Text>
       </View>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   button: {
     minHeight: touchTarget.minHeight,
     borderRadius: radii.pill,
@@ -46,4 +50,4 @@ const styles = StyleSheet.create({
   full: { width: '100%' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   label: { fontFamily: fontFamily.bodyBold, fontSize: 15.5 },
-});
+}));

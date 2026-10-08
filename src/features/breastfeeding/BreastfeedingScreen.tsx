@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { rescheduleBreastfeedingReminder } from '../notifications/reminderScheduling';
 import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -15,6 +16,8 @@ import { useBreastfeeding } from './useBreastfeeding';
 const SIDE_LABEL = { left: 'Esquerda', right: 'Direita' } as const;
 
 export function BreastfeedingScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const { todayEntries, todayDurationMs, running, start, stop, addManual, remove, suggestedSide } = useBreastfeeding();
   const { preferences } = useNotificationPreferences();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right'>(suggestedSide);
@@ -109,7 +112,7 @@ export function BreastfeedingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   sideRow: { flexDirection: 'row', gap: spacing.sm },
   sideButton: {
@@ -122,4 +125,4 @@ const styles = StyleSheet.create({
   },
   timerCard: { alignItems: 'center', gap: spacing.xs },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-});
+}));

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { usePumping } from './usePumping';
@@ -16,6 +17,8 @@ import { usePumping } from './usePumping';
  * styling later without touching usePumping.ts.
  */
 export function PumpingScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const { entries, runningSince, start, stop, addManual, remove, update } = usePumping();
   const now = useNow(1000, runningSince != null);
   const [amountMl, setAmountMl] = useState('');
@@ -149,7 +152,7 @@ export function PumpingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   input: {
     marginTop: spacing.xs,
@@ -179,4 +182,4 @@ const styles = StyleSheet.create({
   editActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginLeft: spacing.sm },
   smallButton: { backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.md, paddingVertical: 8 },
   smallButtonLabel: { fontFamily: fontFamily.bodyBold, fontSize: 13, color: colors.primaryInk },
-});
+}));

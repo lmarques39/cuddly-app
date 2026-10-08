@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 
 type Props = {
   onSend: (email: string) => Promise<void>;
@@ -15,6 +16,8 @@ type Props = {
 // "recover" someone else's account. Deliberately simpler than the Figma
 // frame for this reason (see #5's discussion).
 export function RecoverPasswordScreen({ onSend, onBack, error }: Props) {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -87,7 +90,7 @@ export function RecoverPasswordScreen({ onSend, onBack, error }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper },
   content: { flex: 1, gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   link: { color: colors.primary, fontFamily: fontFamily.bodyBold },
@@ -111,4 +114,4 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.coral },
-});
+}));

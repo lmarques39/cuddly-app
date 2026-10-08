@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { DateField } from '../../components/DateField';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { BabySex } from '../../types/records';
 
 export type BabyInfo = {
@@ -25,6 +26,8 @@ const SEX_LABEL: Record<BabySex, string> = {
 };
 
 export function RegisterBabyScreen({ onFinish }: Props) {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const [alreadyBorn, setAlreadyBorn] = useState(false);
   const [name, setName] = useState('');
   const [dateMs, setDateMs] = useState<number | undefined>(undefined);
@@ -128,7 +131,7 @@ export function RegisterBabyScreen({ onFinish }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper },
   content: { flex: 1, gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   progressRow: { flexDirection: 'row', gap: spacing.sm },
@@ -148,4 +151,4 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, paddingTop: spacing.sm },
-});
+}));

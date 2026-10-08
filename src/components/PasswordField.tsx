@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { colors, fontFamily, radii, spacing } from '../theme/tokens';
+import { Pressable, TextInput, View } from 'react-native';
+import { fontFamily, radii, spacing } from '../theme/tokens';
+import { createStyles, useTheme } from '../theme/ThemeProvider';
 
 type Props = {
   value: string;
@@ -11,6 +12,8 @@ type Props = {
 
 /** A password TextInput with a toggle to reveal/hide what was typed (#79). */
 export function PasswordField({ value, onChangeText, placeholder }: Props) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [visible, setVisible] = useState(false);
 
   return (
@@ -36,7 +39,7 @@ export function PasswordField({ value, onChangeText, placeholder }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   row: {
     marginTop: spacing.xs,
     flexDirection: 'row',
@@ -55,4 +58,4 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   eyeButton: { padding: spacing.xs },
-});
+}));

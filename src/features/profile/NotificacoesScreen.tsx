@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { NotificationPreferences } from '../../types/records';
 import { useSavedFlash } from '../../utils/useSavedFlash';
 
@@ -14,6 +15,8 @@ import { useSavedFlash } from '../../utils/useSavedFlash';
  * it's genuine push (server-triggered), not a local reminder — see #14.
  */
 export function NotificacoesScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const { preferences, save } = useNotificationPreferences();
   const [draft, setDraft] = useState<NotificationPreferences>(preferences);
   const { visible: showSaved, flash } = useSavedFlash();
@@ -97,7 +100,7 @@ export function NotificacoesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   disabledRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, opacity: 0.6 },
@@ -115,4 +118,4 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   savedText: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.accent, textAlign: 'center' },
-});
+}));

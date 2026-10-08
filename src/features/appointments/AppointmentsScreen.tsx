@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { dateKey, MonthCalendar } from '../../components/MonthCalendar';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { Appointment, AppointmentType } from '../../types/records';
 import { useNow } from '../../utils/useNow';
 import { cancelAppointmentReminder, scheduleAppointmentReminder } from '../notifications/reminderScheduling';
@@ -39,6 +40,8 @@ function timeLabel(epochMs: number): string {
 }
 
 export function AppointmentsScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const { appointments, save: saveAppointment, remove: removeAppointment, update: updateAppointment } = useAppointments();
   const { preferences } = useNotificationPreferences();
   const [appointmentType, setAppointmentType] = useState<AppointmentType | null>(null);
@@ -276,7 +279,7 @@ export function AppointmentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   scroll: { gap: spacing.md, paddingBottom: spacing.xl },
   input: {
@@ -324,4 +327,4 @@ const styles = StyleSheet.create({
   menuItemLabelOn: { color: colors.primaryInk, fontFamily: fontFamily.bodyBold },
   notesInput: { minHeight: 72, textAlignVertical: 'top' },
   fieldError: { fontFamily: fontFamily.bodyMedium, fontSize: 12, color: colors.coral, marginTop: spacing.xs },
-});
+}));

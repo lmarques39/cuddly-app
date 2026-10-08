@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 
 type Props = {
   inviterName: string | null;
@@ -19,6 +20,8 @@ type Props = {
  * when signing in via OAuth, but stays editable either way.
  */
 export function AcceptInviteScreen({ inviterName, defaultName, onAccept, onDecline, error }: Props) {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const [name, setName] = useState(defaultName);
   const [accepting, setAccepting] = useState(false);
 
@@ -77,7 +80,7 @@ export function AcceptInviteScreen({ inviterName, defaultName, onAccept, onDecli
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper },
   content: { flex: 1, gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   link: { color: colors.primary, fontFamily: fontFamily.bodyBold },
@@ -102,4 +105,4 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.coral },
-});
+}));

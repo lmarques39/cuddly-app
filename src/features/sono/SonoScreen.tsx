@@ -1,11 +1,12 @@
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
-import { colors, spacing, type } from '../../theme/tokens';
+import { spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { useSono } from './useSono';
@@ -17,6 +18,8 @@ import { useSono } from './useSono';
  * useSono.ts.
  */
 export function SonoScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const { entries, runningSince, start, stop, addManual, remove } = useSono();
   const now = useNow(1000, runningSince != null);
 
@@ -61,9 +64,9 @@ export function SonoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   statCard: {},
   listTitle: { marginTop: spacing.sm },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-});
+}));

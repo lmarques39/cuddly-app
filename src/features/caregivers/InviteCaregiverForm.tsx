@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { BigButton } from '../../components/BigButton';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 
 type Props = {
   onInvite: (email: string) => Promise<void>;
@@ -13,6 +14,8 @@ type Props = {
  * real member/invite list and embeds this alongside it.
  */
 export function InviteCaregiverForm({ onInvite }: Props) {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -65,7 +68,7 @@ export function InviteCaregiverForm({ onInvite }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   container: { gap: spacing.sm },
   input: {
     borderWidth: 1.5,
@@ -79,4 +82,4 @@ const styles = StyleSheet.create({
   },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.coral },
   successText: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.ink },
-});
+}));

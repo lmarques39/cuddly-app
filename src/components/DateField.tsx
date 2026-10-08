@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fontFamily, radii, spacing } from '../theme/tokens';
+import { Pressable, Text, View } from 'react-native';
+import { fontFamily, radii, spacing } from '../theme/tokens';
+import { createStyles } from '../theme/ThemeProvider';
 import { dateKey, MonthCalendar } from './MonthCalendar';
 
 type Props = {
@@ -21,6 +22,7 @@ function formatLong(epochMs: number): string {
 
 /** Tap-to-open calendar date field — no typing, no juggling 20 taps to page months. */
 export function DateField({ label, value, onChange, placeholder = 'Escolher data' }: Props) {
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
 
   return (
@@ -49,7 +51,7 @@ export function DateField({ label, value, onChange, placeholder = 'Escolher data
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   label: { fontFamily: fontFamily.body, fontSize: 12.5, color: colors.inkSecondary, marginBottom: spacing.xs },
   field: {
     flexDirection: 'row',
@@ -65,4 +67,4 @@ const styles = StyleSheet.create({
   fieldPlaceholder: { color: colors.inkMuted, fontFamily: fontFamily.body },
   chevron: { color: colors.inkMuted, fontSize: 13 },
   calendarWrap: { marginTop: spacing.sm },
-});
+}));

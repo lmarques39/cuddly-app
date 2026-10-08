@@ -2,15 +2,17 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppearancePicker } from '../../components/AppearancePicker';
 import { Card } from '../../components/Card';
 import { seedDemoData } from '../../dev/seedDemoData';
 import { PerfilStackParamList } from '../../navigation/types';
 import { clearAllLocalData } from '../../storage/storage';
 import { clearFamilyData } from '../../storage/sync';
 import { auth } from '../../services/firebase';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { signOutOfGoogle } from '../auth/useGoogleSignIn';
 import { useSavedFlash } from '../../utils/useSavedFlash';
 import { useCurrentMember } from './useCurrentMember';
@@ -26,6 +28,8 @@ const SETTINGS: { label: string; route: keyof PerfilStackParamList }[] = [
 ];
 
 export function PerfilScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const navigation = useNavigation<Nav>();
   const [email, setEmail] = useState<string | null>(auth.currentUser?.email ?? null);
   const { member, updateName } = useCurrentMember();
@@ -95,6 +99,8 @@ export function PerfilScreen() {
         ))}
       </View>
 
+      <AppearancePicker />
+
       <Pressable
         onPress={async () => {
           await signOutOfGoogle();
@@ -126,7 +132,7 @@ export function PerfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   logoutButton: {
@@ -162,4 +168,4 @@ const styles = StyleSheet.create({
   smallButton: { backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.md, paddingVertical: 8 },
   smallButtonLabel: { fontFamily: fontFamily.bodyBold, fontSize: 13, color: colors.primaryInk },
   savedText: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.accent },
-});
+}));

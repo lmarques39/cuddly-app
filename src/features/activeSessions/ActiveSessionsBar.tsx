@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fontFamily, spacing } from '../../theme/tokens';
+import { Pressable, Text, View } from 'react-native';
+import { domainColors, fontFamily, spacing } from '../../theme/tokens';
+import { createStyles } from '../../theme/ThemeProvider';
 import { ActiveSessionKind } from '../../types/records';
 import { formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
@@ -15,10 +16,10 @@ export const SESSION_LABEL: Record<ActiveSessionKind, string> = {
 };
 
 const SESSION_STYLE: Record<ActiveSessionKind, { bg: string; ink: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  sono: { ...colors.domain.sleep, icon: 'moon' },
-  breastfeeding: { ...colors.domain.breastfeeding, icon: 'heart' },
-  pumping: { ...colors.domain.pumping, icon: 'water' },
-  contractions: { ...colors.domain.contractions, icon: 'pulse' },
+  sono: { ...domainColors.sleep, icon: 'moon' },
+  breastfeeding: { ...domainColors.breastfeeding, icon: 'heart' },
+  pumping: { ...domainColors.pumping, icon: 'water' },
+  contractions: { ...domainColors.contractions, icon: 'pulse' },
 };
 
 const ORDER: ActiveSessionKind[] = ['contractions', 'breastfeeding', 'pumping', 'sono'];
@@ -37,6 +38,7 @@ type Props = {
  * that screen asks for.
  */
 export function ActiveSessionsBar({ onOpen, hideKind }: Props) {
+  const styles = useStyles();
   const { sessions } = useActiveSessions();
   const running = ORDER.filter((kind) => sessions[kind] && kind !== hideKind);
   const now = useNow(1000, running.length > 0);
@@ -70,7 +72,7 @@ export function ActiveSessionsBar({ onOpen, hideKind }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   bar: {
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
@@ -91,4 +93,4 @@ const styles = StyleSheet.create({
   },
   label: { flex: 1, fontFamily: fontFamily.bodyBold, fontSize: 14 },
   time: { fontFamily: fontFamily.bodyBold, fontSize: 14, fontVariant: ['tabular-nums'] },
-});
+}));

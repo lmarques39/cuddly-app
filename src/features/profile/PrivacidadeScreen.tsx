@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PasswordField } from '../../components/PasswordField';
 import { auth } from '../../services/firebase';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { confirmDestructive } from '../../utils/confirm';
 import { useCuidadores } from '../caregivers/useCuidadores';
 import { AccountDeletionError, deleteMyAccount, usesPassword } from './deleteAccount';
@@ -18,6 +19,8 @@ export const PRIVACY_POLICY_URL = 'https://lmarques39.github.io/cuddly-app/priva
  * there's one copy to keep up to date.
  */
 export function PrivacidadeScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -152,7 +155,7 @@ export function PrivacidadeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   section: {
     gap: spacing.sm,
@@ -191,4 +194,4 @@ const styles = StyleSheet.create({
   cancel: { alignSelf: 'center' },
   cancelLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.inkSecondary },
   deleteLabel: { fontFamily: fontFamily.bodyBold, fontSize: 14.5, color: colors.paper },
-});
+}));

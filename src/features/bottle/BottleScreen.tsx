@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { BottleType } from '../../types/records';
 import { formatClock } from '../../utils/time';
 import { useBottle } from './useBottle';
@@ -16,6 +17,8 @@ const TYPE_LABEL: Record<BottleType, string> = {
 };
 
 export function BottleScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const { todayEntries, todayTotalMl, save, remove } = useBottle();
   const [amount, setAmount] = useState('');
   const [type_, setType] = useState<BottleType>('breastmilk');
@@ -94,7 +97,7 @@ export function BottleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   input: {
     borderWidth: 1.5,
@@ -110,4 +113,4 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: 'row', gap: spacing.sm },
   typeChip: { flex: 1, paddingVertical: 10, borderRadius: radii.pill, alignItems: 'center' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-});
+}));

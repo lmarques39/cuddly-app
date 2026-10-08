@@ -22,7 +22,8 @@ import { SonoScreen } from '../features/sono/SonoScreen';
 import { HistoricoScreen } from '../screens/HistoricoScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { RegistarScreen } from '../screens/RegistarScreen';
-import { colors, fontFamily } from '../theme/tokens';
+import { fontFamily } from '../theme/tokens';
+import { useTheme } from '../theme/ThemeProvider';
 import { ActiveSessionKind } from '../types/records';
 import { PerfilStackParamList, RegistarStackParamList, RootTabParamList } from './types';
 
@@ -63,15 +64,19 @@ function makeTabBarIcon(tab: keyof typeof TAB_ICON) {
 
 // pushed screens keep their own in-content <Text style={type.h1}> title, so the
 // native header is trimmed down to just a back chevron over a matching background
-const nestedStackScreenOptions = {
-  headerShown: true,
-  headerTitle: '',
-  headerShadowVisible: false,
-  headerStyle: { backgroundColor: colors.paper },
-  headerTintColor: colors.ink,
-} as const;
+function useNestedStackScreenOptions() {
+  const { colors } = useTheme();
+  return {
+    headerShown: true,
+    headerTitle: '',
+    headerShadowVisible: false,
+    headerStyle: { backgroundColor: colors.paper },
+    headerTintColor: colors.ink,
+  } as const;
+}
 
 function RegistarNavigator() {
+  const nestedStackScreenOptions = useNestedStackScreenOptions();
   return (
     <RegistarStack.Navigator screenOptions={nestedStackScreenOptions}>
       <RegistarStack.Screen name="RegistarHub" component={RegistarScreen} options={{ headerShown: false }} />
@@ -88,6 +93,7 @@ function RegistarNavigator() {
 }
 
 function PerfilNavigator() {
+  const nestedStackScreenOptions = useNestedStackScreenOptions();
   return (
     <PerfilStack.Navigator screenOptions={nestedStackScreenOptions}>
       <PerfilStack.Screen name="PerfilHub" component={PerfilScreen} options={{ headerShown: false }} />
@@ -127,6 +133,7 @@ function TabBarWithActiveSessions(props: BottomTabBarProps) {
 }
 
 export function RootNavigator() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       tabBar={(props) => <TabBarWithActiveSessions {...props} />}

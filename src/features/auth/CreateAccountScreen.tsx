@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { PasswordField } from '../../components/PasswordField';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 
 type Props = {
   onCreateAccount: (email: string, password: string) => void;
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -83,7 +86,7 @@ export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper },
   content: { flex: 1, gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   link: { color: colors.primary, fontFamily: fontFamily.bodyBold },
@@ -108,4 +111,4 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.coral },
-});
+}));

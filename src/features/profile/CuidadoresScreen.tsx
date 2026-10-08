@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
@@ -8,7 +8,8 @@ import { InviteCaregiverForm } from '../caregivers/InviteCaregiverForm';
 import { removeCaregiver } from '../caregivers/removeCaregiver';
 import { useCuidadores } from '../caregivers/useCuidadores';
 import { ROLE_LABEL, ParentRole } from '../auth/RegisterParentScreen';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { Invite, Member } from '../../types/records';
 import { confirmDestructive } from '../../utils/confirm';
 import { formatSince } from '../../utils/time';
@@ -16,6 +17,8 @@ import { formatSince } from '../../utils/time';
 type Row = { kind: 'member'; data: Member } | { kind: 'invite'; data: Invite };
 
 export function CuidadoresScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const { members, pendingInvites, currentUid } = useCuidadores();
   const [inviting, setInviting] = useState(false);
 
@@ -88,7 +91,7 @@ export function CuidadoresScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pendingCard: { backgroundColor: colors.surfaceSunken, borderStyle: 'dashed' },
@@ -101,4 +104,4 @@ const styles = StyleSheet.create({
   badgeText: { fontFamily: fontFamily.bodyBold, fontSize: 12, color: colors.creamInk },
   removeLink: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.coral },
   footer: { gap: spacing.sm, paddingBottom: spacing.md },
-});
+}));

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { useBottle } from '../features/bottle/useBottle';
@@ -9,7 +9,8 @@ import { useDiapers } from '../features/diapers/useDiapers';
 import { useFoods } from '../features/foods/useFoods';
 import { usePumping } from '../features/pumping/usePumping';
 import { useSono } from '../features/sono/useSono';
-import { colors, fontFamily, radii, spacing, type } from '../theme/tokens';
+import { domainColors, fontFamily, radii, spacing } from '../theme/tokens';
+import { createStyles, useTheme } from '../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../utils/time';
 import { useNow } from '../utils/useNow';
 
@@ -30,13 +31,13 @@ const KIND_LABEL: Record<Kind, string> = {
 };
 
 const KIND_COLOR: Record<Kind, string> = {
-  contraction: colors.domain.contractions.bg,
-  breastfeeding: colors.domain.breastfeeding.bg,
-  sono: colors.domain.sleep.bg,
-  pumping: colors.domain.pumping.bg,
-  bottle: colors.domain.bottle.bg,
-  diaper: colors.domain.diapers.bg,
-  food: colors.domain.foods.bg,
+  contraction: domainColors.contractions.bg,
+  breastfeeding: domainColors.breastfeeding.bg,
+  sono: domainColors.sleep.bg,
+  pumping: domainColors.pumping.bg,
+  bottle: domainColors.bottle.bg,
+  diaper: domainColors.diapers.bg,
+  food: domainColors.foods.bg,
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -60,6 +61,8 @@ function formatDayLabel(dayStart: number, todayStart: number): string {
 }
 
 export function HistoricoScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const [view, setView] = useState<'linha' | 'tendencias'>('linha');
   const [filter, setFilter] = useState<Kind | 'todos'>('todos');
 
@@ -276,7 +279,7 @@ export function HistoricoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   toggleRow: { flexDirection: 'row', gap: spacing.sm },
   toggleChip: { flex: 1, paddingVertical: 10, borderRadius: radii.pill, alignItems: 'center' },
@@ -299,4 +302,4 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5 },
   barTrack: { height: 10, borderRadius: radii.pill, backgroundColor: colors.surfaceSunken, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: radii.pill },
-});
+}));

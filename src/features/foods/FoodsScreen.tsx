@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
-import { colors, fontFamily, radii, spacing, type } from '../../theme/tokens';
+import { fontFamily, radii, spacing } from '../../theme/tokens';
+import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { FoodEntry, FoodReaction } from '../../types/records';
 import { parseDayOnly } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
@@ -49,6 +50,8 @@ function middayOf(dayMs: number): number {
  * with a reaction are pulled to the top so they're never buried.
  */
 export function FoodsScreen() {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const { entries, withReaction, isAlreadyIntroduced, save, update, remove } = useFoods();
   const saved = useSavedFlash();
   const now = useNow(60000);
@@ -294,7 +297,7 @@ export function FoodsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   scroll: { gap: spacing.md, paddingBottom: spacing.xl },
   summary: { alignItems: 'center', gap: spacing.xs },
@@ -343,4 +346,4 @@ const styles = StyleSheet.create({
   rowWithReaction: { borderColor: colors.coral, borderWidth: 2 },
   rowText: { flex: 1 },
   reactionText: { fontFamily: fontFamily.bodyBold, fontSize: 12.5, color: colors.coral },
-});
+}));

@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { useAppointments } from '../features/appointments/useAppointments';
@@ -12,7 +12,8 @@ import { useDiapers } from '../features/diapers/useDiapers';
 import { useBabyProfile } from '../features/profile/useBabyProfile';
 import { useCurrentMember } from '../features/profile/useCurrentMember';
 import { RootTabParamList } from '../navigation/types';
-import { colors, spacing, type } from '../theme/tokens';
+import { spacing } from '../theme/tokens';
+import { createStyles, useTheme } from '../theme/ThemeProvider';
 import { Appointment } from '../types/records';
 import { formatSince } from '../utils/time';
 import { useNow } from '../utils/useNow';
@@ -41,6 +42,8 @@ function babyAge(birthDate: number): string {
 }
 
 function NextAppointmentCard({ appointment, onPress }: { appointment: Appointment | null; onPress: () => void }) {
+  const { type } = useTheme();
+  const styles = useStyles();
   return (
     <Pressable onPress={onPress}>
       <Card style={styles.appointmentCard}>
@@ -56,6 +59,8 @@ function NextAppointmentCard({ appointment, onPress }: { appointment: Appointmen
 }
 
 export function HomeScreen() {
+  const { type } = useTheme();
+  const styles = useStyles();
   const navigation = useNavigation<Nav>();
   const { profile, mode } = useBabyProfile();
   const { member } = useCurrentMember();
@@ -142,10 +147,10 @@ export function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   appointmentCard: { gap: spacing.xs },
   appointmentHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   chevron: { fontSize: 16, color: colors.inkMuted },
-});
+}));

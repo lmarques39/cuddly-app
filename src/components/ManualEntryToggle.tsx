@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors, fontFamily, radii, spacing, type } from '../theme/tokens';
+import { Pressable, Text, TextInput, View } from 'react-native';
+import { fontFamily, radii, spacing } from '../theme/tokens';
+import { createStyles, useTheme } from '../theme/ThemeProvider';
 import { parseDayOnly, resolveManualRange } from '../utils/time';
 import { useNow } from '../utils/useNow';
 import { Card } from './Card';
@@ -25,6 +26,8 @@ type Props = {
  * actually remember (#76), on a day the person picks (not always today).
  */
 export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Props) {
+  const { colors, type } = useTheme();
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
   const [dayOption, setDayOption] = useState<DayOption>('today');
   const [customDate, setCustomDate] = useState('');
@@ -126,7 +129,7 @@ export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Pr
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((colors, type) => ({
   toggleLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.primary },
   dayRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
   dayPill: {
@@ -158,4 +161,4 @@ const styles = StyleSheet.create({
   saveButtonDisabled: { backgroundColor: colors.surfaceSunken },
   saveButtonLabel: { fontFamily: fontFamily.bodyBold, fontSize: 13, color: colors.primaryInk },
   saveButtonLabelDisabled: { color: colors.inkMuted },
-});
+}));
