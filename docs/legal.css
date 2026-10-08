@@ -37,7 +37,6 @@ nav.site a:hover { color: var(--ink); }
 .updated { font-size: 13px; color: var(--ink-muted); margin: 0 0 24px; }
 .summary { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
 .steps li { padding-left: 4px; }
-.contact { background: #FCE7B2; color: var(--ink); padding: 1px 6px; border-radius: 6px; font-weight: 500; }
 
 .legal table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 15px; }
 .legal th { text-align: left; font-family: var(--font-display); font-weight: 600; color: var(--ink); padding: 10px 12px; border-bottom: 2px solid var(--border); }
