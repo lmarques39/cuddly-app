@@ -1,3 +1,5 @@
+import i18n from '../../i18n';
+import { appointmentDisplayTitle } from '../appointments/appointmentTypes';
 import * as Notifications from 'expo-notifications';
 import { Appointment } from '../../types/records';
 import { BREASTFEEDING_REMINDER_ID } from './useNotificationPreferences';
@@ -13,8 +15,8 @@ export async function rescheduleBreastfeedingReminder(intervalHours: number): Pr
   await Notifications.scheduleNotificationAsync({
     identifier: BREASTFEEDING_REMINDER_ID,
     content: {
-      title: 'Hora de amamentar',
-      body: `Já passaram ${intervalHours}h desde o último registo.`,
+      title: i18n.t('reminders.breastfeedingTitle'),
+      body: i18n.t('reminders.breastfeedingBody', { hours: intervalHours }),
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -40,8 +42,8 @@ export async function scheduleAppointmentReminder(appointment: Appointment, days
   await Notifications.scheduleNotificationAsync({
     identifier: appointmentReminderId(appointment.id),
     content: {
-      title: 'Lembrete de consulta',
-      body: `${appointment.title} — daqui a ${daysBefore} dia${daysBefore === 1 ? '' : 's'}.`,
+      title: i18n.t('reminders.appointmentTitle'),
+      body: i18n.t('reminders.appointmentBody', { title: appointmentDisplayTitle(appointment), count: daysBefore }),
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerAt },
   });

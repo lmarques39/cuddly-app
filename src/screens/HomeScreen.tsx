@@ -1,3 +1,4 @@
+import { appointmentDisplayTitle } from '../features/appointments/appointmentTypes';
 import { useTranslation } from 'react-i18next';
 import i18n, { currentLocale } from '../i18n';
 import { useNavigation } from '@react-navigation/native';
@@ -53,7 +54,7 @@ function NextAppointmentCard({ appointment, onPress }: { appointment: Appointmen
           <Text style={type.caption}>{t('home.nextAppointment')}</Text>
           <Text style={styles.chevron}>›</Text>
         </View>
-        <Text style={type.body}>{appointment ? appointment.title : t('home.noAppointments')}</Text>
+        <Text style={type.body}>{appointment ? appointmentDisplayTitle(appointment) : t('home.noAppointments')}</Text>
         {appointment && <Text style={type.caption}>{formatAppointmentDate(appointment.scheduledAt)}</Text>}
       </Card>
     </Pressable>

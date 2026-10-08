@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,7 @@ export const PRIVACY_POLICY_URL = 'https://lmarques39.github.io/cuddly-app/priva
  * there's one copy to keep up to date.
  */
 export function PrivacidadeScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
@@ -30,7 +32,7 @@ export function PrivacidadeScreen() {
     try {
       await exportMyData(format);
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : 'Não foi possível exportar os dados.');
+      setExportError(e instanceof Error ? e.message : t('privacy.exportFailed'));
     } finally {
       setExporting(null);
     }
@@ -54,11 +56,9 @@ export function PrivacidadeScreen() {
 
   const deleteAccount = async () => {
     const confirmed = await confirmDestructive(
-      'Eliminar conta',
-      otherMembers > 0
-        ? 'A tua conta é eliminada já e sais da família. Os registos do bebé ficam com os outros cuidadores. Não é possível desfazer.'
-        : 'A tua conta e todos os dados da família são eliminados já. Não é possível desfazer.',
-      'Eliminar'
+      t('privacy.deleteTitle'),
+      otherMembers > 0 ? t('privacy.confirmShared') : t('privacy.confirmAlone'),
+      t('common.delete')
     );
     if (!confirmed) return;
 
@@ -69,7 +69,7 @@ export function PrivacidadeScreen() {
       // Success signs the user out — App.tsx swaps this screen for the login flow.
     } catch (e) {
       setDeleteError(
-        e instanceof AccountDeletionError ? e.message : 'Não foi possível eliminar a conta. Verifica a ligação e tenta outra vez.'
+        e instanceof AccountDeletionError ? e.message : t('privacy.deleteFailed')
       );
       setDeleting(false);
     }
@@ -77,25 +77,24 @@ export function PrivacidadeScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Privacidade e dados</Text>
+      <Text style={type.h1}>{t('privacy.title')}</Text>
 
       <Text style={[type.body, { color: colors.inkSecondary }]}>
-        Os dados da app (registos, perfil do bebé, cuidadores) ficam guardados só para a tua família, na tua conta.
+        {t('privacy.intro')}
       </Text>
       <Pressable accessibilityRole="link" onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={8}>
-        <Text style={styles.policyLink}>Ler a política de privacidade</Text>
+        <Text style={styles.policyLink}>{t('privacy.readPolicy')}</Text>
       </Pressable>
 
       <View style={styles.section}>
-        <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>Exportar os meus dados</Text>
+        <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>{t('privacy.exportTitle')}</Text>
         <Text style={type.caption}>
-          Descarrega uma cópia de todos os registos, do perfil do bebé e dos cuidadores da família, num ficheiro JSON — ou só os
-          registos numa tabela (CSV) para abrir no Excel ou no Google Sheets.
+          {t('privacy.exportBody')}
         </Text>
         {(
           [
-            { format: 'json', label: 'Exportar dados (JSON)' },
-            { format: 'csv', label: 'Exportar registos (CSV)' },
+            { format: 'json', label: t('privacy.exportJson') },
+            { format: 'csv', label: t('privacy.exportCsv') },
           ] as const
         ).map(({ format, label }) => (
           <Pressable
@@ -114,19 +113,19 @@ export function PrivacidadeScreen() {
       </View>
 
       <View style={styles.dangerZone}>
-        <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>Eliminar conta</Text>
+        <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>{t('privacy.deleteTitle')}</Text>
         <Text style={type.caption}>
           {otherMembers > 0
-            ? `Elimina a tua conta de imediato e sais da família. Os registos do bebé ficam com ${otherMembers === 1 ? 'o outro cuidador' : `os outros ${otherMembers} cuidadores`}.`
-            : 'Elimina de imediato a tua conta e todos os dados da família (registos, perfil do bebé, convites). A sessão termina logo.'}
+            ? t('privacy.deleteBodyShared', { count: otherMembers })
+            : t('privacy.deleteBodyAlone')}
         </Text>
 
         {confirmingDeletion ? (
           <>
             {needsPassword && (
               <View>
-                <Text style={type.caption}>Escreve a tua password para confirmar</Text>
-                <PasswordField value={password} onChangeText={setPassword} placeholder="Password" />
+                <Text style={type.caption}>{t('privacy.typePassword')}</Text>
+                <PasswordField value={password} onChangeText={setPassword} placeholder={t('auth.password')} />
               </View>
             )}
             <Pressable
@@ -136,17 +135,17 @@ export function PrivacidadeScreen() {
               onPress={deleteAccount}
               style={styles.deleteButton}
             >
-              {deleting ? <ActivityIndicator color={colors.paper} /> : <Text style={styles.deleteLabel}>Eliminar definitivamente</Text>}
+              {deleting ? <ActivityIndicator color={colors.paper} /> : <Text style={styles.deleteLabel}>{t('privacy.deletePermanently')}</Text>}
             </Pressable>
             {!deleting && (
               <Pressable accessibilityRole="button" onPress={cancelDeletion} hitSlop={8} style={styles.cancel}>
-                <Text style={styles.cancelLabel}>Cancelar</Text>
+                <Text style={styles.cancelLabel}>{t('common.cancel')}</Text>
               </Pressable>
             )}
           </>
         ) : (
           <Pressable accessibilityRole="button" onPress={() => setConfirmingDeletion(true)} style={styles.deleteButton}>
-            <Text style={styles.deleteLabel}>Eliminar conta e dados</Text>
+            <Text style={styles.deleteLabel}>{t('privacy.deleteAccountAndData')}</Text>
           </Pressable>
         )}
         {deleteError && <Text style={styles.error}>{deleteError}</Text>}

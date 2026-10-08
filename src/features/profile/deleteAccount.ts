@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { deleteUser, EmailAuthProvider, reauthenticateWithCredential, User } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
@@ -11,8 +12,7 @@ const RECENT_LOGIN_MS = 5 * 60 * 1000;
 /** A deletion that was refused before anything was deleted — the message is meant for the user. */
 export class AccountDeletionError extends Error {}
 
-const AUTH_DELETE_FAILED =
-  'Os teus dados foram apagados, mas a conta não. Entra outra vez e repete "Eliminar conta" em Privacidade e dados.';
+const authDeleteFailed = () => i18n.t('privacy.errors.authNotDeleted');
 
 // When deleteUser() fails, Firebase may sign the user out on its own, which
 // unmounts the Privacidade screen before it can show the error (#91). The
@@ -40,22 +40,22 @@ export function usesPassword(user: User): boolean {
  */
 async function ensureRecentLogin(user: User, password?: string): Promise<void> {
   if (usesPassword(user)) {
-    if (!password) throw new AccountDeletionError('Escreve a tua password para confirmar.');
+    if (!password) throw new AccountDeletionError(i18n.t('privacy.errors.typePassword'));
     try {
       await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', password));
     } catch (e) {
       const code = (e as { code?: string }).code;
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        throw new AccountDeletionError('Password incorreta.');
+        throw new AccountDeletionError(i18n.t('privacy.errors.wrongPassword'));
       }
-      throw new AccountDeletionError('Não foi possível confirmar a tua identidade. Tenta outra vez.');
+      throw new AccountDeletionError(i18n.t('privacy.errors.reauthFailed'));
     }
     return;
   }
 
   const { authTime } = await user.getIdTokenResult();
   if (Date.now() - new Date(authTime).getTime() > RECENT_LOGIN_MS) {
-    throw new AccountDeletionError('Por segurança, termina sessão e volta a entrar com o Google antes de eliminar a conta.');
+    throw new AccountDeletionError(i18n.t('privacy.errors.googleReauth'));
   }
 }
 
@@ -69,7 +69,7 @@ async function ensureRecentLogin(user: User, password?: string): Promise<void> {
  */
 export async function deleteMyAccount(password?: string): Promise<void> {
   const user = auth.currentUser;
-  if (!user) throw new AccountDeletionError('Sem sessão iniciada.');
+  if (!user) throw new AccountDeletionError(i18n.t('privacy.errors.notSignedIn'));
 
   await ensureRecentLogin(user, password);
 
@@ -104,7 +104,7 @@ export async function deleteMyAccount(password?: string): Promise<void> {
     await user.getIdToken(true);
     await deleteUser(user);
   } catch {
-    pendingNotice = AUTH_DELETE_FAILED;
-    throw new AccountDeletionError(AUTH_DELETE_FAILED);
+    pendingNotice = authDeleteFailed();
+    throw new AccountDeletionError(pendingNotice);
   }
 }

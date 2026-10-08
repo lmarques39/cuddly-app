@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { useCallback, useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import { ensureNotificationPermission } from '../../notifications/setup';
@@ -38,8 +39,8 @@ export function useNotificationPreferences() {
       await Notifications.scheduleNotificationAsync({
         identifier: BREASTFEEDING_REMINDER_ID,
         content: {
-          title: 'Hora de amamentar',
-          body: `Já passaram ${next.breastfeeding.intervalHours}h desde o último registo.`,
+          title: i18n.t('reminders.breastfeedingTitle'),
+          body: i18n.t('reminders.breastfeedingBody', { hours: next.breastfeeding.intervalHours }),
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -54,7 +55,7 @@ export function useNotificationPreferences() {
     if (next.dailySummary.enabled) {
       await Notifications.scheduleNotificationAsync({
         identifier: DAILY_SUMMARY_REMINDER_ID,
-        content: { title: 'Resumo diário', body: 'Vê o resumo de hoje na Cuddly.' },
+        content: { title: i18n.t('reminders.dailyTitle'), body: i18n.t('reminders.dailyBody') },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
           hour: next.dailySummary.hour,

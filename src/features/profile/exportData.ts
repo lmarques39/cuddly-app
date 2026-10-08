@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { auth } from '../../services/firebase';
 import { readFamilyData } from '../../storage/sync';
 import { familyDataToCsv } from './exportCsv';
@@ -19,10 +20,10 @@ export function exportFileName(now: Date, format: ExportFormat = 'json'): string
  */
 export async function exportMyData(format: ExportFormat = 'json', now: Date = new Date()): Promise<void> {
   const user = auth.currentUser;
-  if (!user) throw new Error('Sem sessão iniciada.');
+  if (!user) throw new Error(i18n.t('privacy.errors.notSignedIn'));
 
   const familyData = await readFamilyData();
-  if (!familyData) throw new Error('Não foi encontrada nenhuma família nesta conta.');
+  if (!familyData) throw new Error(i18n.t('privacy.errors.noFamily'));
 
   if (format === 'csv') {
     await saveExportFile(exportFileName(now, 'csv'), familyDataToCsv(familyData), 'csv');

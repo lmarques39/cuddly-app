@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +12,8 @@ import { Appointment, AppointmentType } from '../../types/records';
 import { useNow } from '../../utils/useNow';
 import { cancelAppointmentReminder, scheduleAppointmentReminder } from '../notifications/reminderScheduling';
 import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
-import { APPOINTMENT_TYPES, appointmentTypeLabel } from './appointmentTypes';
+import { currentLocale } from '../../i18n';
+import { APPOINTMENT_TYPES, appointmentDisplayTitle, appointmentTypeLabel } from './appointmentTypes';
 import { useAppointments } from './useAppointments';
 
 /** Builds a local-time timestamp from a "YYYY-MM-DD" key and a "HH:MM" label. */
@@ -27,11 +29,11 @@ function combineDateAndTime(key: string, time: string): number | undefined {
 
 function formatDateLabel(key: string): string {
   const [y, m, d] = key.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long' });
+  return new Date(y, m - 1, d).toLocaleDateString(currentLocale(), { day: '2-digit', month: 'long' });
 }
 
 function formatAppointment(epochMs: number): string {
-  return new Date(epochMs).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return new Date(epochMs).toLocaleString(currentLocale(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 function timeLabel(epochMs: number): string {
@@ -40,6 +42,7 @@ function timeLabel(epochMs: number): string {
 }
 
 export function AppointmentsScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { appointments, save: saveAppointment, remove: removeAppointment, update: updateAppointment } = useAppointments();
@@ -137,7 +140,7 @@ export function AppointmentsScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={type.h1}>Consultas médicas</Text>
+        <Text style={type.h1}>{t('appointments.title')}</Text>
 
         <MonthCalendar
           markedDates={markedDates}
@@ -147,40 +150,40 @@ export function AppointmentsScreen() {
 
         {selectedKey && (
           <Pressable onPress={() => setSelectedKey(null)} style={styles.clearFilter}>
-            <Text style={styles.clearFilterLabel}>« Ver todas as consultas</Text>
+            <Text style={styles.clearFilterLabel}>{t('appointments.seeAll')}</Text>
           </Pressable>
         )}
 
         {formOpen ? (
           <Card style={{ gap: spacing.md }}>
             <View style={styles.editingBanner}>
-              <Text style={styles.editingBannerLabel}>{editingId != null ? 'A editar consulta' : 'Nova consulta'}</Text>
+              <Text style={styles.editingBannerLabel}>{editingId != null ? t('appointments.editing') : t('appointments.new')}</Text>
               <Pressable onPress={resetForm} hitSlop={8}>
-                <Text style={styles.editingBannerCancel}>Cancelar</Text>
+                <Text style={styles.editingBannerCancel}>{t('common.cancel')}</Text>
               </Pressable>
             </View>
 
             <Text style={[type.caption, styles.formTarget]}>
-              A marcar para <Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
-              {!selectedKey && ' (hoje — toca num dia no calendário para escolher outro)'}
+              {t('appointments.bookingFor')}<Text style={styles.formTargetBold}>{formatDateLabel(formDateKey)}</Text>
+              {!selectedKey && t('appointments.todayHint')}
             </Text>
 
             <View>
-              <Text style={type.caption}>Tipo de consulta</Text>
+              <Text style={type.caption}>{t('appointments.type')}</Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Tipo de consulta"
+                accessibilityLabel={t('appointments.type')}
                 onPress={() => setTypeMenuOpen((open) => !open)}
                 style={[styles.input, styles.select]}
               >
                 <Text style={appointmentType ? styles.selectValue : styles.selectPlaceholder}>
-                  {appointmentType ? appointmentTypeLabel(appointmentType) : 'Escolher…'}
+                  {appointmentType ? appointmentTypeLabel(appointmentType) : t('common.choose')}
                 </Text>
                 <Text style={styles.selectValue}>{typeMenuOpen ? '▴' : '▾'}</Text>
               </Pressable>
               {typeMenuOpen && (
                 <View style={styles.menu}>
-                  {APPOINTMENT_TYPES.map((option) => (
+                  {APPOINTMENT_TYPES.map((value) => ({ value, label: appointmentTypeLabel(value) })).map((option) => (
                     <Pressable
                       key={option.value}
                       accessibilityRole="menuitem"
@@ -201,7 +204,7 @@ export function AppointmentsScreen() {
                 <TextInput
                   value={customTitle}
                   onChangeText={setCustomTitle}
-                  placeholder="Qual? (ex: Fisioterapia)"
+                  placeholder={t('appointments.otherPlaceholder')}
                   placeholderTextColor={colors.inkMuted}
                   style={[styles.input, { marginTop: spacing.sm }]}
                 />
@@ -209,7 +212,7 @@ export function AppointmentsScreen() {
             </View>
 
             <View>
-              <Text style={type.caption}>Hora</Text>
+              <Text style={type.caption}>{t('appointments.time')}</Text>
               <TextInput
                 value={time}
                 onChangeText={setTime}
@@ -219,15 +222,15 @@ export function AppointmentsScreen() {
                 maxLength={5}
                 style={styles.input}
               />
-              {timeInvalid && <Text style={styles.fieldError}>Hora inválida — usa o formato HH:MM (ex: 09:30).</Text>}
+              {timeInvalid && <Text style={styles.fieldError}>{t('common.invalidTime')}</Text>}
             </View>
 
             <View>
-              <Text style={type.caption}>Observações (opcional)</Text>
+              <Text style={type.caption}>{t('appointments.notes')}</Text>
               <TextInput
                 value={notes}
                 onChangeText={setNotes}
-                placeholder="Levar exames anteriores, perguntas para o médico…"
+                placeholder={t('appointments.notesPlaceholder')}
                 placeholderTextColor={colors.inkMuted}
                 multiline
                 style={[styles.input, styles.notesInput]}
@@ -235,7 +238,7 @@ export function AppointmentsScreen() {
             </View>
 
             <BigButton
-              label={editingId != null ? 'Guardar alterações' : 'Marcar consulta'}
+              label={editingId != null ? t('appointments.saveChanges') : t('appointments.book')}
               background={canSave ? colors.primary : colors.surfaceSunken}
               foreground={canSave ? colors.primaryInk : colors.inkMuted}
               onPress={save}
@@ -244,7 +247,7 @@ export function AppointmentsScreen() {
           </Card>
         ) : (
           <BigButton
-            label="+ Marcar nova consulta"
+            label={t('appointments.add')}
             background={colors.primary}
             foreground={colors.primaryInk}
             onPress={() => setFormOpen(true)}
@@ -254,15 +257,15 @@ export function AppointmentsScreen() {
 
         {visible.length === 0 ? (
           <Text style={type.caption}>
-            {selectedKey ? 'Sem consultas neste dia.' : 'Ainda sem consultas marcadas.'}
+            {selectedKey ? t('appointments.noneOnDay') : t('appointments.none')}
           </Text>
         ) : (
           <View style={{ gap: spacing.sm }}>
             {[...upcoming, ...past].map((item) => (
               <Card key={item.id} style={styles.row}>
                 <Pressable style={styles.rowText} onPress={() => startEdit(item)}>
-                  <Text style={type.body}>{item.title}</Text>
-                  <Text style={type.caption}>{formatAppointment(item.scheduledAt)} · toca para editar</Text>
+                  <Text style={type.body}>{appointmentDisplayTitle(item)}</Text>
+                  <Text style={type.caption}>{formatAppointment(item.scheduledAt)} · {t('common.tapToEdit')}</Text>
                   {item.notes ? (
                     <Text style={type.caption} numberOfLines={2}>
                       {item.notes}

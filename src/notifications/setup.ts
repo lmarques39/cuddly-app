@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import i18n from '../i18n';
 
 export const REMINDER_CHANNEL_ID = 'cuddly-reminders';
 
@@ -27,7 +28,7 @@ export function configureNotificationHandler(): void {
 export async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
-    name: 'Lembretes',
+    name: i18n.t('reminders.channel'),
     importance: Notifications.AndroidImportance.DEFAULT,
   });
 }

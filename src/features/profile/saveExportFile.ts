@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
@@ -18,7 +19,7 @@ export async function saveExportFile(fileName: string, contents: string, format:
   file.write(contents);
 
   if (!(await Sharing.isAvailableAsync())) {
-    throw new Error('A partilha de ficheiros não está disponível neste dispositivo.');
+    throw new Error(i18n.t('privacy.errors.sharingUnavailable'));
   }
-  await Sharing.shareAsync(file.uri, { ...FILE_TYPE[format], dialogTitle: 'Exportar os meus dados' });
+  await Sharing.shareAsync(file.uri, { ...FILE_TYPE[format], dialogTitle: i18n.t('privacy.shareDialogTitle') });
 }
