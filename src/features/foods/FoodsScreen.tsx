@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import i18n, { currentLocale } from '../../i18n';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,20 +18,17 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 type DayOption = 'today' | 'yesterday' | 'custom';
 
-const REACTIONS: { value: FoodReaction; label: string }[] = [
-  { value: 'nenhuma', label: 'Nenhuma' },
-  { value: 'ligeira', label: 'Ligeira' },
-  { value: 'forte', label: 'Forte' },
-];
+const REACTIONS: FoodReaction[] = ['nenhuma', 'ligeira', 'forte'];
 
-const PREPARATIONS = ['Puré', 'Papa', 'Pedaços'];
+// Saved as free text in the chosen language (it's a note, shown as-is).
+const PREPARATIONS = ['puree', 'porridge', 'pieces'] as const;
 
 function reactionLabel(reaction: FoodReaction): string {
-  return REACTIONS.find((r) => r.value === reaction)?.label ?? reaction;
+  return i18n.t(`foods.reactions.${reaction}`);
 }
 
 function formatDay(epochMs: number): string {
-  return new Date(epochMs).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long' });
+  return new Date(epochMs).toLocaleDateString(currentLocale(), { day: '2-digit', month: 'long' });
 }
 
 /** "DD/MM" for reopening an entry's day in the "Outro dia" field. */
@@ -50,6 +49,7 @@ function middayOf(dayMs: number): number {
  * with a reaction are pulled to the top so they're never buried.
  */
 export function FoodsScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { entries, withReaction, isAlreadyIntroduced, save, update, remove } = useFoods();
@@ -120,16 +120,16 @@ export function FoodsScreen() {
 
   const renderEntry = (entry: FoodEntry) => (
     <Card key={entry.id} style={[styles.row, entry.reaction !== 'nenhuma' && styles.rowWithReaction]}>
-      <Pressable style={styles.rowText} onPress={() => startEdit(entry)} accessibilityLabel={`${entry.food}, editar`}>
+      <Pressable style={styles.rowText} onPress={() => startEdit(entry)} accessibilityLabel={t('foods.editA11y', { food: entry.food })}>
         <Text style={type.body}>{entry.food}</Text>
         <Text style={type.caption}>
           {formatDay(entry.introducedAt)}
           {entry.preparation ? ` · ${entry.preparation}` : ''}
-          {' · toca para editar'}
+          {` · ${t('common.tapToEdit')}`}
         </Text>
         {entry.reaction !== 'nenhuma' && (
           <Text style={styles.reactionText}>
-            Reação {reactionLabel(entry.reaction).toLowerCase()}
+            {t('foods.reactionLine', { level: reactionLabel(entry.reaction).toLowerCase() })}
             {entry.reactionNotes ? `: ${entry.reactionNotes}` : ''}
           </Text>
         )}
@@ -143,43 +143,43 @@ export function FoodsScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={type.h1}>Introdução alimentar</Text>
+        <Text style={type.h1}>{t('foods.title')}</Text>
 
         <Card style={styles.summary}>
-          <Text style={type.caption}>Alimentos já introduzidos</Text>
+          <Text style={type.caption}>{t('foods.introduced')}</Text>
           <Text style={type.data}>{entries.length}</Text>
           {withReaction.length > 0 && (
             <Text style={styles.reactionText}>
-              {withReaction.length} com reação
+              {t('foods.withReactionCount', { count: withReaction.length })}
             </Text>
           )}
         </Card>
 
-        {saved.visible && <Text style={styles.savedLabel}>Guardado ✓</Text>}
+        {saved.visible && <Text style={styles.savedLabel}>{t('common.saved')}</Text>}
 
         {formOpen ? (
           <Card style={{ gap: spacing.md }}>
             <View style={styles.banner}>
-              <Text style={styles.bannerLabel}>{editingId != null ? 'A editar alimento' : 'Novo alimento'}</Text>
+              <Text style={styles.bannerLabel}>{editingId != null ? t('foods.editing') : t('foods.new')}</Text>
               <Pressable onPress={resetForm} hitSlop={8}>
-                <Text style={styles.bannerCancel}>Cancelar</Text>
+                <Text style={styles.bannerCancel}>{t('common.cancel')}</Text>
               </Pressable>
             </View>
 
             <View>
-              <Text style={type.caption}>Alimento</Text>
+              <Text style={type.caption}>{t('foods.food')}</Text>
               <TextInput
                 value={food}
                 onChangeText={setFood}
-                placeholder="ex: Cenoura"
+                placeholder={t('foods.foodPlaceholder')}
                 placeholderTextColor={colors.inkMuted}
                 style={styles.input}
               />
-              {duplicate && <Text style={styles.hint}>Este alimento já foi registado — podes guardar na mesma.</Text>}
+              {duplicate && <Text style={styles.hint}>{t('foods.duplicate')}</Text>}
             </View>
 
             <View>
-              <Text style={type.caption}>Dia</Text>
+              <Text style={type.caption}>{t('common.day')}</Text>
               <View style={styles.pillRow}>
                 {(['today', 'yesterday', 'custom'] as DayOption[]).map((option) => (
                   <Pressable
@@ -190,7 +190,7 @@ export function FoodsScreen() {
                     style={[styles.pill, dayOption === option && styles.pillOn]}
                   >
                     <Text style={[styles.pillLabel, dayOption === option && styles.pillLabelOn]}>
-                      {option === 'today' ? 'Hoje' : option === 'yesterday' ? 'Ontem' : 'Outro dia'}
+                      {option === 'today' ? t('common.today') : option === 'yesterday' ? t('common.yesterday') : t('common.otherDay')}
                     </Text>
                   </Pressable>
                 ))}
@@ -206,41 +206,44 @@ export function FoodsScreen() {
                   style={styles.input}
                 />
               )}
-              {customDateInvalid && <Text style={styles.fieldError}>Data inválida — usa o formato DD/MM.</Text>}
+              {customDateInvalid && <Text style={styles.fieldError}>{t('common.invalidDate')}</Text>}
             </View>
 
             <View>
-              <Text style={type.caption}>Preparação (opcional)</Text>
+              <Text style={type.caption}>{t('foods.preparation')}</Text>
               <View style={styles.pillRow}>
-                {PREPARATIONS.map((option) => (
-                  <Pressable
-                    key={option}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: preparation === option }}
-                    onPress={() => setPreparation((prev) => (prev === option ? '' : option))}
-                    style={[styles.pill, preparation === option && styles.pillOn]}
-                  >
-                    <Text style={[styles.pillLabel, preparation === option && styles.pillLabelOn]}>{option}</Text>
-                  </Pressable>
-                ))}
+                {PREPARATIONS.map((prepKey) => {
+                  const option = t(`foods.preparations.${prepKey}`);
+                  return (
+                    <Pressable
+                      key={prepKey}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: preparation === option }}
+                      onPress={() => setPreparation((prev) => (prev === option ? '' : option))}
+                      style={[styles.pill, preparation === option && styles.pillOn]}
+                    >
+                      <Text style={[styles.pillLabel, preparation === option && styles.pillLabelOn]}>{option}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
 
             <View>
-              <Text style={type.caption}>Reação</Text>
+              <Text style={type.caption}>{t('foods.reaction')}</Text>
               <View style={styles.pillRow}>
                 {REACTIONS.map((option) => (
                   <Pressable
-                    key={option.value}
+                    key={option}
                     accessibilityRole="button"
-                    accessibilityState={{ selected: reaction === option.value }}
-                    onPress={() => setReaction(option.value)}
+                    accessibilityState={{ selected: reaction === option }}
+                    onPress={() => setReaction(option)}
                     style={[
                       styles.pill,
-                      reaction === option.value && (option.value === 'nenhuma' ? styles.pillOn : styles.pillReactionOn),
+                      reaction === option && (option === 'nenhuma' ? styles.pillOn : styles.pillReactionOn),
                     ]}
                   >
-                    <Text style={[styles.pillLabel, reaction === option.value && styles.pillLabelOn]}>{option.label}</Text>
+                    <Text style={[styles.pillLabel, reaction === option && styles.pillLabelOn]}>{t(`foods.reactions.${option}`)}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -248,7 +251,7 @@ export function FoodsScreen() {
                 <TextInput
                   value={reactionNotes}
                   onChangeText={setReactionNotes}
-                  placeholder="O que notaste? (ex: manchas na cara, vómito)"
+                  placeholder={t('foods.reactionNotesPlaceholder')}
                   placeholderTextColor={colors.inkMuted}
                   multiline
                   style={[styles.input, styles.notesInput]}
@@ -257,7 +260,7 @@ export function FoodsScreen() {
             </View>
 
             <BigButton
-              label={editingId != null ? 'Guardar alterações' : 'Guardar alimento'}
+              label={editingId != null ? t('foods.saveChanges') : t('foods.save')}
               background={canSave ? colors.domain.foods.bg : colors.surfaceSunken}
               foreground={canSave ? colors.domain.foods.ink : colors.inkMuted}
               onPress={submit}
@@ -266,7 +269,7 @@ export function FoodsScreen() {
           </Card>
         ) : (
           <BigButton
-            label="+ Novo alimento"
+            label={t('foods.add')}
             background={colors.domain.foods.bg}
             foreground={colors.domain.foods.ink}
             onPress={() => setFormOpen(true)}
@@ -275,18 +278,18 @@ export function FoodsScreen() {
         )}
 
         {entries.length === 0 ? (
-          <Text style={type.caption}>Ainda sem alimentos registados. Regista cada alimento novo que o bebé experimenta.</Text>
+          <Text style={type.caption}>{t('foods.empty')}</Text>
         ) : (
           <>
             {withReaction.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Com reação</Text>
+                <Text style={styles.sectionTitle}>{t('foods.withReaction')}</Text>
                 {withReaction.map(renderEntry)}
               </View>
             )}
             {withoutReaction.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Sem reação</Text>
+                <Text style={styles.sectionTitle}>{t('foods.withoutReaction')}</Text>
                 {withoutReaction.map(renderEntry)}
               </View>
             )}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import { useSono } from './useSono';
  * useSono.ts.
  */
 export function SonoScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { entries, runningSince, start, stop, addManual, remove } = useSono();
@@ -27,15 +29,15 @@ export function SonoScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Sono</Text>
+      <Text style={type.h1}>{t('sono.title')}</Text>
 
       <Card style={styles.statCard}>
-        <Text style={type.caption}>Duração atual</Text>
+        <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
       </Card>
 
       <BigButton
-        label={runningSince == null ? 'Iniciar sono' : 'Terminar sono'}
+        label={runningSince == null ? t('sono.start') : t('sono.finish')}
         background={colors.domain.sleep.bg}
         foreground={colors.domain.sleep.ink}
         onPress={runningSince == null ? start : stop}
@@ -44,12 +46,12 @@ export function SonoScreen() {
 
       {runningSince == null && <ManualEntryToggle onSave={addManual} />}
 
-      <Text style={[type.caption, styles.listTitle]}>Últimos registos</Text>
+      <Text style={[type.caption, styles.listTitle]}>{t('trackers.latest')}</Text>
       <FlatList
         data={entries}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
-        ListEmptyComponent={<Text style={type.caption}>Ainda sem registos.</Text>}
+        ListEmptyComponent={<Text style={type.caption}>{t('trackers.none')}</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
             <View>

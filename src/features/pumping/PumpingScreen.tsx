@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +18,7 @@ import { usePumping } from './usePumping';
  * styling later without touching usePumping.ts.
  */
 export function PumpingScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { entries, runningSince, start, stop, addManual, remove, update } = usePumping();
@@ -55,16 +57,16 @@ export function PumpingScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Extração</Text>
+      <Text style={type.h1}>{t('pumping.title')}</Text>
 
       <Card>
-        <Text style={type.caption}>Duração atual</Text>
+        <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
       </Card>
 
       {runningSince != null && (
         <View>
-          <Text style={type.caption}>Quantidade (ml)</Text>
+          <Text style={type.caption}>{t('trackers.amountMl')}</Text>
           <TextInput
             value={amountMl}
             onChangeText={setAmountMl}
@@ -77,7 +79,7 @@ export function PumpingScreen() {
       )}
 
       <BigButton
-        label={runningSince == null ? 'Iniciar extração' : 'Terminar extração'}
+        label={runningSince == null ? t('pumping.start') : t('pumping.finish')}
         background={runningSince == null || canStop ? colors.domain.pumping.bg : colors.surfaceSunken}
         foreground={runningSince == null || canStop ? colors.domain.pumping.ink : colors.inkMuted}
         onPress={runningSince == null ? start : handleStop}
@@ -90,7 +92,7 @@ export function PumpingScreen() {
           extraValid={canSaveManual}
           extraFields={
             <View>
-              <Text style={type.caption}>Quantidade (ml)</Text>
+              <Text style={type.caption}>{t('trackers.amountMl')}</Text>
               <TextInput
                 value={manualAmountMl}
                 onChangeText={setManualAmountMl}
@@ -104,12 +106,12 @@ export function PumpingScreen() {
         />
       )}
 
-      <Text style={[type.caption, styles.listTitle]}>Últimos registos</Text>
+      <Text style={[type.caption, styles.listTitle]}>{t('trackers.latest')}</Text>
       <FlatList
         data={entries}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
-        ListEmptyComponent={<Text style={type.caption}>Ainda sem registos.</Text>}
+        ListEmptyComponent={<Text style={type.caption}>{t('trackers.none')}</Text>}
         renderItem={({ item }) =>
           editingId === item.id ? (
             <Card style={styles.row}>
@@ -122,10 +124,10 @@ export function PumpingScreen() {
               />
               <View style={styles.editActions}>
                 <Pressable onPress={() => saveEdit(item)} style={styles.smallButton}>
-                  <Text style={styles.smallButtonLabel}>Guardar</Text>
+                  <Text style={styles.smallButtonLabel}>{t('common.save')}</Text>
                 </Pressable>
                 <Pressable onPress={() => setEditingId(null)} hitSlop={8}>
-                  <Text style={type.caption}>Cancelar</Text>
+                  <Text style={type.caption}>{t('common.cancel')}</Text>
                 </Pressable>
               </View>
             </Card>
@@ -140,7 +142,7 @@ export function PumpingScreen() {
               >
                 <Text style={type.body}>{formatClock(item.startedAt)}</Text>
                 <Text style={type.caption}>
-                  {formatDuration(item.endedAt - item.startedAt)} · {item.amountMl}ml · toca para editar
+                  {t('pumping.row', { duration: formatDuration(item.endedAt - item.startedAt), ml: item.amountMl })}
                 </Text>
               </Pressable>
               <RemoveEntryButton onRemove={() => remove(item.id)} />

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +13,7 @@ import { useNow } from '../../utils/useNow';
 import { useContractions } from './useContractions';
 
 export function ContractionsScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { entries, runningSince, start, stop, addManual, remove, fiveOneOne } = useContractions();
@@ -22,21 +24,21 @@ export function ContractionsScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Contrações</Text>
+      <Text style={type.h1}>{t('contractions.title')}</Text>
 
       <View style={styles.statsRow}>
         <Card style={styles.statCard}>
-          <Text style={type.caption}>Duração atual</Text>
+          <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
           <Text style={type.data}>{formatDuration(elapsed)}</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Text style={type.caption}>Desde a última</Text>
+          <Text style={type.caption}>{t('contractions.sinceLast')}</Text>
           <Text style={type.data}>{lastInterval != null ? formatDuration(lastInterval) : '—'}</Text>
         </Card>
       </View>
 
       <BigButton
-        label={runningSince == null ? 'Iniciar contração' : 'Parar contração'}
+        label={runningSince == null ? t('contractions.start') : t('contractions.stop')}
         background={colors.domain.contractions.bg}
         foreground={colors.domain.contractions.ink}
         onPress={runningSince == null ? start : stop}
@@ -46,19 +48,19 @@ export function ContractionsScreen() {
       {fiveOneOne && (
         <Card style={[styles.alert, { borderColor: colors.domain.contractions.bg }]}>
           <Text style={[type.body, { color: colors.domain.contractions.bg, fontFamily: fontFamily.bodyBold }]}>
-            Padrão 5-1-1 detetado — considera contactar a maternidade.
+            {t('contractions.fiveOneOne')}
           </Text>
         </Card>
       )}
 
       {runningSince == null && <ManualEntryToggle onSave={addManual} />}
 
-      <Text style={[type.caption, styles.listTitle]}>Histórico</Text>
+      <Text style={[type.caption, styles.listTitle]}>{t('trackers.history')}</Text>
       <FlatList
         data={entries}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
-        ListEmptyComponent={<Text style={type.caption}>Ainda sem registos hoje.</Text>}
+        ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
             <View>

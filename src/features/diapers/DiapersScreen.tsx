@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,9 +10,10 @@ import { DiaperType } from '../../types/records';
 import { formatClock, formatSince } from '../../utils/time';
 import { useDiapers } from './useDiapers';
 
-const TYPE_LABEL: Record<DiaperType, string> = { wet: 'Xixi', dirty: 'Cocó', both: 'Ambos' };
+const TYPE_LABEL = { wet: 'diaperTypes.wet', dirty: 'diaperTypes.dirty', both: 'diaperTypes.both' } as const satisfies Record<DiaperType, string>;
 
 export function DiapersScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { todayEntries, lastEntry, register, remove } = useDiapers();
@@ -24,38 +26,38 @@ export function DiapersScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Fraldas</Text>
+      <Text style={type.h1}>{t('diapers.title')}</Text>
 
       <Card style={styles.lastCard}>
-        <Text style={type.caption}>Última muda</Text>
-        <Text style={type.data}>{lastEntry ? formatSince(lastEntry.at) : 'sem registos'}</Text>
-        {lastEntry && <Text style={type.caption}>{TYPE_LABEL[lastEntry.type]} às {formatClock(lastEntry.at)}</Text>}
+        <Text style={type.caption}>{t('diapers.lastChange')}</Text>
+        <Text style={type.data}>{lastEntry ? formatSince(lastEntry.at) : t('diapers.none')}</Text>
+        {lastEntry && <Text style={type.caption}>{t('diapers.typeAt', { type: t(TYPE_LABEL[lastEntry.type]), time: formatClock(lastEntry.at) })}</Text>}
       </Card>
 
       <View style={styles.buttonRow}>
-        {(['wet', 'dirty', 'both'] as DiaperType[]).map((t) => (
+        {(['wet', 'dirty', 'both'] as DiaperType[]).map((diaperType) => (
           <Pressable
-            key={t}
-            onPress={() => register(t)}
+            key={diaperType}
+            onPress={() => register(diaperType)}
             style={[styles.diaperButton, { backgroundColor: colors.domain.diapers.bg }]}
           >
-            <Text style={[styles.diaperLabel, { color: colors.domain.diapers.ink }]}>{TYPE_LABEL[t]}</Text>
+            <Text style={[styles.diaperLabel, { color: colors.domain.diapers.ink }]}>{t(TYPE_LABEL[diaperType])}</Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={type.caption}>Hoje: {todayEntries.length} muda{todayEntries.length === 1 ? '' : 's'}</Text>
+      <Text style={type.caption}>{t('diapers.today', { count: todayEntries.length })}</Text>
 
       <FlatList
         data={todayEntries}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
-        ListEmptyComponent={<Text style={type.caption}>Ainda sem registos hoje.</Text>}
+        ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
             <View>
               <Text style={type.body}>{formatClock(item.at)}</Text>
-              <Text style={type.caption}>{TYPE_LABEL[item.type]}</Text>
+              <Text style={type.caption}>{t(TYPE_LABEL[item.type])}</Text>
             </View>
             <RemoveEntryButton onRemove={() => remove(item.id)} />
           </Card>

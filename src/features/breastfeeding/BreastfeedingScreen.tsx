@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,9 +14,10 @@ import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { useBreastfeeding } from './useBreastfeeding';
 
-const SIDE_LABEL = { left: 'Esquerda', right: 'Direita' } as const;
+const SIDE_LABEL = { left: 'breastfeeding.sides.left', right: 'breastfeeding.sides.right' } as const;
 
 export function BreastfeedingScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { todayEntries, todayDurationMs, running, start, stop, addManual, remove, suggestedSide } = useBreastfeeding();
@@ -33,7 +35,7 @@ export function BreastfeedingScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Amamentação</Text>
+      <Text style={type.h1}>{t('breastfeeding.title')}</Text>
 
       <View style={styles.sideRow}>
         {(['left', 'right'] as const).map((side) => (
@@ -55,7 +57,7 @@ export function BreastfeedingScreen() {
                 color: selectedSide === side ? colors.domain.breastfeeding.ink : colors.domain.breastfeeding.bg,
               }}
             >
-              {SIDE_LABEL[side]}
+              {t(SIDE_LABEL[side])}
             </Text>
           </Pressable>
         ))}
@@ -63,13 +65,13 @@ export function BreastfeedingScreen() {
 
       <Card style={styles.timerCard}>
         <Text style={type.caption}>
-          {running != null ? `A decorrer · lado ${SIDE_LABEL[running.side].toLowerCase()}` : 'Pronta para começar'}
+          {running != null ? t('breastfeeding.running', { side: t(SIDE_LABEL[running.side]).toLowerCase() }) : t('breastfeeding.ready')}
         </Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
       </Card>
 
       <BigButton
-        label={running == null ? 'Iniciar' : 'Terminar'}
+        label={running == null ? t('breastfeeding.start') : t('breastfeeding.finish')}
         background={colors.domain.breastfeeding.bg}
         foreground={colors.domain.breastfeeding.ink}
         onPress={() => {
@@ -90,18 +92,18 @@ export function BreastfeedingScreen() {
       )}
 
       <Text style={type.caption}>
-        Hoje: {todayEntries.length} mamada{todayEntries.length === 1 ? '' : 's'} · {formatDuration(todayDurationMs)}
+        {t('breastfeeding.today', { count: todayEntries.length, duration: formatDuration(todayDurationMs) })}
       </Text>
 
       <FlatList
         data={todayEntries}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
-        ListEmptyComponent={<Text style={type.caption}>Ainda sem registos hoje.</Text>}
+        ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
             <View>
-              <Text style={type.body}>{formatClock(item.startedAt)} · {SIDE_LABEL[item.side]}</Text>
+              <Text style={type.body}>{formatClock(item.startedAt)} · {t(SIDE_LABEL[item.side])}</Text>
               <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)}</Text>
             </View>
             <RemoveEntryButton onRemove={() => remove(item.id)} />
