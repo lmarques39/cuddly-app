@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ type Props = {
 // "recover" someone else's account. Deliberately simpler than the Figma
 // frame for this reason (see #5's discussion).
 export function RecoverPasswordScreen({ onSend, onBack, error }: Props) {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [email, setEmail] = useState('');
@@ -39,15 +41,15 @@ export function RecoverPasswordScreen({ onSend, onBack, error }: Props) {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.content}>
         <Pressable onPress={onBack} hitSlop={12}>
-          <Text style={[type.caption, styles.link]}>‹ Voltar</Text>
+          <Text style={[type.caption, styles.link]}>{t('common.back')}</Text>
         </Pressable>
 
         <View>
-          <Text style={type.h1}>Recuperar password</Text>
+          <Text style={type.h1}>{t('auth.recover.title')}</Text>
           <Text style={[type.body, { color: colors.inkSecondary, marginTop: spacing.xs }]}>
             {sent
-              ? 'Verifica o teu email — mandámos-te um link para definires uma password nova.'
-              : 'Indica o teu email e mandamos-te um link para definires uma password nova.'}
+              ? t('auth.recover.sent')
+              : t('auth.recover.intro')}
           </Text>
         </View>
 
@@ -60,11 +62,11 @@ export function RecoverPasswordScreen({ onSend, onBack, error }: Props) {
             )}
 
             <View>
-              <Text style={type.caption}>Email</Text>
+              <Text style={type.caption}>{t('auth.email')}</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
-                placeholder="tu@email.com"
+                placeholder={t('auth.emailPlaceholder')}
                 placeholderTextColor={colors.inkMuted}
                 autoCapitalize="none"
                 keyboardType="email-address"
@@ -78,7 +80,7 @@ export function RecoverPasswordScreen({ onSend, onBack, error }: Props) {
       {!sent && (
         <View style={styles.footer}>
           <BigButton
-            label={sending ? 'A enviar…' : 'Enviar link'}
+            label={sending ? t('auth.recover.sending') : t('auth.recover.send')}
             background={canSubmit ? colors.action : colors.surfaceSunken}
             foreground={canSubmit ? colors.actionInk : colors.inkMuted}
             onPress={handleSend}

@@ -49,23 +49,23 @@ function describeAuthError(err: unknown): string {
   const code = err && typeof err === 'object' && 'code' in err ? String((err as { code: unknown }).code) : '';
   switch (code) {
     case 'auth/email-already-in-use':
-      return 'Já existe uma conta com este email. Tenta entrar em vez de criar conta.';
+      return i18n.t('auth.errors.emailInUse');
     case 'auth/invalid-email':
-      return 'Este email não parece válido.';
+      return i18n.t('auth.errors.invalidEmail');
     case 'auth/weak-password':
-      return 'A password tem de ter pelo menos 6 caracteres.';
+      return i18n.t('auth.errors.weakPassword');
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
     case 'auth/invalid-login-credentials':
-      return 'Email ou password incorretos.';
+      return i18n.t('auth.errors.wrongCredentials');
     case 'auth/user-not-found':
-      return 'Não existe nenhuma conta com este email.';
+      return i18n.t('auth.errors.userNotFound');
     case 'auth/too-many-requests':
-      return 'Demasiadas tentativas seguidas. Espera um pouco e tenta novamente.';
+      return i18n.t('auth.errors.tooManyRequests');
     case 'auth/network-request-failed':
-      return 'Sem ligação à internet.';
+      return i18n.t('auth.errors.network');
     default:
-      return err instanceof Error ? err.message : 'Algo correu mal. Tenta novamente.';
+      return err instanceof Error ? err.message : i18n.t('auth.errors.generic');
   }
 }
 
@@ -235,7 +235,7 @@ function AppContent() {
       // (see #78), not a typo, so describeAuthError's message would mislead.
       setAuthError(
         code === 'auth/invalid-credential'
-          ? 'A conta Google não foi aceite. Tenta novamente ou entra com email e password.'
+          ? i18n.t('auth.google.notAccepted')
           : describeAuthError(err),
       );
     }

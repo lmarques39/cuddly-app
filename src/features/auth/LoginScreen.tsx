@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, onForgotPassword, error }: Props) {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [email, setEmail] = useState('');
@@ -30,7 +32,7 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
         <View style={styles.brand}>
           <View style={styles.logoBadge} />
           <Text style={styles.wordmark}>cuddly</Text>
-          <Text style={[type.caption, styles.tagline]}>Acompanha a gravidez e os primeiros meses, com calma.</Text>
+          <Text style={[type.caption, styles.tagline]}>{t('auth.login.tagline')}</Text>
         </View>
 
         <View style={{ gap: spacing.md }}>
@@ -41,11 +43,11 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
           )}
 
           <View>
-            <Text style={type.caption}>Email</Text>
+            <Text style={type.caption}>{t('auth.email')}</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="tu@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               placeholderTextColor={colors.inkMuted}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -55,16 +57,16 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
 
           <View>
             <View style={styles.row}>
-              <Text style={type.caption}>Password</Text>
+              <Text style={type.caption}>{t('auth.password')}</Text>
               <Pressable onPress={onForgotPassword} hitSlop={8}>
-                <Text style={[type.caption, styles.link]}>Esqueci-me</Text>
+                <Text style={[type.caption, styles.link]}>{t('auth.login.forgot')}</Text>
               </Pressable>
             </View>
             <PasswordField value={password} onChangeText={setPassword} placeholder="••••••••" />
           </View>
 
           <BigButton
-            label="Entrar"
+            label={t('auth.login.signIn')}
             background={colors.action}
             foreground={colors.actionInk}
             onPress={() => onLogin(email, password)}
@@ -74,7 +76,7 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
 
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
-            <Text style={[type.caption, { color: colors.inkMuted }]}>ou</Text>
+            <Text style={[type.caption, { color: colors.inkMuted }]}>{t('auth.login.or')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -83,14 +85,14 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
             disabled={!google.available}
             style={[styles.googleButton, !google.available && { opacity: 0.5 }]}
           >
-            <Text style={styles.googleLabel}>Continuar com Google</Text>
+            <Text style={styles.googleLabel}>{t('auth.login.google')}</Text>
           </Pressable>
         </View>
 
         <View style={styles.footerRow}>
-          <Text style={type.caption}>Ainda não tens conta?</Text>
+          <Text style={type.caption}>{t('auth.login.noAccount')}</Text>
           <Pressable onPress={onCreateAccount}>
-            <Text style={[type.caption, styles.link, { fontFamily: fontFamily.bodyBold }]}>Criar conta</Text>
+            <Text style={[type.caption, styles.link, { fontFamily: fontFamily.bodyBold }]}>{t('auth.login.createAccount')}</Text>
           </Pressable>
         </View>
       </View>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,13 +20,14 @@ type Props = {
   onFinish: (baby: BabyInfo) => void;
 };
 
-const SEX_LABEL: Record<BabySex, string> = {
-  menina: 'Menina',
-  menino: 'Menino',
-  prefiro_nao_dizer: 'Prefiro não dizer',
-};
+const SEX_LABEL = {
+  menina: 'auth.baby.sexes.menina',
+  menino: 'auth.baby.sexes.menino',
+  prefiro_nao_dizer: 'auth.baby.sexes.prefiro_nao_dizer',
+} as const satisfies Record<BabySex, string>;
 
 export function RegisterBabyScreen({ onFinish }: Props) {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [alreadyBorn, setAlreadyBorn] = useState(false);
@@ -52,21 +54,21 @@ export function RegisterBabyScreen({ onFinish }: Props) {
         </View>
 
         <View>
-          <Text style={type.h1}>Sobre o bebé</Text>
+          <Text style={type.h1}>{t('auth.baby.title')}</Text>
           <Text style={[type.body, { color: colors.inkSecondary, marginTop: spacing.xs }]}>
-            Isto determina o que a app mostra a seguir.
+            {t('auth.baby.subtitle')}
           </Text>
         </View>
 
         <View>
-          <Text style={type.caption}>O bebé já nasceu?</Text>
+          <Text style={type.caption}>{t('auth.baby.born')}</Text>
           <View style={styles.toggleRow}>
             <Pressable
               onPress={() => setAlreadyBorn(true)}
               style={[styles.togglePill, { backgroundColor: alreadyBorn ? colors.action : colors.surfaceSunken }]}
             >
               <Text style={{ fontFamily: fontFamily.bodyMedium, fontSize: 13, color: alreadyBorn ? colors.actionInk : colors.inkSecondary }}>
-                Já nasceu
+                {t('auth.baby.yes')}
               </Text>
             </Pressable>
             <Pressable
@@ -74,32 +76,32 @@ export function RegisterBabyScreen({ onFinish }: Props) {
               style={[styles.togglePill, { backgroundColor: !alreadyBorn ? colors.action : colors.surfaceSunken }]}
             >
               <Text style={{ fontFamily: fontFamily.bodyMedium, fontSize: 13, color: !alreadyBorn ? colors.actionInk : colors.inkSecondary }}>
-                Ainda não
+                {t('auth.baby.notYet')}
               </Text>
             </Pressable>
           </View>
         </View>
 
         <View>
-          <Text style={type.caption}>Nome ou alcunha</Text>
+          <Text style={type.caption}>{t('auth.baby.nickname')}</Text>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Opcional"
+            placeholder={t('common.optional')}
             placeholderTextColor={colors.inkMuted}
             style={[styles.input, { fontFamily: fontFamily.bodyBold, fontSize: 16 }]}
           />
         </View>
 
         <DateField
-          label={alreadyBorn ? 'Data de nascimento' : 'Data prevista para o parto'}
+          label={alreadyBorn ? t('auth.baby.birthDate') : t('auth.baby.dueDate')}
           value={dateMs}
           onChange={setDateMs}
-          placeholder={alreadyBorn ? 'Quando nasceu' : 'Data prevista'}
+          placeholder={alreadyBorn ? t('auth.baby.whenBorn') : t('auth.baby.duePlaceholder')}
         />
 
         <View>
-          <Text style={type.caption}>Sexo</Text>
+          <Text style={type.caption}>{t('auth.baby.sex')}</Text>
           <View style={styles.toggleRow}>
             {(Object.keys(SEX_LABEL) as BabySex[]).map((s) => (
               <Pressable
@@ -115,7 +117,7 @@ export function RegisterBabyScreen({ onFinish }: Props) {
                     textAlign: 'center',
                   }}
                 >
-                  {SEX_LABEL[s]}
+                  {t(SEX_LABEL[s])}
                 </Text>
               </Pressable>
             ))}
@@ -124,8 +126,8 @@ export function RegisterBabyScreen({ onFinish }: Props) {
       </View>
 
       <View style={styles.footer}>
-        <BigButton label="Concluir" background={colors.action} foreground={colors.actionInk} onPress={handleFinish} full />
-        <Text style={[type.caption, { textAlign: 'center', color: colors.inkMuted, marginTop: spacing.sm }]}>Passo 2 de 2</Text>
+        <BigButton label={t('auth.baby.finish')} background={colors.action} foreground={colors.actionInk} onPress={handleFinish} full />
+        <Text style={[type.caption, { textAlign: 'center', color: colors.inkMuted, marginTop: spacing.sm }]}>{t('auth.step', { step: 2, total: 2 })}</Text>
       </View>
     </SafeAreaView>
   );

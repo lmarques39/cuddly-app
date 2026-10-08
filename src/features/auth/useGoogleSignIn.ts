@@ -6,6 +6,7 @@ import {
   isSuccessResponse,
   statusCodes,
 } from 'react-native-nitro-google-signin';
+import i18n from '../../i18n';
 
 const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
@@ -23,15 +24,15 @@ function describeGoogleError(err: unknown): string {
   if (isErrorWithCode(err)) {
     switch (err.code) {
       case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-        return 'Este telemóvel não tem os Serviços Google Play atualizados.';
+        return i18n.t('auth.google.playServices');
       case statusCodes.IN_PROGRESS:
-        return 'O login com Google já está a decorrer.';
+        return i18n.t('auth.google.inProgress');
       case statusCodes.DEVELOPER_ERROR:
         // Wrong/missing SHA-1 for the certificate that signed this build.
-        return 'Login com Google mal configurado neste build. Avisa a equipa.';
+        return i18n.t('auth.google.misconfigured');
     }
   }
-  return 'Não foi possível entrar com Google. Tenta novamente.';
+  return i18n.t('auth.google.failed');
 }
 
 /**
@@ -54,7 +55,7 @@ export function useGoogleSignIn(onIdToken: (idToken: string) => void) {
       if (isSuccessResponse(response) && response.data.idToken) {
         onIdToken(response.data.idToken);
       } else if (!isCancelledResponse(response)) {
-        setError('Não foi possível entrar com Google. Tenta novamente.');
+        setError(i18n.t('auth.google.failed'));
       }
     } catch (err) {
       setError(describeGoogleError(err));

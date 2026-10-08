@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +18,7 @@ import { formatSince } from '../../utils/time';
 type Row = { kind: 'member'; data: Member } | { kind: 'invite'; data: Invite };
 
 export function CuidadoresScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { members, pendingInvites, currentUid } = useCuidadores();
@@ -54,7 +56,7 @@ export function CuidadoresScreen() {
             <Card style={styles.row}>
               <View>
                 <Text style={type.body}>{item.data.name}</Text>
-                <Text style={type.caption}>{ROLE_LABEL[item.data.role as ParentRole] ?? item.data.role}</Text>
+                <Text style={type.caption}>{item.data.role in ROLE_LABEL ? t(ROLE_LABEL[item.data.role as ParentRole]) : item.data.role}</Text>
               </View>
               {item.data.id === currentUid ? (
                 <View style={styles.badge}>

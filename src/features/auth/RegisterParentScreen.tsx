@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,13 +23,15 @@ type Props = {
   error?: string | null;
 };
 
-export const ROLE_LABEL: Record<ParentRole, string> = {
-  mae: 'Mãe',
-  pai: 'Pai',
-  cuidador: 'Cuidador(a)',
-};
+/** Translation key of each role's label (#118) — render with t(ROLE_LABEL[role]). */
+export const ROLE_LABEL = {
+  mae: 'auth.parent.roles.mae',
+  pai: 'auth.parent.roles.pai',
+  cuidador: 'auth.parent.roles.cuidador',
+} as const satisfies Record<ParentRole, string>;
 
 export function RegisterParentScreen({ email, onContinue, error }: Props) {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [name, setName] = useState('');
@@ -46,9 +49,9 @@ export function RegisterParentScreen({ email, onContinue, error }: Props) {
         </View>
 
         <View>
-          <Text style={type.h1}>Sobre ti</Text>
+          <Text style={type.h1}>{t('auth.parent.title')}</Text>
           <Text style={[type.body, { color: colors.inkSecondary, marginTop: spacing.xs }]}>
-            Isto ajuda-nos a saber quem está a registar.
+            {t('auth.parent.subtitle')}
           </Text>
         </View>
 
@@ -59,23 +62,23 @@ export function RegisterParentScreen({ email, onContinue, error }: Props) {
         )}
 
         <View>
-          <Text style={type.caption}>O teu nome</Text>
+          <Text style={type.caption}>{t('auth.parent.name')}</Text>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Nome"
+            placeholder={t('auth.parent.namePlaceholder')}
             placeholderTextColor={colors.inkMuted}
             style={[styles.input, { fontFamily: fontFamily.bodyBold, fontSize: 16 }]}
           />
         </View>
 
         <View style={styles.emailRow}>
-          <Text style={type.caption}>Conta</Text>
+          <Text style={type.caption}>{t('auth.parent.account')}</Text>
           <Text style={[type.body, { fontFamily: fontFamily.bodyMedium }]}>{email}</Text>
         </View>
 
         <View>
-          <Text style={type.caption}>O teu papel</Text>
+          <Text style={type.caption}>{t('auth.parent.role')}</Text>
           <View style={styles.roleRow}>
             {(Object.keys(ROLE_LABEL) as ParentRole[]).map((r) => (
               <Pressable
@@ -90,7 +93,7 @@ export function RegisterParentScreen({ email, onContinue, error }: Props) {
                     color: role === r ? colors.actionInk : colors.inkSecondary,
                   }}
                 >
-                  {ROLE_LABEL[r]}
+                  {t(ROLE_LABEL[r])}
                 </Text>
               </Pressable>
             ))}
@@ -98,7 +101,7 @@ export function RegisterParentScreen({ email, onContinue, error }: Props) {
         </View>
 
         <View>
-          <Text style={type.caption}>Telemóvel (opcional)</Text>
+          <Text style={type.caption}>{t('auth.parent.phone')}</Text>
           <TextInput
             value={phone}
             onChangeText={setPhone}
@@ -112,14 +115,14 @@ export function RegisterParentScreen({ email, onContinue, error }: Props) {
 
       <View style={styles.footer}>
         <BigButton
-          label="Continuar"
+          label={t('common.continue')}
           background={canContinue ? colors.action : colors.surfaceSunken}
           foreground={canContinue ? colors.actionInk : colors.inkMuted}
           onPress={() => canContinue && onContinue({ name: name.trim(), role, email, phone: phone.trim() })}
           full
         />
         <Text style={[type.caption, { textAlign: 'center', color: colors.inkMuted, marginTop: spacing.sm }]}>
-          Passo 1 de 2
+          {t('auth.step', { step: 1, total: 2 })}
         </Text>
       </View>
     </SafeAreaView>

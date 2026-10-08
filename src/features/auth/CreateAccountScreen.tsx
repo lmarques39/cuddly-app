@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [email, setEmail] = useState('');
@@ -27,13 +29,13 @@ export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.content}>
         <Pressable onPress={onBack} hitSlop={12}>
-          <Text style={[type.caption, styles.link]}>‹ Voltar</Text>
+          <Text style={[type.caption, styles.link]}>{t('common.back')}</Text>
         </Pressable>
 
         <View>
-          <Text style={type.h1}>Criar conta</Text>
+          <Text style={type.h1}>{t('auth.create.title')}</Text>
           <Text style={[type.body, { color: colors.inkSecondary, marginTop: spacing.xs }]}>
-            Só precisamos do teu email e de uma password para começar.
+            {t('auth.create.subtitle')}
           </Text>
         </View>
 
@@ -45,11 +47,11 @@ export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
 
         <View style={{ gap: spacing.md }}>
           <View>
-            <Text style={type.caption}>Email</Text>
+            <Text style={type.caption}>{t('auth.email')}</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="tu@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               placeholderTextColor={colors.inkMuted}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -58,16 +60,16 @@ export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
           </View>
 
           <View>
-            <Text style={type.caption}>Password</Text>
-            <PasswordField value={password} onChangeText={setPassword} placeholder="Pelo menos 6 caracteres" />
-            {passwordTooShort && <Text style={styles.mismatchText}>Precisa de ter pelo menos 6 caracteres.</Text>}
+            <Text style={type.caption}>{t('auth.password')}</Text>
+            <PasswordField value={password} onChangeText={setPassword} placeholder={t('auth.create.passwordPlaceholder')} />
+            {passwordTooShort && <Text style={styles.mismatchText}>{t('auth.create.passwordTooShort')}</Text>}
           </View>
 
           <View>
-            <Text style={type.caption}>Confirmar password</Text>
-            <PasswordField value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Repete a password" />
+            <Text style={type.caption}>{t('auth.create.confirm')}</Text>
+            <PasswordField value={confirmPassword} onChangeText={setConfirmPassword} placeholder={t('auth.create.confirmPlaceholder')} />
             {password.length > 0 && confirmPassword.length > 0 && !passwordsMatch && (
-              <Text style={styles.mismatchText}>As passwords não coincidem.</Text>
+              <Text style={styles.mismatchText}>{t('auth.create.mismatch')}</Text>
             )}
           </View>
         </View>
@@ -75,7 +77,7 @@ export function CreateAccountScreen({ onCreateAccount, onBack, error }: Props) {
 
       <View style={styles.footer}>
         <BigButton
-          label="Criar conta"
+          label={t('auth.create.title')}
           background={canSubmit ? colors.action : colors.surfaceSunken}
           foreground={canSubmit ? colors.actionInk : colors.inkMuted}
           onPress={() => canSubmit && onCreateAccount(email.trim(), password)}
