@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import i18n, { currentLocale } from '../i18n';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useMemo } from 'react';
@@ -29,29 +31,29 @@ function pregnancyWeek(dueDate: number): number {
 }
 
 function formatAppointmentDate(epochMs: number): string {
-  return new Date(epochMs).toLocaleString('pt-PT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return new Date(epochMs).toLocaleString(currentLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 function babyAge(birthDate: number): string {
   const days = Math.floor((Date.now() - birthDate) / (24 * 60 * 60 * 1000));
-  if (days < 14) return `${days} dia${days === 1 ? '' : 's'}`;
+  if (days < 14) return i18n.t('age.days', { count: days });
   const weeks = Math.floor(days / 7);
-  if (weeks < 12) return `${weeks} semanas`;
-  const months = Math.floor(days / 30);
-  return `${months} ${months === 1 ? 'mês' : 'meses'}`;
+  if (weeks < 12) return i18n.t('age.weeks', { count: weeks });
+  return i18n.t('age.months', { count: Math.floor(days / 30) });
 }
 
 function NextAppointmentCard({ appointment, onPress }: { appointment: Appointment | null; onPress: () => void }) {
+  const { t } = useTranslation();
   const { type } = useTheme();
   const styles = useStyles();
   return (
     <Pressable onPress={onPress}>
       <Card style={styles.appointmentCard}>
         <View style={styles.appointmentHead}>
-          <Text style={type.caption}>Próxima consulta</Text>
+          <Text style={type.caption}>{t('home.nextAppointment')}</Text>
           <Text style={styles.chevron}>›</Text>
         </View>
-        <Text style={type.body}>{appointment ? appointment.title : 'Sem consultas agendadas.'}</Text>
+        <Text style={type.body}>{appointment ? appointment.title : t('home.noAppointments')}</Text>
         {appointment && <Text style={type.caption}>{formatAppointmentDate(appointment.scheduledAt)}</Text>}
       </Card>
     </Pressable>
@@ -59,6 +61,7 @@ function NextAppointmentCard({ appointment, onPress }: { appointment: Appointmen
 }
 
 export function HomeScreen() {
+  const { t } = useTranslation();
   const { type } = useTheme();
   const styles = useStyles();
   const navigation = useNavigation<Nav>();
@@ -76,16 +79,16 @@ export function HomeScreen() {
   // subscription — no refetch-on-focus needed, just derive the view.
   const latest = useMemo(() => {
     const items: LatestEntry[] = [
-      contractions[0] && { label: 'Contração registada', at: contractions[0].endedAt },
+      contractions[0] && { label: t('home.latestContraction'), at: contractions[0].endedAt },
       breastfeeding[0] && {
-        label: `Amamentação (${breastfeeding[0].side === 'left' ? 'esquerdo' : 'direito'})`,
+        label: t('home.latestBreastfeeding', { side: t(breastfeeding[0].side === 'left' ? 'side.left' : 'side.right') }),
         at: breastfeeding[0].endedAt,
       },
-      bottle[0] && { label: `Biberão · ${bottle[0].amountMl}ml`, at: bottle[0].at },
-      diapers[0] && { label: 'Muda de fralda', at: diapers[0].at },
+      bottle[0] && { label: t('home.latestBottle', { ml: bottle[0].amountMl }), at: bottle[0].at },
+      diapers[0] && { label: t('home.latestDiaper'), at: diapers[0].at },
     ].filter(Boolean) as LatestEntry[];
     return items.sort((a, b) => b.at - a.at);
-  }, [contractions, breastfeeding, bottle, diapers]);
+  }, [contractions, breastfeeding, bottle, diapers, t]);
 
   const nextAppointment: Appointment | null = useMemo(() => {
     const upcoming = appointments.filter((a) => a.scheduledAt >= now).sort((a, b) => a.scheduledAt - b.scheduledAt);
@@ -95,15 +98,15 @@ export function HomeScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={{ gap: spacing.md, paddingBottom: spacing.xl }}>
-        <Text style={type.h1}>{firstName ? `Olá, ${firstName} 👋` : 'Olá 👋'}</Text>
+        <Text style={type.h1}>{firstName ? t('home.hello', { name: firstName }) : t('home.helloAnon')}</Text>
 
         {mode === 'gravida' ? (
           <>
             <Card style={{ alignItems: 'center', gap: spacing.xs }}>
-              <Text style={type.caption}>Semana de gravidez</Text>
-              <Text style={type.data}>{profile?.dueDate ? `Semana ${pregnancyWeek(profile.dueDate)}` : '—'}</Text>
+              <Text style={type.caption}>{t('home.pregnancyWeek')}</Text>
+              <Text style={type.data}>{profile?.dueDate ? t('home.week', { week: pregnancyWeek(profile.dueDate) }) : '—'}</Text>
               {!profile?.dueDate && (
-                <Text style={type.caption}>Define a data prevista do parto em Perfil › Perfil do bebé.</Text>
+                <Text style={type.caption}>{t('home.setDueDate')}</Text>
               )}
             </Card>
             <NextAppointmentCard
@@ -114,7 +117,7 @@ export function HomeScreen() {
         ) : (
           <>
             <Card style={{ alignItems: 'center', gap: spacing.xs }}>
-              <Text style={type.caption}>{profile?.name || 'O bebé'}</Text>
+              <Text style={type.caption}>{profile?.name || t('home.theBaby')}</Text>
               <Text style={type.data}>{profile?.birthDate ? babyAge(profile.birthDate) : '—'}</Text>
               {(profile?.weightKg || profile?.heightCm) && (
                 <Text style={type.caption}>
@@ -130,9 +133,9 @@ export function HomeScreen() {
               onPress={() => navigation.navigate('Registar', { screen: 'MarcarConsulta' })}
             />
 
-            <Text style={[type.caption, { marginTop: spacing.sm }]}>Últimos registos</Text>
+            <Text style={[type.caption, { marginTop: spacing.sm }]}>{t('home.latest')}</Text>
             <Card style={{ gap: spacing.sm }}>
-              {latest.length === 0 && <Text style={type.caption}>Ainda sem registos — usa o separador Registar.</Text>}
+              {latest.length === 0 && <Text style={type.caption}>{t('home.noEntries')}</Text>}
               {latest.map((item, index) => (
                 <View key={index} style={styles.row}>
                   <Text style={type.body}>{item.label}</Text>

@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next';
+import i18n, { currentLocale } from '../i18n';
+import { weekdayLetters } from '../i18n/calendar';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,17 +21,16 @@ type Kind = 'contraction' | 'breastfeeding' | 'sono' | 'pumping' | 'bottle' | 'd
 // allDay: only the day is known (a food tried "today"), so no clock time is shown.
 type TimelineItem = { id: string; kind: Kind; label: string; detail: string; at: number; allDay?: boolean };
 
-const REACTION_DETAIL = { nenhuma: 'sem reação', ligeira: 'reação ligeira', forte: 'reação forte' } as const;
 
-const KIND_LABEL: Record<Kind, string> = {
-  contraction: 'Contração',
-  breastfeeding: 'Amamentação',
-  sono: 'Sono',
-  pumping: 'Extração',
-  bottle: 'Biberão',
-  diaper: 'Fralda',
-  food: 'Alimento novo',
-};
+const KIND_LABEL = {
+  contraction: 'history.kinds.contraction',
+  breastfeeding: 'history.kinds.breastfeeding',
+  sono: 'history.kinds.sono',
+  pumping: 'history.kinds.pumping',
+  bottle: 'history.kinds.bottle',
+  diaper: 'history.kinds.diaper',
+  food: 'history.kinds.food',
+} as const satisfies Record<Kind, string>;
 
 const KIND_COLOR: Record<Kind, string> = {
   contraction: domainColors.contractions.bg,
@@ -41,7 +43,6 @@ const KIND_COLOR: Record<Kind, string> = {
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const DAY_LETTER = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
 function startOfDay(epochMs: number): number {
   const d = new Date(epochMs);
@@ -52,15 +53,16 @@ function startOfDay(epochMs: number): number {
 /** "Hoje, 24/09" / "Ontem, 23/09" / "Terça-feira, 22/09" for older days. */
 function formatDayLabel(dayStart: number, todayStart: number): string {
   const d = new Date(dayStart);
-  const dateLabel = d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' });
+  const dateLabel = d.toLocaleDateString(currentLocale(), { day: '2-digit', month: '2-digit' });
   const diffDays = Math.round((todayStart - dayStart) / (24 * 60 * 60 * 1000));
-  if (diffDays === 0) return `Hoje, ${dateLabel}`;
-  if (diffDays === 1) return `Ontem, ${dateLabel}`;
-  const weekday = d.toLocaleDateString('pt-PT', { weekday: 'long' });
+  if (diffDays === 0) return i18n.t('history.todayLabel', { date: dateLabel });
+  if (diffDays === 1) return i18n.t('history.yesterdayLabel', { date: dateLabel });
+  const weekday = d.toLocaleDateString(currentLocale(), { weekday: 'long' });
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${dateLabel}`;
 }
 
 export function HistoricoScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [view, setView] = useState<'linha' | 'tendencias'>('linha');
@@ -81,50 +83,50 @@ export function HistoricoScreen() {
       ...contractions.map((e) => ({
         id: e.id,
         kind: 'contraction' as const,
-        label: 'Contração',
+        label: t('history.kinds.contraction'),
         detail: formatDuration(e.endedAt - e.startedAt),
         at: e.endedAt,
       })),
       ...breastfeeding.map((e) => ({
         id: e.id,
         kind: 'breastfeeding' as const,
-        label: `Amamentação · ${e.side === 'left' ? 'esquerdo' : 'direito'}`,
+        label: t('history.breastfeedingSide', { side: t(e.side === 'left' ? 'side.left' : 'side.right') }),
         detail: formatDuration(e.endedAt - e.startedAt),
         at: e.endedAt,
       })),
       ...sono.map((e) => ({
         id: e.id,
         kind: 'sono' as const,
-        label: 'Sono',
+        label: t('history.kinds.sono'),
         detail: formatDuration(e.endedAt - e.startedAt),
         at: e.endedAt,
       })),
       ...pumping.map((e) => ({
         id: e.id,
         kind: 'pumping' as const,
-        label: 'Extração',
+        label: t('history.kinds.pumping'),
         detail: `${formatDuration(e.endedAt - e.startedAt)} · ${e.amountMl}ml`,
         at: e.endedAt,
       })),
       ...bottle.map((e) => ({
         id: e.id,
         kind: 'bottle' as const,
-        label: 'Biberão',
+        label: t('history.kinds.bottle'),
         detail: `${e.amountMl}ml`,
         at: e.at,
       })),
       ...diapers.map((e) => ({
         id: e.id,
         kind: 'diaper' as const,
-        label: 'Fralda',
-        detail: e.type === 'wet' ? 'Xixi' : e.type === 'dirty' ? 'Cocó' : 'Ambos',
+        label: t('history.kinds.diaper'),
+        detail: t(`diaperTypes.${e.type}`),
         at: e.at,
       })),
       ...foods.map((e) => ({
         id: e.id,
         kind: 'food' as const,
-        label: `Alimento novo · ${e.food}`,
-        detail: [e.preparation?.toLowerCase(), REACTION_DETAIL[e.reaction] ?? e.reaction].filter(Boolean).join(' · '),
+        label: t('history.newFood', { food: e.food }),
+        detail: [e.preparation?.toLowerCase(), t(`history.reactions.${e.reaction}`)].filter(Boolean).join(' · '),
         at: e.introducedAt,
         allDay: true,
       })),
@@ -166,7 +168,7 @@ export function HistoricoScreen() {
       const dayStart = today - (6 - i) * 24 * 60 * 60 * 1000;
       const date = new Date(dayStart);
       const count = items.filter((it) => startOfDay(it.at) === dayStart).length;
-      return { key: dayStart, letter: DAY_LETTER[date.getDay()], count, isToday: dayStart === today };
+      return { key: dayStart, letter: weekdayLetters()[date.getDay()], count, isToday: dayStart === today };
     });
     return days;
   }, [items, now]);
@@ -174,7 +176,7 @@ export function HistoricoScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Histórico</Text>
+      <Text style={type.h1}>{t('history.title')}</Text>
 
       <View style={styles.toggleRow}>
         {(['linha', 'tendencias'] as const).map((v) => (
@@ -190,7 +192,7 @@ export function HistoricoScreen() {
                 color: view === v ? colors.primaryInk : colors.inkSecondary,
               }}
             >
-              {v === 'linha' ? 'Linha do tempo' : 'Tendências'}
+              {v === 'linha' ? t('history.timeline') : t('history.trends')}
             </Text>
           </Pressable>
         ))}
@@ -209,7 +211,7 @@ export function HistoricoScreen() {
                 ]}
               >
                 <Text style={{ fontFamily: fontFamily.bodyMedium, fontSize: 12, color: colors.inkSecondary }}>
-                  {f === 'todos' ? 'Todos' : KIND_LABEL[f]}
+                  {f === 'todos' ? t('history.all') : t(KIND_LABEL[f])}
                 </Text>
               </Pressable>
             ))}
@@ -220,7 +222,7 @@ export function HistoricoScreen() {
             keyExtractor={(item) => `${item.kind}-${item.id}`}
             contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
             stickySectionHeadersEnabled={false}
-            ListEmptyComponent={<Text style={type.caption}>Ainda sem registos.</Text>}
+            ListEmptyComponent={<Text style={type.caption}>{t('history.empty')}</Text>}
             renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
             renderItem={({ item }) => (
               <Card style={styles.row}>
@@ -238,7 +240,7 @@ export function HistoricoScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ gap: spacing.md, paddingBottom: spacing.xl }}>
           <Card style={{ gap: spacing.sm }}>
-            <Text style={type.caption}>Atividade por dia · esta semana</Text>
+            <Text style={type.caption}>{t('history.activityByDay')}</Text>
             <View style={styles.chartRow}>
               {dailyTotals.map((d) => (
                 <View key={d.key} style={styles.chartCol}>
@@ -261,11 +263,11 @@ export function HistoricoScreen() {
             </View>
           </Card>
 
-          <Text style={type.caption}>Totais dos últimos 7 dias</Text>
+          <Text style={type.caption}>{t('history.totals7')}</Text>
           {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
             <Card key={k} style={{ gap: spacing.xs }}>
               <View style={styles.row}>
-                <Text style={type.body}>{KIND_LABEL[k]}</Text>
+                <Text style={type.body}>{t(KIND_LABEL[k])}</Text>
                 <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>{totals[k]}</Text>
               </View>
               <View style={styles.barTrack}>
