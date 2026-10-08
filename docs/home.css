@@ -1,0 +1,47 @@
+/* Home page only (index.html, en/index.html) — shared tokens/header/footer are in base.css. */
+h1, h2, h3 { margin: 0 0 12px; }
+p { margin: 0 0 12px; color: var(--ink-secondary); }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+.hero { padding: 72px 0 56px; text-align: center; }
+.hero h1 { font-size: clamp(32px, 5vw, 48px); max-width: 720px; margin: 0 auto 16px; }
+.hero .lede { font-size: 18px; max-width: 560px; margin: 0 auto 32px; }
+.cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.status-pill { display: inline-block; margin-top: 20px; padding: 6px 14px; border-radius: 999px; background: var(--surface-sunken); color: var(--ink-secondary); font-size: 12.5px; font-weight: 500; }
+
+section { padding: 56px 0; }
+section.alt { background: var(--surface); }
+section h2 { font-size: 26px; text-align: center; margin-bottom: 8px; }
+section .section-lede { text-align: center; max-width: 560px; margin: 0 auto 36px; }
+
+.why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 800px; margin: 0 auto; }
+@media (max-width: 640px) { .why-grid { grid-template-columns: 1fr; } }
+.why-grid .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+.why-grid .card h3 { font-size: 17px; }
+
+/* Feature cards keep their own saturated fills in both themes — light text reads on all of them. */
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.feature-card { border-radius: 16px; padding: 20px; color: #FBF8F3; }
+.feature-card h3 { color: inherit; font-size: 16px; margin-bottom: 4px; }
+.feature-card p { color: rgba(251,248,243,0.85); font-size: 13.5px; margin: 0; }
+
+.gallery { display: flex; gap: 18px; overflow-x: auto; padding: 8px 0 16px; scroll-snap-type: x mandatory; }
+.gallery figure { flex: 0 0 auto; width: 200px; margin: 0; scroll-snap-align: start; }
+.gallery img { border-radius: 20px; border: 1px solid var(--border); }
+.gallery figcaption { text-align: center; font-size: 12.5px; color: var(--ink-muted); margin-top: 8px; }
+.gallery-note { text-align: center; font-size: 13px; color: var(--ink-muted); margin-top: 4px; }
+
+.safety-list { max-width: 640px; margin: 0 auto; list-style: none; padding: 0; }
+.safety-list li { padding: 14px 0; border-bottom: 1px solid var(--border); color: var(--ink-secondary); }
+.safety-list li:last-child { border-bottom: none; }
+.safety-list strong { display: block; color: var(--ink); margin-bottom: 2px; }
+.safety-more { text-align: center; margin-top: 20px; }
+
+.oss-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; align-items: center; }
+.oss-row .badge { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
+
+.download-card { max-width: 480px; margin: 0 auto; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.download-card .btn { margin-top: 16px; }
+.install-steps { text-align: left; margin: 24px 0 0; padding-left: 20px; color: var(--ink-secondary); font-size: 14.5px; }
+.install-steps li { margin-bottom: 8px; }
