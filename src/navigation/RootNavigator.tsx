@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CommonActions } from '@react-navigation/native';
 import { BottomTabBar, BottomTabBarProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -133,6 +134,7 @@ function TabBarWithActiveSessions(props: BottomTabBarProps) {
 }
 
 export function RootNavigator() {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   return (
     <Tab.Navigator
@@ -146,12 +148,12 @@ export function RootNavigator() {
       <Tab.Screen
         name="Início"
         component={HomeScreen}
-        options={{ tabBarIcon: makeTabBarIcon('Início'), tabBarActiveTintColor: TAB_COLOR.Início, tabBarInactiveTintColor: TAB_COLOR.Início }}
+        options={{ title: t('tabs.home'), tabBarLabel: t('tabs.home'), tabBarIcon: makeTabBarIcon('Início'), tabBarActiveTintColor: TAB_COLOR.Início, tabBarInactiveTintColor: TAB_COLOR.Início }}
       />
       <Tab.Screen
         name="Registar"
         component={RegistarNavigator}
-        options={{ tabBarIcon: makeTabBarIcon('Registar'), tabBarActiveTintColor: TAB_COLOR.Registar, tabBarInactiveTintColor: TAB_COLOR.Registar }}
+        options={{ title: t('tabs.register'), tabBarLabel: t('tabs.register'), tabBarIcon: makeTabBarIcon('Registar'), tabBarActiveTintColor: TAB_COLOR.Registar, tabBarInactiveTintColor: TAB_COLOR.Registar }}
         listeners={({ navigation, route }) => ({
           // Leaving the tab resets its nested stack back to the hub screen —
           // otherwise React Navigation keeps you exactly where you were
@@ -178,12 +180,12 @@ export function RootNavigator() {
       <Tab.Screen
         name="Histórico"
         component={HistoricoScreen}
-        options={{ tabBarIcon: makeTabBarIcon('Histórico'), tabBarActiveTintColor: TAB_COLOR.Histórico, tabBarInactiveTintColor: TAB_COLOR.Histórico }}
+        options={{ title: t('tabs.history'), tabBarLabel: t('tabs.history'), tabBarIcon: makeTabBarIcon('Histórico'), tabBarActiveTintColor: TAB_COLOR.Histórico, tabBarInactiveTintColor: TAB_COLOR.Histórico }}
       />
       <Tab.Screen
         name="Perfil"
         component={PerfilNavigator}
-        options={{ tabBarIcon: makeTabBarIcon('Perfil'), tabBarActiveTintColor: TAB_COLOR.Perfil, tabBarInactiveTintColor: TAB_COLOR.Perfil }}
+        options={{ title: t('tabs.profile'), tabBarLabel: t('tabs.profile'), tabBarIcon: makeTabBarIcon('Perfil'), tabBarActiveTintColor: TAB_COLOR.Perfil, tabBarInactiveTintColor: TAB_COLOR.Perfil }}
         listeners={({ navigation, route }) => ({
           blur: () => {
             const state = navigation.getState();

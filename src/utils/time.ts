@@ -1,3 +1,5 @@
+import i18n, { currentLocale } from '../i18n';
+
 export function formatDuration(ms: number): string {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));
   const h = Math.floor(totalSeconds / 3600);
@@ -8,21 +10,20 @@ export function formatDuration(ms: number): string {
 }
 
 export function formatClock(epochMs: number): string {
-  return new Date(epochMs).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+  return new Date(epochMs).toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatSince(epochMs: number): string {
   const diffMs = Date.now() - epochMs;
   const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return 'agora mesmo';
-  if (minutes < 60) return `há ${minutes} min`;
+  if (minutes < 1) return i18n.t('time.justNow');
+  if (minutes < 60) return i18n.t('time.minutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
   if (hours < 24) {
     const remMin = minutes % 60;
-    return remMin > 0 ? `há ${hours}h ${remMin}min` : `há ${hours}h`;
+    return remMin > 0 ? i18n.t('time.hoursMinutesAgo', { hours, minutes: remMin }) : i18n.t('time.hoursAgo', { count: hours });
   }
-  const days = Math.floor(hours / 24);
-  return days === 1 ? 'há 1 dia' : `há ${days} dias`;
+  return i18n.t('time.daysAgo', { count: Math.floor(hours / 24) });
 }
 
 /** Turns a "HH:MM" string into an epoch ms on the given day, or undefined if malformed. */

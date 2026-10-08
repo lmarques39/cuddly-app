@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { ensureNotificationPermission } from '../../notifications/setup';
 import { ActiveSession, ActiveSessionKind } from '../../types/records';
+import i18n from '../../i18n';
 import { formatClock } from '../../utils/time';
 import { canFinishWithoutInput, finishSessionOutsideApp } from './finishSession';
 
@@ -12,12 +13,7 @@ const CATEGORY_VIEW_ONLY = 'active-session-view-only';
 export const ACTION_VIEW = 'view';
 export const ACTION_FINISH = 'finish';
 
-const TITLE: Record<ActiveSessionKind, string> = {
-  sono: 'Sono a decorrer',
-  breastfeeding: 'Amamentação a decorrer',
-  pumping: 'Extração a decorrer',
-  contractions: 'Contração a decorrer',
-};
+const KINDS: ActiveSessionKind[] = ['sono', 'breastfeeding', 'pumping', 'contractions'];
 
 export function sessionNotificationId(kind: ActiveSessionKind): string {
   return `active-session-${kind}`;
@@ -30,24 +26,24 @@ export function isSessionNotification(notification: Notifications.Notification):
 /** The running timer a notification (or a tap on one of its buttons) belongs to. */
 export function sessionKindOf(response: Notifications.NotificationResponse): ActiveSessionKind | null {
   const kind = response.notification.request.content.data?.kind;
-  return typeof kind === 'string' && kind in TITLE ? (kind as ActiveSessionKind) : null;
+  return typeof kind === 'string' && (KINDS as string[]).includes(kind) ? (kind as ActiveSessionKind) : null;
 }
 
 /** Channel + the Ver/Terminar buttons. Android only — the whole feature is (#101: iOS out of scope). */
 export async function setUpSessionNotifications(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
-    name: 'Timers a decorrer',
+    name: i18n.t('sessionNotification.channel'),
     // LOW: sits in the shade without sound, vibration or a heads-up banner.
     importance: Notifications.AndroidImportance.LOW,
     showBadge: false,
   });
   await Notifications.setNotificationCategoryAsync(CATEGORY_WITH_FINISH, [
-    { identifier: ACTION_VIEW, buttonTitle: 'Ver', options: { opensAppToForeground: true } },
-    { identifier: ACTION_FINISH, buttonTitle: 'Terminar', options: { opensAppToForeground: false } },
+    { identifier: ACTION_VIEW, buttonTitle: i18n.t('sessionNotification.view'), options: { opensAppToForeground: true } },
+    { identifier: ACTION_FINISH, buttonTitle: i18n.t('sessionNotification.finish'), options: { opensAppToForeground: false } },
   ]);
   await Notifications.setNotificationCategoryAsync(CATEGORY_VIEW_ONLY, [
-    { identifier: ACTION_VIEW, buttonTitle: 'Ver', options: { opensAppToForeground: true } },
+    { identifier: ACTION_VIEW, buttonTitle: i18n.t('sessionNotification.view'), options: { opensAppToForeground: true } },
   ]);
 }
 
@@ -60,12 +56,12 @@ export async function showSessionNotification(session: ActiveSession): Promise<v
   if (Platform.OS !== 'android') return;
   if (!(await ensureNotificationPermission())) return;
 
-  const side = session.side ? ` (mama ${session.side === 'left' ? 'esquerda' : 'direita'})` : '';
+  const side = session.side ? i18n.t(session.side === 'left' ? 'sessionNotification.leftBreast' : 'sessionNotification.rightBreast') : '';
   await Notifications.scheduleNotificationAsync({
     identifier: sessionNotificationId(session.kind),
     content: {
-      title: TITLE[session.kind],
-      body: `Desde as ${formatClock(session.startedAt)}${side}`,
+      title: i18n.t(`sessionNotification.title.${session.kind}`),
+      body: i18n.t('sessionNotification.since', { time: formatClock(session.startedAt) }) + side,
       data: { kind: session.kind },
       categoryIdentifier: canFinishWithoutInput(session.kind) ? CATEGORY_WITH_FINISH : CATEGORY_VIEW_ONLY,
       sticky: true,

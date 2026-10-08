@@ -1,32 +1,43 @@
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { createStyles, ThemePreference, useTheme } from '../theme/ThemeProvider';
+import { LanguagePreference, loadLanguagePreference, setLanguagePreference } from '../i18n';
+import { createStyles, useTheme } from '../theme/ThemeProvider';
 import { fontFamily, radii, spacing } from '../theme/tokens';
 import { Card } from './Card';
 
-const OPTIONS: ThemePreference[] = ['system', 'light', 'dark'];
+const OPTIONS: LanguagePreference[] = ['system', 'pt', 'en'];
 
-/** Perfil → Aparência (#117): follow the phone, or force light/dark. Saved on this device only. */
-export function AppearancePicker() {
+/** Perfil → Idioma (#118): follow the phone, or force Portuguese/English. Saved on this device only. */
+export function LanguagePicker() {
   const { t } = useTranslation();
-  const { type, preference, setPreference } = useTheme();
+  const { type } = useTheme();
   const styles = useStyles();
+  const [preference, setPreference] = useState<LanguagePreference>('system');
+
+  useEffect(() => {
+    loadLanguagePreference().then(setPreference);
+  }, []);
+
+  const choose = (next: LanguagePreference) => {
+    setPreference(next);
+    setLanguagePreference(next);
+  };
 
   return (
     <Card style={styles.card}>
-      <Text style={type.body}>{t('appearance.title')}</Text>
+      <Text style={type.body}>{t('language.title')}</Text>
       <View style={styles.pills} accessibilityRole="radiogroup">
         {OPTIONS.map((option) => {
           const selected = preference === option;
-          const label = t(`appearance.${option}`);
+          const label = t(`language.${option}`);
           return (
             <Pressable
               key={option}
               accessibilityRole="radio"
               accessibilityState={{ selected }}
-              accessibilityLabel={t('appearance.a11y', { option: label })}
-              onPress={() => setPreference(option)}
+              accessibilityLabel={t('language.a11y', { option: label })}
+              onPress={() => choose(option)}
               style={[styles.pill, selected && styles.pillOn]}
             >
               <Text style={[styles.pillLabel, selected && styles.pillLabelOn]}>{label}</Text>

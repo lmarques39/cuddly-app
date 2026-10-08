@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { fontFamily, radii, spacing } from '../theme/tokens';
 import { createStyles } from '../theme/ThemeProvider';
+import { useTranslation } from 'react-i18next';
+import { currentLocale } from '../i18n';
 import { dateKey, MonthCalendar } from './MonthCalendar';
 
 type Props = {
@@ -17,11 +19,12 @@ function parseDateKey(key: string): number {
 }
 
 function formatLong(epochMs: number): string {
-  return new Date(epochMs).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
+  return new Date(epochMs).toLocaleDateString(currentLocale(), { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 /** Tap-to-open calendar date field — no typing, no juggling 20 taps to page months. */
-export function DateField({ label, value, onChange, placeholder = 'Escolher data' }: Props) {
+export function DateField({ label, value, onChange, placeholder }: Props) {
+  const { t } = useTranslation();
   const styles = useStyles();
   const [open, setOpen] = useState(false);
 
@@ -30,7 +33,7 @@ export function DateField({ label, value, onChange, placeholder = 'Escolher data
       <Text style={styles.label}>{label}</Text>
       <Pressable onPress={() => setOpen((v) => !v)} style={styles.field}>
         <Text style={[styles.fieldText, !value && styles.fieldPlaceholder]}>
-          {value ? formatLong(value) : placeholder}
+          {value ? formatLong(value) : (placeholder ?? t('common.chooseDate'))}
         </Text>
         <Text style={styles.chevron}>{open ? '▴' : '▾'}</Text>
       </Pressable>

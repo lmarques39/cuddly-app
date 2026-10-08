@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
@@ -12,6 +13,7 @@ type Props = {
 
 /** A password TextInput with a toggle to reveal/hide what was typed (#79). */
 export function PasswordField({ value, onChangeText, placeholder }: Props) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = useStyles();
   const [visible, setVisible] = useState(false);
@@ -31,7 +33,7 @@ export function PasswordField({ value, onChangeText, placeholder }: Props) {
         hitSlop={8}
         style={styles.eyeButton}
         accessibilityRole="button"
-        accessibilityLabel={visible ? 'Ocultar password' : 'Mostrar password'}
+        accessibilityLabel={visible ? t('common.hidePassword') : t('common.showPassword')}
       >
         <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.inkMuted} />
       </Pressable>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -8,12 +9,6 @@ import { formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { useActiveSessions } from './ActiveSessionsProvider';
 
-export const SESSION_LABEL: Record<ActiveSessionKind, string> = {
-  sono: 'Sono',
-  breastfeeding: 'Amamentação',
-  pumping: 'Extração',
-  contractions: 'Contração',
-};
 
 const SESSION_STYLE: Record<ActiveSessionKind, { bg: string; ink: string; icon: keyof typeof Ionicons.glyphMap }> = {
   sono: { ...domainColors.sleep, icon: 'moon' },
@@ -38,6 +33,7 @@ type Props = {
  * that screen asks for.
  */
 export function ActiveSessionsBar({ onOpen, hideKind }: Props) {
+  const { t } = useTranslation();
   const styles = useStyles();
   const { sessions } = useActiveSessions();
   const running = ORDER.filter((kind) => sessions[kind] && kind !== hideKind);
@@ -50,12 +46,12 @@ export function ActiveSessionsBar({ onOpen, hideKind }: Props) {
       {running.map((kind) => {
         const { bg, ink, icon } = SESSION_STYLE[kind];
         const side = sessions[kind]?.side;
-        const label = `${SESSION_LABEL[kind]}${side ? ` (${side === 'left' ? 'esq.' : 'dir.'})` : ''}`;
+        const label = `${t(`sessions.name.${kind}`)}${side ? ` (${side === 'left' ? t('sessions.sideShortLeft') : t('sessions.sideShortRight')})` : ''}`;
         return (
           <Pressable
             key={kind}
             accessibilityRole="button"
-            accessibilityLabel={`${label} a decorrer, abrir`}
+            accessibilityLabel={t('sessions.runningOpen', { label })}
             onPress={() => onOpen(kind)}
             style={[styles.chip, { backgroundColor: bg }]}
           >

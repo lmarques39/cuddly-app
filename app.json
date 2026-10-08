@@ -28,7 +28,8 @@
       "expo-font",
       "expo-web-browser",
       "expo-sharing",
-      "react-native-nitro-google-signin"
+      "react-native-nitro-google-signin",
+      "expo-localization"
     ],
     "extra": {
       "eas": {

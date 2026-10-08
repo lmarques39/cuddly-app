@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppearancePicker } from '../../components/AppearancePicker';
+import { LanguagePicker } from '../../components/LanguagePicker';
 import { Card } from '../../components/Card';
 import { seedDemoData } from '../../dev/seedDemoData';
 import { PerfilStackParamList } from '../../navigation/types';
@@ -100,6 +101,7 @@ export function PerfilScreen() {
       </View>
 
       <AppearancePicker />
+      <LanguagePicker />
 
       <Pressable
         onPress={async () => {

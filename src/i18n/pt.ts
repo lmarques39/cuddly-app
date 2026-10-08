@@ -1,0 +1,92 @@
+// Generated for #118 — Portuguese strings. Keep keys in sync with en.ts (the
+// typecheck enforces it: en is typed as Translations).
+export const pt = {
+  common: {
+    cancel: "Cancelar",
+    save: "Guardar",
+    saved: "Guardado ✓",
+    remove: "Remover",
+    delete: "Eliminar",
+    close: "Fechar",
+    back: "‹ Voltar",
+    continue: "Continuar",
+    edit: "Editar",
+    today: "Hoje",
+    yesterday: "Ontem",
+    otherDay: "Outro dia",
+    day: "Dia",
+    start: "Início",
+    end: "Fim",
+    chooseDate: "Escolher data",
+    choose: "Escolher…",
+    optional: "Opcional",
+    showPassword: "Mostrar password",
+    hidePassword: "Ocultar password",
+    tapToEdit: "toca para editar",
+    invalidDate: "Data inválida — usa o formato DD/MM.",
+    invalidTime: "Hora inválida — usa o formato HH:MM (ex: 09:30).",
+  },
+  time: {
+    justNow: "agora mesmo",
+    minutesAgo: "há {{count}} min",
+    hoursAgo: "há {{count}}h",
+    hoursMinutesAgo: "há {{hours}}h {{minutes}}min",
+    daysAgo_one: "há 1 dia",
+    daysAgo_other: "há {{count}} dias",
+  },
+  removeEntry: {
+    title: "Remover registo",
+    message: "Tens a certeza que queres remover este registo?",
+  },
+  manualEntry: {
+    toggle: "Registar sessão anterior",
+    heading: "A registar uma sessão já terminada",
+  },
+  sessions: {
+    name: {
+      sono: "Sono",
+      breastfeeding: "Amamentação",
+      pumping: "Extração",
+      contractions: "Contração",
+    },
+    sideShortLeft: "esq.",
+    sideShortRight: "dir.",
+    runningOpen: "{{label}} a decorrer, abrir",
+  },
+  sessionNotification: {
+    title: {
+      sono: "Sono a decorrer",
+      breastfeeding: "Amamentação a decorrer",
+      pumping: "Extração a decorrer",
+      contractions: "Contração a decorrer",
+    },
+    channel: "Timers a decorrer",
+    view: "Ver",
+    finish: "Terminar",
+    since: "Desde as {{time}}",
+    leftBreast: " (mama esquerda)",
+    rightBreast: " (mama direita)",
+  },
+  tabs: {
+    home: "Início",
+    register: "Registar",
+    history: "Histórico",
+    profile: "Perfil",
+  },
+  appearance: {
+    title: "Aparência",
+    system: "Automático",
+    light: "Claro",
+    dark: "Escuro",
+    a11y: "Aparência: {{option}}",
+  },
+  language: {
+    title: "Idioma",
+    system: "Automático",
+    pt: "Português",
+    en: "English",
+    a11y: "Idioma: {{option}}",
+  },
+};
+
+export type Translations = typeof pt;

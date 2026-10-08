@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Pressable, Text } from 'react-native';
 import { fontFamily } from '../theme/tokens';
@@ -10,18 +11,19 @@ type Props = {
 
 /** Shared "Remover" link + confirmation used on every tracker's history row. */
 export function RemoveEntryButton({ onRemove }: Props) {
+  const { t } = useTranslation();
   const styles = useStyles();
   const confirm = async () => {
     const confirmed = await confirmDestructive(
-      'Remover registo',
-      'Tens a certeza que queres remover este registo?'
+      t('removeEntry.title'),
+      t('removeEntry.message')
     );
     if (confirmed) onRemove();
   };
 
   return (
     <Pressable onPress={confirm} hitSlop={12}>
-      <Text style={styles.label}>Remover</Text>
+      <Text style={styles.label}>{t('common.remove')}</Text>
     </Pressable>
   );
 }

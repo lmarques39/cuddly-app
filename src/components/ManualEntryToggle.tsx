@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { fontFamily, radii, spacing } from '../theme/tokens';
@@ -26,6 +27,7 @@ type Props = {
  * actually remember (#76), on a day the person picks (not always today).
  */
 export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Props) {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [open, setOpen] = useState(false);
@@ -57,17 +59,17 @@ export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Pr
   if (!open) {
     return (
       <Pressable onPress={() => setOpen(true)} hitSlop={8}>
-        <Text style={styles.toggleLabel}>Registar sessão anterior</Text>
+        <Text style={styles.toggleLabel}>{t('manualEntry.toggle')}</Text>
       </Pressable>
     );
   }
 
   return (
     <Card style={{ gap: spacing.md }}>
-      <Text style={type.caption}>A registar uma sessão já terminada</Text>
+      <Text style={type.caption}>{t('manualEntry.heading')}</Text>
 
       <View>
-        <Text style={type.caption}>Dia</Text>
+        <Text style={type.caption}>{t('common.day')}</Text>
         <View style={styles.dayRow}>
           {(['today', 'yesterday', 'custom'] as DayOption[]).map((option) => (
             <Pressable
@@ -76,7 +78,7 @@ export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Pr
               style={[styles.dayPill, dayOption === option && styles.dayPillOn]}
             >
               <Text style={[styles.dayPillLabel, dayOption === option && styles.dayPillLabelOn]}>
-                {option === 'today' ? 'Hoje' : option === 'yesterday' ? 'Ontem' : 'Outro dia'}
+                {option === 'today' ? t('common.today') : option === 'yesterday' ? t('common.yesterday') : t('common.otherDay')}
               </Text>
             </Pressable>
           ))}
@@ -94,7 +96,7 @@ export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Pr
 
       <View style={styles.timeRow}>
         <View style={styles.timeField}>
-          <Text style={type.caption}>Início</Text>
+          <Text style={type.caption}>{t('common.start')}</Text>
           <TextInput
             value={startTime}
             onChangeText={setStartTime}
@@ -104,7 +106,7 @@ export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Pr
           />
         </View>
         <View style={styles.timeField}>
-          <Text style={type.caption}>Fim</Text>
+          <Text style={type.caption}>{t('common.end')}</Text>
           <TextInput
             value={endTime}
             onChangeText={setEndTime}
@@ -119,10 +121,10 @@ export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Pr
 
       <View style={styles.actions}>
         <Pressable onPress={save} disabled={!canSave} style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}>
-          <Text style={[styles.saveButtonLabel, !canSave && styles.saveButtonLabelDisabled]}>Guardar</Text>
+          <Text style={[styles.saveButtonLabel, !canSave && styles.saveButtonLabelDisabled]}>{t('common.save')}</Text>
         </Pressable>
         <Pressable onPress={reset} hitSlop={8}>
-          <Text style={type.caption}>Cancelar</Text>
+          <Text style={type.caption}>{t('common.cancel')}</Text>
         </Pressable>
       </View>
     </Card>

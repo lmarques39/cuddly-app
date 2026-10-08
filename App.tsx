@@ -1,3 +1,5 @@
+// i18n must be initialised before any screen renders (#118).
+import i18n, { initLanguage } from './src/i18n';
 import { Karla_400Regular, Karla_500Medium, Karla_700Bold } from '@expo-google-fonts/karla';
 import { Fredoka_500Medium, Fredoka_600SemiBold } from '@expo-google-fonts/fredoka';
 import { useFonts } from 'expo-font';
@@ -133,6 +135,12 @@ function AppContent() {
     initNotifications()
       .then(setUpSessionNotifications)
       .catch(() => {});
+    initLanguage();
+    // The notification's Ver/Terminar buttons are registered with the
+    // current language's labels — re-register them when it changes.
+    const onLanguageChanged = () => setUpSessionNotifications().catch(() => {});
+    i18n.on('languageChanged', onLanguageChanged);
+    return () => i18n.off('languageChanged', onLanguageChanged);
   }, []);
 
   useEffect(() => {

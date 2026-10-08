@@ -2,14 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { fontFamily, radii, spacing } from '../theme/tokens';
 import { createStyles } from '../theme/ThemeProvider';
+import { useTranslation } from 'react-i18next';
+import { monthNames, monthShortNames, weekdayLetters } from '../i18n/calendar';
 import { useNow } from '../utils/useNow';
 
-const WEEKDAY_LABEL = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
-const MONTH_LABEL = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-];
-const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 export function dateKey(epochMs: number): string {
   const d = new Date(epochMs);
@@ -27,6 +23,11 @@ type Props = {
 
 export function MonthCalendar({ markedDates, selectedKey, onSelectDate, initialMonth }: Props) {
   const styles = useStyles();
+  // Re-renders on a language change, so the labels below follow it.
+  useTranslation();
+  const MONTH_LABEL = monthNames();
+  const MONTH_SHORT = monthShortNames();
+  const WEEKDAY_LABEL = weekdayLetters();
   const [cursor, setCursor] = useState(() => {
     const base = initialMonth ?? new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
