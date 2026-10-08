@@ -39,7 +39,7 @@ export function BabyProfileScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Text style={type.h1}>{t('babyProfile.title')}</Text>
       <Text style={type.caption}>
-        Modo atual: {mode === 'gravida' ? 'Grávida' : 'Pós-parto'} — preencher a data de nascimento muda o modo da app.
+        {t('babyProfile.mode', { mode: t(`babyProfile.modes.${mode}`) })}
       </Text>
 
       <Card style={{ gap: spacing.md }}>
@@ -61,7 +61,7 @@ export function BabyProfileScreen() {
           placeholder={t('auth.baby.whenBorn')}
         />
         <BigButton label={t('common.save')} background={colors.primary} foreground={colors.primaryInk} onPress={onSave} full />
-        {showSaved && <Text style={styles.savedText}>Guardado com sucesso.</Text>}
+        {showSaved && <Text style={styles.savedText}>{t('profile.savedOk')}</Text>}
       </Card>
     </SafeAreaView>
   );

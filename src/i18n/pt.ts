@@ -252,6 +252,7 @@ export const pt = {
     noneToday: "Ainda sem registos hoje.",
     none: "Ainda sem registos.",
     amountMl: "Quantidade (ml)",
+    durationSuffix: "{{duration}} de duração",
   },
   contractions: {
     title: "Contrações",
@@ -354,6 +355,11 @@ export const pt = {
     name: "Nome/alcunha do bebé",
     dueDate: "Data prevista do parto",
     birthDate: "Data de nascimento (se já nasceu)",
+    mode: "Modo atual: {{mode}} — preencher a data de nascimento muda o modo da app.",
+    modes: {
+      gravida: "Grávida",
+      posparto: "Pós-parto",
+    },
   },
   caregivers: {
     title: "Cuidadores",
@@ -377,6 +383,9 @@ export const pt = {
       accept: "Aceitar convite",
       decline: "Não, quero criar a minha própria família",
     },
+    sent: "Convite enviado.",
+    noFamilyInvite: "Sem família associada — não é possível convidar.",
+    noFamilyRemove: "Sem família associada — não é possível remover.",
   },
   notificationsScreen: {
     title: "Notificações",
@@ -449,6 +458,7 @@ export const pt = {
       sharingUnavailable: "A partilha de ficheiros não está disponível neste dispositivo.",
     },
     shareDialogTitle: "Exportar os meus dados",
+    fileNamePrefix: "cuddly-dados",
   },
   reminders: {
     channel: "Lembretes",
@@ -459,6 +469,33 @@ export const pt = {
     appointmentBody_other: "{{title}} — daqui a {{count}} dias.",
     dailyTitle: "Resumo diário",
     dailyBody: "Vê o resumo de hoje na Cuddly.",
+  },
+  csv: {
+    header: {
+      type: "Tipo",
+      start: "Início",
+      end: "Fim",
+      duration: "Duração (min)",
+      detail: "Detalhe",
+      notes: "Observações",
+    },
+    kinds: {
+      contraction: "Contração",
+      sono: "Sono",
+      breastfeeding: "Amamentação",
+      pumping: "Extração",
+      bottle: "Biberão",
+      diaper: "Fralda",
+      food: "Alimento novo",
+      appointment: "Consulta",
+    },
+    leftBreast: "Mama esquerda",
+    rightBreast: "Mama direita",
+    reactions: {
+      nenhuma: "Sem reação",
+      ligeira: "Reação ligeira",
+      forte: "Reação forte",
+    },
   },
 };
 

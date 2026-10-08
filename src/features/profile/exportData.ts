@@ -10,7 +10,7 @@ export type ExportFormat = 'json' | 'csv';
 /** e.g. "cuddly-dados-2026-09-30.json" — local date, so it matches what the user sees on their calendar. */
 export function exportFileName(now: Date, format: ExportFormat = 'json'): string {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `cuddly-dados-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.${format}`;
+  return `${i18n.t('privacy.fileNamePrefix')}-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.${format}`;
 }
 
 /**

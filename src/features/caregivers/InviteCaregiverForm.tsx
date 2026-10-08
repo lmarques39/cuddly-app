@@ -57,7 +57,7 @@ export function InviteCaregiverForm({ onInvite }: Props) {
       />
 
       {error && <Text style={styles.errorText}>{error}</Text>}
-      {sent && <Text style={styles.successText}>Convite enviado.</Text>}
+      {sent && <Text style={styles.successText}>{t('caregivers.sent')}</Text>}
 
       <BigButton
         label={sending ? t('caregivers.inviting') : t('caregivers.invite')}

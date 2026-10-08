@@ -46,3 +46,33 @@ it('quotes cells that contain the separator, quotes or line breaks', () => {
   });
   expect(csv).toContain('Fralda;07/10/2026 09:00;;;Xixi;"disse ""ai""; chorou\nmuito"');
 });
+
+describe('in English (#118)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const i18n = require('../../i18n').default;
+  beforeAll(() => i18n.changeLanguage('en'));
+  afterAll(() => i18n.changeLanguage('pt'));
+
+  it('uses English labels, "," between columns and a decimal point, for English Excel', () => {
+    const csv = familyDataToCsv({
+      contractions: [{ id: 'c1', startedAt: at(5, 10, 0), endedAt: at(5, 10, 0) + 45_000 }],
+      breastfeeding: [{ id: 'b1', side: 'left', startedAt: at(6, 22, 0), endedAt: at(6, 22, 15) }],
+      bottle: [{ id: 'bo1', amountMl: 90, type: 'breastmilk', at: at(7, 9, 0) }],
+      appointments: [{ id: 'a1', title: 'Pediatria', type: 'pediatria', scheduledAt: at(9, 10, 0) }],
+    });
+
+    expect(rows(csv)).toEqual([
+      'Type,Start,End,Duration (min),Detail,Notes',
+      'Contraction,05/10/2026 10:00,05/10/2026 10:00,0.8,,',
+      'Breastfeeding,06/10/2026 22:00,06/10/2026 22:15,15.0,Left breast,',
+      'Bottle,07/10/2026 09:00,,,90 ml · Breast milk,',
+      // the type is shown in the current language, even though `title` was saved in Portuguese
+      'Appointment,09/10/2026 10:00,,,Paediatrics,',
+    ]);
+  });
+
+  it('quotes cells that contain a comma', () => {
+    const csv = familyDataToCsv({ diapers: [{ id: 'd1', type: 'wet', at: at(7, 9, 0), note: 'cried, a lot' }] });
+    expect(csv).toContain('Diaper,07/10/2026 09:00,,,Wee,"cried, a lot"');
+  });
+});

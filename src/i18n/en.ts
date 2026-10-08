@@ -253,6 +253,7 @@ export const en: Translations = {
     noneToday: "No entries today yet.",
     none: "No entries yet.",
     amountMl: "Amount (ml)",
+    durationSuffix: "{{duration}} long",
   },
   contractions: {
     title: "Contractions",
@@ -355,6 +356,11 @@ export const en: Translations = {
     name: "Baby's name/nickname",
     dueDate: "Due date",
     birthDate: "Date of birth (if born)",
+    mode: "Current mode: {{mode}} — filling in the date of birth changes the app mode.",
+    modes: {
+      gravida: "Pregnancy",
+      posparto: "Postpartum",
+    },
   },
   caregivers: {
     title: "Caregivers",
@@ -378,6 +384,9 @@ export const en: Translations = {
       accept: "Accept invite",
       decline: "No, I want to create my own family",
     },
+    sent: "Invite sent.",
+    noFamilyInvite: "No family linked — can't send invites.",
+    noFamilyRemove: "No family linked — can't remove anyone.",
   },
   notificationsScreen: {
     title: "Notifications",
@@ -450,6 +459,7 @@ export const en: Translations = {
       sharingUnavailable: "File sharing isn't available on this device.",
     },
     shareDialogTitle: "Export my data",
+    fileNamePrefix: "cuddly-data",
   },
   reminders: {
     channel: "Reminders",
@@ -460,5 +470,32 @@ export const en: Translations = {
     appointmentBody_other: "{{title}} — in {{count}} days.",
     dailyTitle: "Daily summary",
     dailyBody: "See today's summary in Cuddly.",
+  },
+  csv: {
+    header: {
+      type: "Type",
+      start: "Start",
+      end: "End",
+      duration: "Duration (min)",
+      detail: "Detail",
+      notes: "Notes",
+    },
+    kinds: {
+      contraction: "Contraction",
+      sono: "Sleep",
+      breastfeeding: "Breastfeeding",
+      pumping: "Pumping",
+      bottle: "Bottle",
+      diaper: "Diaper",
+      food: "New food",
+      appointment: "Appointment",
+    },
+    leftBreast: "Left breast",
+    rightBreast: "Right breast",
+    reactions: {
+      nenhuma: "No reaction",
+      ligeira: "Mild reaction",
+      forte: "Strong reaction",
+    },
   },
 };

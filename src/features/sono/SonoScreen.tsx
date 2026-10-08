@@ -56,7 +56,7 @@ export function SonoScreen() {
           <Card style={styles.row}>
             <View>
               <Text style={type.body}>{formatClock(item.startedAt)}</Text>
-              <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)} de duração</Text>
+              <Text style={type.caption}>{t('trackers.durationSuffix', { duration: formatDuration(item.endedAt - item.startedAt) })}</Text>
             </View>
             <RemoveEntryButton onRemove={() => remove(item.id)} />
           </Card>

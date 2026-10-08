@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { getFamilyId } from '../../storage/sync';
@@ -13,7 +14,7 @@ import { getFamilyId } from '../../storage/sync';
 export async function removeCaregiver(memberUid: string): Promise<void> {
   const familyId = await getFamilyId();
   if (!familyId) {
-    throw new Error('Sem família associada — não é possível remover.');
+    throw new Error(i18n.t('caregivers.noFamilyRemove'));
   }
 
   await deleteDoc(doc(db, 'families', familyId, 'members', memberUid));

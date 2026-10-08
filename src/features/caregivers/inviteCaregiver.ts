@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
 import { getFamilyId } from '../../storage/sync';
@@ -13,7 +14,7 @@ export async function inviteCaregiver(email: string): Promise<Invite> {
   const familyId = await getFamilyId();
   const uid = auth.currentUser?.uid;
   if (!familyId || !uid) {
-    throw new Error('Sem família associada — não é possível convidar.');
+    throw new Error(i18n.t('caregivers.noFamilyInvite'));
   }
 
   // Denormalized onto the invite itself — see records.ts's Invite comment
