@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +21,7 @@ type Props = {
  * when signing in via OAuth, but stays editable either way.
  */
 export function AcceptInviteScreen({ inviterName, defaultName, onAccept, onDecline, error }: Props) {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [name, setName] = useState(defaultName);
@@ -40,10 +42,9 @@ export function AcceptInviteScreen({ inviterName, defaultName, onAccept, onDecli
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.content}>
-        <Text style={type.h1}>Foste convidado(a)!</Text>
+        <Text style={type.h1}>{t('caregivers.accept.title')}</Text>
         <Text style={[type.body, { color: colors.inkSecondary }]}>
-          {inviterName ? `${inviterName} convidou-te` : 'Foste convidado(a)'} para seres cuidador(a) na Cuddly — vais
-          poder ver e registar os cuidados do bebé com o resto da família.
+          {inviterName ? t('caregivers.accept.byName', { name: inviterName }) : t('caregivers.accept.anonymous')}
         </Text>
 
         {error && (
@@ -53,11 +54,11 @@ export function AcceptInviteScreen({ inviterName, defaultName, onAccept, onDecli
         )}
 
         <View>
-          <Text style={type.caption}>O teu nome</Text>
+          <Text style={type.caption}>{t('caregivers.accept.name')}</Text>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Como te devemos chamar?"
+            placeholder={t('caregivers.accept.namePlaceholder')}
             placeholderTextColor={colors.inkMuted}
             style={styles.input}
           />
@@ -66,14 +67,14 @@ export function AcceptInviteScreen({ inviterName, defaultName, onAccept, onDecli
 
       <View style={styles.footer}>
         <BigButton
-          label={accepting ? 'A aceitar…' : 'Aceitar convite'}
+          label={accepting ? t('caregivers.accept.accepting') : t('caregivers.accept.accept')}
           background={canAccept ? colors.action : colors.surfaceSunken}
           foreground={canAccept ? colors.actionInk : colors.inkMuted}
           onPress={handleAccept}
           full
         />
         <Pressable onPress={onDecline} hitSlop={12} style={styles.declineLink}>
-          <Text style={[type.caption, styles.link]}>Não, quero criar a minha própria família</Text>
+          <Text style={[type.caption, styles.link]}>{t('caregivers.accept.decline')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

@@ -36,21 +36,21 @@ export function CuidadoresScreen() {
 
   const confirmRemove = async (member: Member) => {
     const confirmed = await confirmDestructive(
-      'Remover cuidador',
-      `Tens a certeza que queres remover ${member.name}? Perde o acesso já.`
+      t('caregivers.removeTitle'),
+      t('caregivers.removeMessage', { name: member.name })
     );
     if (confirmed) removeCaregiver(member.id);
   };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Cuidadores</Text>
+      <Text style={type.h1}>{t('caregivers.title')}</Text>
 
       <FlatList
         data={rows}
         keyExtractor={(row) => (row.kind === 'member' ? `member-${row.data.id}` : `invite-${row.data.id}`)}
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.lg }}
-        ListEmptyComponent={<Text style={type.caption}>Ainda sem cuidadores.</Text>}
+        ListEmptyComponent={<Text style={type.caption}>{t('caregivers.empty')}</Text>}
         renderItem={({ item }) =>
           item.kind === 'member' ? (
             <Card style={styles.row}>
@@ -60,11 +60,11 @@ export function CuidadoresScreen() {
               </View>
               {item.data.id === currentUid ? (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>Tu</Text>
+                  <Text style={styles.badgeText}>{t('caregivers.you')}</Text>
                 </View>
               ) : (
                 <Pressable onPress={() => confirmRemove(item.data)} hitSlop={12}>
-                  <Text style={styles.removeLink}>Remover</Text>
+                  <Text style={styles.removeLink}>{t('common.remove')}</Text>
                 </Pressable>
               )}
             </Card>
@@ -72,7 +72,7 @@ export function CuidadoresScreen() {
             <Card style={[styles.row, styles.pendingCard]}>
               <View>
                 <Text style={type.body}>{item.data.email}</Text>
-                <Text style={type.caption}>Convite pendente · Enviado {formatSince(item.data.invitedAt)}</Text>
+                <Text style={type.caption}>{t('caregivers.pending', { since: formatSince(item.data.invitedAt) })}</Text>
               </View>
             </Card>
           )
@@ -82,7 +82,7 @@ export function CuidadoresScreen() {
       <View style={styles.footer}>
         {inviting ? <InviteCaregiverForm onInvite={handleInvite} /> : null}
         <BigButton
-          label={inviting ? 'Fechar' : 'Convidar cuidador'}
+          label={inviting ? t('common.close') : t('caregivers.invite')}
           background={colors.action}
           foreground={colors.actionInk}
           onPress={() => setInviting((current) => !current)}

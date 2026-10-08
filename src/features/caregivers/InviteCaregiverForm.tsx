@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { BigButton } from '../../components/BigButton';
@@ -14,6 +15,7 @@ type Props = {
  * real member/invite list and embeds this alongside it.
  */
 export function InviteCaregiverForm({ onInvite }: Props) {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [email, setEmail] = useState('');
@@ -32,7 +34,7 @@ export function InviteCaregiverForm({ onInvite }: Props) {
       setSent(true);
       setEmail('');
     } catch {
-      setError('Não foi possível enviar o convite. Tenta outra vez.');
+      setError(t('caregivers.inviteFailed'));
     } finally {
       setSending(false);
     }
@@ -40,14 +42,14 @@ export function InviteCaregiverForm({ onInvite }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={type.caption}>Email do cuidador</Text>
+      <Text style={type.caption}>{t('caregivers.emailLabel')}</Text>
       <TextInput
         value={email}
         onChangeText={(text) => {
           setEmail(text);
           setSent(false);
         }}
-        placeholder="cuidador@email.com"
+        placeholder={t('caregivers.emailPlaceholder')}
         placeholderTextColor={colors.inkMuted}
         autoCapitalize="none"
         keyboardType="email-address"
@@ -58,7 +60,7 @@ export function InviteCaregiverForm({ onInvite }: Props) {
       {sent && <Text style={styles.successText}>Convite enviado.</Text>}
 
       <BigButton
-        label={sending ? 'A convidar…' : 'Convidar cuidador'}
+        label={sending ? t('caregivers.inviting') : t('caregivers.invite')}
         background={canSubmit ? colors.action : colors.surfaceSunken}
         foreground={canSubmit ? colors.actionInk : colors.inkMuted}
         onPress={handleInvite}

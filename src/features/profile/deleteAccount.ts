@@ -27,7 +27,7 @@ export function takeAccountDeletionNotice(): string | null {
 }
 
 export function usesPassword(user: User): boolean {
-  return user.providerData.some((p) => p.providerId === 'password');
+  return (user.providerData ?? []).some((p) => p.providerId === 'password');
 }
 
 /**

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import { useSavedFlash } from '../../utils/useSavedFlash';
 import { useBabyProfile } from './useBabyProfile';
 
 export function BabyProfileScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { profile, mode, save } = useBabyProfile();
@@ -35,30 +37,30 @@ export function BabyProfileScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Perfil do bebé</Text>
+      <Text style={type.h1}>{t('babyProfile.title')}</Text>
       <Text style={type.caption}>
         Modo atual: {mode === 'gravida' ? 'Grávida' : 'Pós-parto'} — preencher a data de nascimento muda o modo da app.
       </Text>
 
       <Card style={{ gap: spacing.md }}>
         <View>
-          <Text style={type.caption}>Nome/alcunha do bebé</Text>
+          <Text style={type.caption}>{t('babyProfile.name')}</Text>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Opcional"
+            placeholder={t('common.optional')}
             placeholderTextColor={colors.inkMuted}
             style={styles.input}
           />
         </View>
-        <DateField label="Data prevista do parto" value={dueDate} onChange={setDueDate} placeholder="Data prevista" />
+        <DateField label={t('babyProfile.dueDate')} value={dueDate} onChange={setDueDate} placeholder={t('auth.baby.duePlaceholder')} />
         <DateField
-          label="Data de nascimento (se já nasceu)"
+          label={t('babyProfile.birthDate')}
           value={birthDate}
           onChange={setBirthDate}
-          placeholder="Quando nasceu"
+          placeholder={t('auth.baby.whenBorn')}
         />
-        <BigButton label="Guardar" background={colors.primary} foreground={colors.primaryInk} onPress={onSave} full />
+        <BigButton label={t('common.save')} background={colors.primary} foreground={colors.primaryInk} onPress={onSave} full />
         {showSaved && <Text style={styles.savedText}>Guardado com sucesso.</Text>}
       </Card>
     </SafeAreaView>

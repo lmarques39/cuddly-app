@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -16,19 +17,21 @@ import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { signOutOfGoogle } from '../auth/useGoogleSignIn';
 import { useSavedFlash } from '../../utils/useSavedFlash';
+import { usesPassword } from './deleteAccount';
 import { useCurrentMember } from './useCurrentMember';
 
 type Nav = NativeStackNavigationProp<PerfilStackParamList, 'PerfilHub'>;
 
-const SETTINGS: { label: string; route: keyof PerfilStackParamList }[] = [
-  { label: 'Perfil do bebé', route: 'PerfilDoBebe' },
-  { label: 'Consultas médicas', route: 'ConsultasMedicas' },
-  { label: 'Cuidadores', route: 'Cuidadores' },
-  { label: 'Notificações', route: 'Notificacoes' },
-  { label: 'Privacidade e dados', route: 'PrivacidadeDados' },
-];
+const SETTINGS = [
+  { label: 'profile.settings.baby', route: 'PerfilDoBebe' },
+  { label: 'profile.settings.appointments', route: 'ConsultasMedicas' },
+  { label: 'profile.settings.caregivers', route: 'Cuidadores' },
+  { label: 'profile.settings.notifications', route: 'Notificacoes' },
+  { label: 'profile.settings.privacy', route: 'PrivacidadeDados' },
+] as const satisfies readonly { label: string; route: keyof PerfilStackParamList }[];
 
 export function PerfilScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const navigation = useNavigation<Nav>();
@@ -54,7 +57,7 @@ export function PerfilScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Perfil</Text>
+      <Text style={type.h1}>{t('profile.title')}</Text>
 
       <Card style={{ gap: spacing.xs }}>
         {editingName ? (
@@ -62,38 +65,40 @@ export function PerfilScreen() {
             <TextInput
               value={nameDraft}
               onChangeText={setNameDraft}
-              placeholder="O teu nome"
+              placeholder={t('profile.namePlaceholder')}
               placeholderTextColor={colors.inkMuted}
               style={styles.nameInput}
               autoFocus
             />
             <View style={styles.nameEditActions}>
               <Pressable onPress={saveName} style={styles.smallButton}>
-                <Text style={styles.smallButtonLabel}>Guardar</Text>
+                <Text style={styles.smallButtonLabel}>{t('common.save')}</Text>
               </Pressable>
               <Pressable onPress={() => setEditingName(false)} hitSlop={8}>
-                <Text style={type.caption}>Cancelar</Text>
+                <Text style={type.caption}>{t('common.cancel')}</Text>
               </Pressable>
             </View>
           </View>
         ) : (
           <Pressable onPress={startEditingName} style={styles.nameRow}>
             <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>
-              {member?.name || 'Adicionar o teu nome'}
+              {member?.name || t('profile.addName')}
             </Text>
-            <Text style={styles.editLink}>Editar</Text>
+            <Text style={styles.editLink}>{t('common.edit')}</Text>
           </Pressable>
         )}
-        <Text style={type.body}>{email ?? 'Sem sessão iniciada'}</Text>
-        <Text style={type.caption}>Conta com email e password (Firebase).</Text>
-        {showSaved && <Text style={styles.savedText}>Guardado com sucesso.</Text>}
+        <Text style={type.body}>{email ?? t('profile.notSignedIn')}</Text>
+        <Text style={type.caption}>
+          {auth.currentUser && !usesPassword(auth.currentUser) ? t('profile.googleAccount') : t('profile.passwordAccount')}
+        </Text>
+        {showSaved && <Text style={styles.savedText}>{t('profile.savedOk')}</Text>}
       </Card>
 
       <View style={{ gap: spacing.sm }}>
         {SETTINGS.map((item) => (
           <Pressable key={item.route} onPress={() => navigation.navigate(item.route)}>
             <Card style={styles.row}>
-              <Text style={type.body}>{item.label}</Text>
+              <Text style={type.body}>{t(item.label)}</Text>
               <Text style={type.caption}>›</Text>
             </Card>
           </Pressable>
@@ -110,14 +115,14 @@ export function PerfilScreen() {
         }}
         style={styles.logoutButton}
       >
-        <Text style={styles.logoutLabel}>Terminar sessão</Text>
+        <Text style={styles.logoutLabel}>{t('profile.signOut')}</Text>
       </Pressable>
 
       {(__DEV__ || process.env.EXPO_PUBLIC_ENABLE_DEV_TOOLS === 'true') && (
         <View style={{ gap: spacing.sm }}>
-          <Text style={type.caption}>Ferramentas de demonstração</Text>
+          <Text style={type.caption}>{t('profile.devTools')}</Text>
           <Pressable onPress={() => seedDemoData()} style={styles.devButton}>
-            <Text style={styles.devLabel}>Carregar dados de demonstração</Text>
+            <Text style={styles.devLabel}>{t('profile.seedDemo')}</Text>
           </Pressable>
           <Pressable
             onPress={() => {
@@ -126,7 +131,7 @@ export function PerfilScreen() {
             }}
             style={styles.devButton}
           >
-            <Text style={styles.devLabel}>Limpar dados locais</Text>
+            <Text style={styles.devLabel}>{t('profile.clearLocal')}</Text>
           </Pressable>
         </View>
       )}

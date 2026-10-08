@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,10 +12,11 @@ import { useSavedFlash } from '../../utils/useSavedFlash';
 
 /**
  * Deliberately simple UI, no Figma frame changed here — matches the 3 real
- * toggles. "Novidades da Cuddly" from the Figma is left out on purpose:
+ * toggles. t('notificationsScreen.news') from the Figma is left out on purpose:
  * it's genuine push (server-triggered), not a local reminder — see #14.
  */
 export function NotificacoesScreen() {
+  const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { preferences, save } = useNotificationPreferences();
@@ -30,13 +32,13 @@ export function NotificacoesScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>Notificações</Text>
-      <Text style={type.caption}>Só lembretes que tu crias — nunca notificações push de marketing.</Text>
+      <Text style={type.h1}>{t('notificationsScreen.title')}</Text>
+      <Text style={type.caption}>{t('notificationsScreen.intro')}</Text>
 
       <Card style={styles.row}>
         <View style={styles.rowText}>
-          <Text style={type.body}>Lembrete de amamentação</Text>
-          <Text style={type.caption}>A cada</Text>
+          <Text style={type.body}>{t('notificationsScreen.breastfeeding')}</Text>
+          <Text style={type.caption}>{t('notificationsScreen.every')}</Text>
         </View>
         <TextInput
           value={String(draft.breastfeeding.intervalHours)}
@@ -44,7 +46,7 @@ export function NotificacoesScreen() {
           keyboardType="numeric"
           style={styles.hoursInput}
         />
-        <Text style={type.caption}>h</Text>
+        <Text style={type.caption}>{t('notificationsScreen.hoursUnit')}</Text>
         <Switch
           value={draft.breastfeeding.enabled}
           onValueChange={(enabled) => setDraft((d) => ({ ...d, breastfeeding: { ...d.breastfeeding, enabled } }))}
@@ -53,8 +55,8 @@ export function NotificacoesScreen() {
 
       <Card style={styles.row}>
         <View style={styles.rowText}>
-          <Text style={type.body}>Lembrete de consultas</Text>
-          <Text style={type.caption}>Dias antes</Text>
+          <Text style={type.body}>{t('notificationsScreen.appointments')}</Text>
+          <Text style={type.caption}>{t('notificationsScreen.daysBefore')}</Text>
         </View>
         <TextInput
           value={String(draft.appointment.daysBefore)}
@@ -70,8 +72,8 @@ export function NotificacoesScreen() {
 
       <Card style={styles.row}>
         <View style={styles.rowText}>
-          <Text style={type.body}>Resumo diário</Text>
-          <Text style={type.caption}>Às</Text>
+          <Text style={type.body}>{t('notificationsScreen.daily')}</Text>
+          <Text style={type.caption}>{t('notificationsScreen.at')}</Text>
         </View>
         <TextInput
           value={String(draft.dailySummary.hour)}
@@ -79,7 +81,7 @@ export function NotificacoesScreen() {
           keyboardType="numeric"
           style={styles.hoursInput}
         />
-        <Text style={type.caption}>h</Text>
+        <Text style={type.caption}>{t('notificationsScreen.hoursUnit')}</Text>
         <Switch
           value={draft.dailySummary.enabled}
           onValueChange={(enabled) => setDraft((d) => ({ ...d, dailySummary: { ...d.dailySummary, enabled } }))}
@@ -88,14 +90,14 @@ export function NotificacoesScreen() {
 
       <Card style={styles.disabledRow}>
         <View style={styles.rowText}>
-          <Text style={[type.body, { color: colors.inkMuted }]}>Novidades da Cuddly</Text>
-          <Text style={type.caption}>Brevemente</Text>
+          <Text style={[type.body, { color: colors.inkMuted }]}>{t('notificationsScreen.news')}</Text>
+          <Text style={type.caption}>{t('notificationsScreen.soon')}</Text>
         </View>
         <Switch value={false} disabled />
       </Card>
 
-      <BigButton label="Guardar" background={colors.primary} foreground={colors.primaryInk} onPress={onSave} full />
-      {showSaved && <Text style={styles.savedText}>Guardado com sucesso.</Text>}
+      <BigButton label={t('common.save')} background={colors.primary} foreground={colors.primaryInk} onPress={onSave} full />
+      {showSaved && <Text style={styles.savedText}>{t('profile.savedOk')}</Text>}
     </SafeAreaView>
   );
 }
