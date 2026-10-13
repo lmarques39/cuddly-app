@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import i18n, { currentLocale } from '../i18n';
-import { weekdayLetters } from '../i18n/calendar';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +15,9 @@ import { domainColors, fontFamily, radii, spacing } from '../theme/tokens';
 import { createStyles, useTheme } from '../theme/ThemeProvider';
 import { formatClock, formatDurationShort } from '../utils/time';
 import { useNow } from '../utils/useNow';
+import { CalendarEvent } from '../features/history/calendarLayout';
+import { TrendsCalendar } from '../features/history/TrendsCalendar';
+import { useBabyProfile } from '../features/profile/useBabyProfile';
 import { entryDurationMs } from '../utils/sessionTime';
 
 type Kind = 'contraction' | 'breastfeeding' | 'sono' | 'pumping' | 'bottle' | 'diaper' | 'food';
@@ -41,6 +43,18 @@ const KIND_COLOR: Record<Kind, string> = {
   bottle: domainColors.bottle.bg,
   diaper: domainColors.diapers.bg,
   food: domainColors.foods.bg,
+};
+
+// Food introductions are one-offs on a day, not a rhythm — no calendar for them.
+type CalendarKind = Exclude<Kind, 'food'>;
+const CALENDAR_KINDS: CalendarKind[] = ['breastfeeding', 'sono', 'pumping', 'bottle', 'diaper', 'contraction'];
+const CALENDAR_COLOR: Record<CalendarKind, { bg: string; ink: string }> = {
+  contraction: domainColors.contractions,
+  breastfeeding: domainColors.breastfeeding,
+  sono: domainColors.sleep,
+  pumping: domainColors.pumping,
+  bottle: domainColors.bottle,
+  diaper: domainColors.diapers,
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -133,7 +147,7 @@ export function HistoricoScreen() {
       })),
     ];
     return merged.sort((a, b) => b.at - a.at);
-  }, [contractions, breastfeeding, sono, pumping, bottle, diapers, foods]);
+  }, [contractions, breastfeeding, sono, pumping, bottle, diapers, foods, t]);
 
   const filtered = useMemo(() => (filter === 'todos' ? items : items.filter((i) => i.kind === filter)), [items, filter]);
 
@@ -163,17 +177,32 @@ export function HistoricoScreen() {
   }, [last7Days]);
   const maxTotal = Math.max(1, ...Object.values(totals));
 
-  const dailyTotals = useMemo(() => {
-    const today = startOfDay(now);
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const dayStart = today - (6 - i) * 24 * 60 * 60 * 1000;
-      const date = new Date(dayStart);
-      const count = items.filter((it) => startOfDay(it.at) === dayStart).length;
-      return { key: dayStart, letter: weekdayLetters()[date.getDay()], count, isToday: dayStart === today };
+  // Tendências (#129): one tracker's entries on a week calendar, placed by start time.
+  const { mode } = useBabyProfile();
+  const [calendarKind, setCalendarKind] = useState<CalendarKind | null>(null);
+  const shownKind: CalendarKind = calendarKind ?? (mode === 'gravida' ? 'contraction' : 'breastfeeding');
+  const calendarEvents = useMemo((): CalendarEvent[] => {
+    const session = (e: { id: string; startedAt: number; endedAt: number; pausedMs?: number }) => ({
+      id: e.id,
+      startedAt: e.startedAt,
+      endedAt: e.endedAt,
+      label: `${formatClock(e.startedAt)} · ${t('trackers.durationSuffix', { duration: formatDurationShort(entryDurationMs(e)) })}`,
     });
-    return days;
-  }, [items, now]);
-  const maxDaily = Math.max(1, ...dailyTotals.map((d) => d.count));
+    switch (shownKind) {
+      case 'breastfeeding':
+        return breastfeeding.map(session);
+      case 'sono':
+        return sono.map(session);
+      case 'pumping':
+        return pumping.map((e) => ({ ...session(e), label: `${session(e).label} · ${e.amountMl} ml` }));
+      case 'contraction':
+        return contractions.map(session);
+      case 'bottle':
+        return bottle.map((e) => ({ id: e.id, startedAt: e.at, label: `${formatClock(e.at)} · ${e.amountMl} ml` }));
+      case 'diaper':
+        return diapers.map((e) => ({ id: e.id, startedAt: e.at, label: `${formatClock(e.at)} · ${t(`diaperTypes.${e.type}`)}` }));
+    }
+  }, [shownKind, breastfeeding, sono, pumping, contractions, bottle, diapers, t]);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -240,29 +269,21 @@ export function HistoricoScreen() {
         </>
       ) : (
         <ScrollView contentContainerStyle={{ gap: spacing.md, paddingBottom: spacing.xl }}>
-          <Card style={{ gap: spacing.sm }}>
-            <Text style={type.caption}>{t('history.activityByDay')}</Text>
-            <View style={styles.chartRow}>
-              {dailyTotals.map((d) => (
-                <View key={d.key} style={styles.chartCol}>
-                  <View style={styles.chartTrack}>
-                    <View
-                      style={[
-                        styles.chartBar,
-                        {
-                          height: `${(d.count / maxDaily) * 100}%`,
-                          backgroundColor: d.isToday ? colors.primary : colors.domain.breastfeeding.bg,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={[styles.chartLabel, d.isToday && { fontFamily: fontFamily.bodyBold, color: colors.ink }]}>
-                    {d.letter}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </Card>
+          <View style={styles.filterRow}>
+            {CALENDAR_KINDS.map((k) => (
+              <Pressable
+                key={k}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: shownKind === k }}
+                onPress={() => setCalendarKind(k)}
+                style={[styles.filterChip, { backgroundColor: shownKind === k ? colors.surfaceSunken : 'transparent' }]}
+              >
+                <Text style={{ fontFamily: fontFamily.bodyMedium, fontSize: 12, color: colors.inkSecondary }}>{t(KIND_LABEL[k])}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <TrendsCalendar title={t(KIND_LABEL[shownKind])} events={calendarEvents} color={CALENDAR_COLOR[shownKind]} now={now} />
 
           <Text style={type.caption}>{t('history.totals7')}</Text>
           {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
@@ -297,11 +318,6 @@ const useStyles = createStyles((colors, type) => ({
   },
   filterChip: { paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  chartRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 110, paddingTop: spacing.sm },
-  chartCol: { alignItems: 'center', gap: spacing.xs, width: 28 },
-  chartTrack: { width: 16, height: 80, borderRadius: radii.pill, backgroundColor: colors.surfaceSunken, justifyContent: 'flex-end', overflow: 'hidden' },
-  chartBar: { width: '100%', borderRadius: radii.pill },
-  chartLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 11, color: colors.inkMuted },
   dot: { width: 10, height: 10, borderRadius: 5 },
   barTrack: { height: 10, borderRadius: radii.pill, backgroundColor: colors.surfaceSunken, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: radii.pill },

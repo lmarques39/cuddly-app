@@ -250,7 +250,14 @@ export const pt = {
     empty: "Ainda sem registos.",
     todayLabel: "Hoje, {{date}}",
     yesterdayLabel: "Ontem, {{date}}",
-    activityByDay: "Atividade por dia · esta semana",
+    calendar: {
+      perDay: "{{value}} por dia",
+      caption: "{{kind}} · média por dia nesta semana",
+      empty: "Sem registos nesta semana.",
+      previousWeek: "Semana anterior",
+      nextWeek: "Semana seguinte",
+      tapHint: "Toca numa marca para ver os detalhes",
+    },
     totals7: "Totais dos últimos 7 dias",
   },
   trackers: {

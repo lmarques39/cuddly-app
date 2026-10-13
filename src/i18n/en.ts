@@ -251,7 +251,14 @@ export const en: Translations = {
     empty: "No entries yet.",
     todayLabel: "Today, {{date}}",
     yesterdayLabel: "Yesterday, {{date}}",
-    activityByDay: "Activity per day · this week",
+    calendar: {
+      perDay: "{{value}} per day",
+      caption: "{{kind}} · daily average this week",
+      empty: "Nothing logged this week.",
+      previousWeek: "Previous week",
+      nextWeek: "Next week",
+      tapHint: "Tap a mark to see its details",
+    },
     totals7: "Totals for the last 7 days",
   },
   trackers: {
