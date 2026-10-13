@@ -31,32 +31,50 @@ function formatDay(epochMs: number): string {
   return `${d.getDate()} ${monthShortNames()[d.getMonth()]}`;
 }
 
-type Props = {
-  /** What's being shown, e.g. "Amamentação" — names the single series, so no legend box is needed. */
+export type CalendarSeries = {
+  key: string;
+  /** "Amamentação" — in the legend, and before a tapped mark's details. */
   title: string;
+  color: string;
   events: CalendarEvent[];
-  color: { bg: string; ink: string };
+};
+
+type Props = {
+  /** One to three trackers (#131), in colour-slot order — also their lane order inside each day. */
+  series: CalendarSeries[];
   now: number;
 };
+
+type Selected = { segment: CalendarSegment; seriesTitle: string };
 
 /**
  * Tendências as a week calendar (#129): days across, hours 00→24 down, one
  * mark per entry at the hour it *started* and as tall as it lasted — so
- * the rhythm of feeds or naps across the day and night jumps out. One
- * tracker at a time; the timeline is the table view of the same entries.
+ * the rhythm of feeds or naps across the day and night jumps out. Up to
+ * three trackers together (#131), each in its own colour and its own lane
+ * of every day, named in the legend. The timeline is the table view of the
+ * same entries.
  */
-export function TrendsCalendar({ title, events, color, now }: Props) {
+export function TrendsCalendar({ series, now }: Props) {
   const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const [weeksBack, setWeeksBack] = useState(0);
-  const [selected, setSelected] = useState<CalendarSegment | null>(null);
+  const [selected, setSelected] = useState<Selected | null>(null);
 
   // The shown week ends today, so the latest days are always in view.
   const firstDay = dayStart(now, -(DAYS - 1) - weeksBack * DAYS);
   const todayStart = dayStart(now);
-  const segments = useMemo(() => layOutWeek(events, firstDay, DAYS), [events, firstDay]);
-  const average = averagePerDay(events, firstDay, now, DAYS);
+  const lanes = useMemo(
+    () =>
+      series.map((s) => ({
+        ...s,
+        segments: layOutWeek(s.events, firstDay, DAYS),
+        average: averagePerDay(s.events, firstDay, now, DAYS),
+      })),
+    [series, firstDay, now],
+  );
+  const single = lanes.length === 1 ? lanes[0] : null;
   const columns = Array.from({ length: DAYS }, (_, i) => dayStart(firstDay, i));
 
   const changeWeek = (delta: number) => {
@@ -66,10 +84,27 @@ export function TrendsCalendar({ title, events, color, now }: Props) {
 
   return (
     <Card style={styles.card}>
-      <View style={styles.headline}>
-        <Text style={styles.average}>{average != null ? t('history.calendar.perDay', { value: formatAverage(average) }) : '—'}</Text>
-        <Text style={type.caption}>{average != null ? t('history.calendar.caption', { kind: title }) : t('history.calendar.empty')}</Text>
-      </View>
+      {single ? (
+        <View style={styles.headline}>
+          <Text style={styles.average}>{single.average != null ? t('history.calendar.perDay', { value: formatAverage(single.average) }) : '—'}</Text>
+          <Text style={type.caption}>
+            {single.average != null ? t('history.calendar.caption', { kind: single.title }) : t('history.calendar.empty')}
+          </Text>
+        </View>
+      ) : (
+        // Two or more: a legend, so identity never rests on colour alone.
+        <View style={styles.legend} accessibilityRole="summary">
+          {lanes.map((lane) => (
+            <View key={lane.key} style={styles.legendRow}>
+              <View style={[styles.swatch, { backgroundColor: lane.color }]} />
+              <Text style={styles.legendName}>{lane.title}</Text>
+              <Text style={styles.legendValue}>
+                {lane.average != null ? t('history.calendar.perDay', { value: formatAverage(lane.average) }) : '—'}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={styles.weekNav}>
         <Pressable accessibilityRole="button" accessibilityLabel={t('history.calendar.previousWeek')} hitSlop={12} onPress={() => changeWeek(1)}>
@@ -91,7 +126,15 @@ export function TrendsCalendar({ title, events, color, now }: Props) {
       </View>
 
       <Text style={[type.caption, styles.detail]} numberOfLines={1}>
-        {selected ? `${weekdayLetters()[new Date(columns[selected.dayIndex]).getDay()]} ${new Date(columns[selected.dayIndex]).getDate()} · ${selected.event.label}` : t('history.calendar.tapHint')}
+        {selected
+          ? [
+              single ? null : selected.seriesTitle,
+              `${weekdayLetters()[new Date(columns[selected.segment.dayIndex]).getDay()]} ${new Date(columns[selected.segment.dayIndex]).getDate()}`,
+              selected.segment.event.label,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          : t('history.calendar.tapHint')}
       </Text>
 
       <View style={styles.headerRow}>
@@ -128,30 +171,34 @@ export function TrendsCalendar({ title, events, color, now }: Props) {
 
           {columns.map((day, dayIndex) => (
             <View key={day} style={styles.column}>
-              {segments
-                .filter((s) => s.dayIndex === dayIndex)
-                .map((s) => {
-                  const isSelected = selected?.event.id === s.event.id;
-                  const height = Math.max(MIN_MARK_PX, ((s.endMin - s.startMin) / 60) * HOUR_PX);
-                  return (
-                    <Pressable
-                      key={`${s.event.id}-${dayIndex}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={s.event.label}
-                      hitSlop={{ top: 8, bottom: 8 }}
-                      onPress={() => setSelected(isSelected ? null : s)}
-                      style={[
-                        styles.mark,
-                        {
-                          top: Math.min((s.startMin / 60) * HOUR_PX, GRID_PX - height),
-                          height,
-                          backgroundColor: color.bg,
-                          borderWidth: isSelected ? 2 : 1,
-                        },
-                      ]}
-                    />
-                  );
-                })}
+              {lanes.map((lane) => (
+                <View key={lane.key} style={styles.lane}>
+                  {lane.segments
+                    .filter((seg) => seg.dayIndex === dayIndex)
+                    .map((seg) => {
+                      const isSelected = selected?.segment.event.id === seg.event.id && selected.seriesTitle === lane.title;
+                      const height = Math.max(MIN_MARK_PX, ((seg.endMin - seg.startMin) / 60) * HOUR_PX);
+                      return (
+                        <Pressable
+                          key={`${seg.event.id}-${dayIndex}`}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${lane.title} · ${seg.event.label}`}
+                          hitSlop={{ top: 8, bottom: 8 }}
+                          onPress={() => setSelected(isSelected ? null : { segment: seg, seriesTitle: lane.title })}
+                          style={[
+                            styles.mark,
+                            {
+                              top: Math.min((seg.startMin / 60) * HOUR_PX, GRID_PX - height),
+                              height,
+                              backgroundColor: lane.color,
+                              borderWidth: isSelected ? 2 : 1,
+                            },
+                          ]}
+                        />
+                      );
+                    })}
+                </View>
+              ))}
             </View>
           ))}
         </View>
@@ -184,6 +231,12 @@ const useStyles = createStyles((colors, type) => ({
   },
   night: { position: 'absolute', left: 0, right: 0, backgroundColor: colors.surfaceSunken },
   guide: { position: 'absolute', left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.border, opacity: 0.5 },
-  column: { flex: 1 },
-  mark: { position: 'absolute', left: '18%', right: '18%', borderRadius: 3, borderColor: colors.inkBorder },
+  column: { flex: 1, minWidth: 0, flexDirection: 'row', paddingHorizontal: 4, gap: 2 },
+  lane: { flex: 1, minWidth: 0 },
+  mark: { position: 'absolute', left: 0, right: 0, borderRadius: 3, borderColor: colors.inkBorder },
+  legend: { gap: spacing.xs, paddingHorizontal: spacing.xs },
+  legendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  swatch: { width: 12, height: 12, borderRadius: 3, borderWidth: 1, borderColor: colors.inkBorder },
+  legendName: { flex: 1, fontFamily: fontFamily.bodyMedium, fontSize: 14, color: colors.ink },
+  legendValue: { fontFamily: fontFamily.bodyBold, fontSize: 14, color: colors.ink, fontVariant: ['tabular-nums'] },
 }));

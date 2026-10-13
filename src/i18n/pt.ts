@@ -257,6 +257,7 @@ export const pt = {
       previousWeek: "Semana anterior",
       nextWeek: "Semana seguinte",
       tapHint: "Toca numa marca para ver os detalhes",
+      pickHint: "Escolhe até {{count}} para comparar no mesmo gráfico.",
     },
     totals7: "Totais dos últimos 7 dias",
   },

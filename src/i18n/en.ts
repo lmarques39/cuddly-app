@@ -258,6 +258,7 @@ export const en: Translations = {
       previousWeek: "Previous week",
       nextWeek: "Next week",
       tapHint: "Tap a mark to see its details",
+      pickHint: "Pick up to {{count}} to compare on one chart.",
     },
     totals7: "Totals for the last 7 days",
   },
