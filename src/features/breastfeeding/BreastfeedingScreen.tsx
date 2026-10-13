@@ -65,7 +65,7 @@ export function BreastfeedingScreen() {
 
       <Card style={styles.timerCard}>
         <Text style={type.caption}>
-          {running != null ? t('breastfeeding.running', { side: t(SIDE_LABEL[running.side]).toLowerCase() }) : t('breastfeeding.ready')}
+          {running != null ? t('breastfeeding.running', { side: t(running.side === 'left' ? 'side.left' : 'side.right') }) : t('breastfeeding.ready')}
         </Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
       </Card>
