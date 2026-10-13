@@ -153,7 +153,7 @@ it('opening a running timer from another tab keeps the Registar hub underneath, 
   });
   expect(await screen.findByRole('button', { name: 'Parar contração' })).toBeTruthy();
 
-  const registar = navigationRef.getRootState().routes.find((r) => r.name === 'Registar');
+  const registar = navigationRef.getRootState()?.routes.find((r) => r.name === 'Registar');
   expect(registar?.state?.routes.map((r) => r.name)).toEqual(['RegistarHub', 'Contrações']);
   await AsyncStorage.clear();
 });
