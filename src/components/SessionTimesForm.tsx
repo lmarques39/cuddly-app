@@ -65,7 +65,16 @@ export function SessionTimesForm({ heading, initial, onSave, onCancel, extraFiel
 
   const dayMs = dayOption === 'today' ? now : dayOption === 'yesterday' ? now - DAY_MS : parseDayOnly(customDate, now);
 
-  const range = dayMs != null ? resolveManualRange(dayMs, startTime, endTime) : undefined;
+  // Times left as they were keep the entry's exact timestamps — HH:MM
+  // loses the seconds, so a 30 s session would otherwise become 11:29–11:29
+  // and refuse to save a change to just its side or ml.
+  const untouched =
+    initial != null &&
+    dayOption === initialDay(initial.startedAt, now).option &&
+    customDate === initialDay(initial.startedAt, now).custom &&
+    startTime === hhmm(initial.startedAt) &&
+    endTime === hhmm(initial.endedAt);
+  const range = untouched ? initial : dayMs != null ? resolveManualRange(dayMs, startTime, endTime) : undefined;
   const canSave = range != null && range.endedAt > range.startedAt && extraValid;
 
   const save = () => {

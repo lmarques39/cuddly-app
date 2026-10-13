@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { ManualEntryToggle } from './ManualEntryToggle';
+import { SessionTimesForm } from './SessionTimesForm';
 
 describe('ManualEntryToggle', () => {
   it('is collapsed by default and reveals the form on tap', async () => {
@@ -115,5 +116,18 @@ describe('ManualEntryToggle', () => {
       expect(new Date(startedAt).getMonth()).toBe(8); // September
       expect(new Date(startedAt).getDate()).toBe(5);
     });
+  });
+});
+
+describe('SessionTimesForm editing an entry (#126)', () => {
+  it('saves a seconds-long entry unchanged when only other fields are edited', async () => {
+    const startedAt = new Date().setHours(11, 29, 10, 0);
+    const initial = { startedAt, endedAt: startedAt + 30_000 }; // 11:29–11:29 at minute precision
+    const onSave = jest.fn();
+    await render(<SessionTimesForm heading="x" initial={initial} onSave={onSave} onCancel={jest.fn()} />);
+
+    await act(async () => fireEvent.press(screen.getByText('Guardar')));
+
+    expect(onSave).toHaveBeenCalledWith(initial.startedAt, initial.endedAt);
   });
 });
