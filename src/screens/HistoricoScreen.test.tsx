@@ -68,14 +68,31 @@ describe('HistoricoScreen', () => {
 
     await render(<HistoricoScreen />, { wrapper: ActiveSessionsWrapper });
 
-    expect(await screen.findByText('14:30 · 01:30:00')).toBeTruthy();
-    expect(screen.getByText('10:20 · 20:00 · 120ml')).toBeTruthy();
+    expect(await screen.findByText('13:00 · 01:30:00')).toBeTruthy();
+    expect(screen.getByText('10:00 · 20:00 · 120ml')).toBeTruthy();
 
     await act(async () => {
       fireEvent.press(screen.getAllByText('Sono')[0]); // the filter chip comes before the timeline row
     });
-    expect(screen.getByText('14:30 · 01:30:00')).toBeTruthy();
-    expect(screen.queryByText('10:20 · 20:00 · 120ml')).toBeNull();
+    expect(screen.getByText('13:00 · 01:30:00')).toBeTruthy();
+    expect(screen.queryByText('10:00 · 20:00 · 120ml')).toBeNull();
+
+    jest.restoreAllMocks();
+  });
+
+  it('places a session by when it started, not when it ended (#122)', async () => {
+    const now = new Date(2026, 9, 8, 9, 0, 0).getTime();
+    jest.spyOn(Date, 'now').mockReturnValue(now);
+
+    // Fell asleep last night, woke up this morning — belongs to yesterday, at 23:00.
+    const night: SonoEntry = { id: 's1', startedAt: new Date(2026, 9, 7, 23, 0).getTime(), endedAt: new Date(2026, 9, 8, 2, 0).getTime() };
+    await AsyncStorage.setItem(STORAGE_KEYS.sono, JSON.stringify([night]));
+
+    await render(<HistoricoScreen />, { wrapper: ActiveSessionsWrapper });
+
+    expect(await screen.findByText('Ontem, 07/10')).toBeTruthy();
+    expect(screen.queryByText('Hoje, 08/10')).toBeNull();
+    expect(screen.getByText('23:00 · 03:00:00')).toBeTruthy();
 
     jest.restoreAllMocks();
   });

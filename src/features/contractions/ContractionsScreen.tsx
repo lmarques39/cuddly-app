@@ -20,7 +20,9 @@ export function ContractionsScreen() {
   const now = useNow(1000, runningSince != null);
 
   const elapsed = runningSince != null ? now - runningSince : 0;
-  const lastInterval = entries.length > 0 ? now - entries[0].endedAt : null;
+  // Start to start, like every other time in the app (#122) — and how
+  // contraction frequency is usually counted.
+  const lastInterval = entries.length > 0 ? now - entries[0].startedAt : null;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>

@@ -80,10 +80,10 @@ export function HomeScreen() {
   // subscription — no refetch-on-focus needed, just derive the view.
   const latest = useMemo(() => {
     const items: LatestEntry[] = [
-      contractions[0] && { label: t('home.latestContraction'), at: contractions[0].endedAt },
+      contractions[0] && { label: t('home.latestContraction'), at: contractions[0].startedAt },
       breastfeeding[0] && {
         label: t('home.latestBreastfeeding', { side: t(breastfeeding[0].side === 'left' ? 'side.left' : 'side.right') }),
-        at: breastfeeding[0].endedAt,
+        at: breastfeeding[0].startedAt,
       },
       bottle[0] && { label: t('home.latestBottle', { ml: bottle[0].amountMl }), at: bottle[0].at },
       diapers[0] && { label: t('home.latestDiaper'), at: diapers[0].at },

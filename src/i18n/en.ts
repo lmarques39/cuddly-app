@@ -257,7 +257,7 @@ export const en: Translations = {
   },
   contractions: {
     title: "Contractions",
-    sinceLast: "Since the last one",
+    sinceLast: "Since the last one began",
     start: "Start contraction",
     stop: "Stop contraction",
     fiveOneOne: "5-1-1 pattern detected — consider contacting the maternity ward.",

@@ -256,7 +256,7 @@ export const pt = {
   },
   contractions: {
     title: "Contrações",
-    sinceLast: "Desde a última",
+    sinceLast: "Desde o início da última",
     start: "Iniciar contração",
     stop: "Parar contração",
     fiveOneOne: "Padrão 5-1-1 detetado — considera contactar a maternidade.",
