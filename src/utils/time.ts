@@ -9,6 +9,21 @@ export function formatDuration(ms: number): string {
   return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
+/**
+ * A finished session's length in words — "45 s", "12 min", "1 h 05 min" —
+ * so it can't be mistaken for a clock time the way "12:05" can (#124).
+ * The running stopwatch keeps formatDuration's mm:ss.
+ */
+export function formatDurationShort(ms: number): string {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  if (totalSeconds < 60) return `${totalSeconds} s`;
+  const totalMinutes = Math.round(totalSeconds / 60);
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h} h ${m.toString().padStart(2, '0')} min`;
+}
+
 export function formatClock(epochMs: number): string {
   return new Date(epochMs).toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' });
 }

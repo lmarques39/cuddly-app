@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
-import { RemoveEntryButton } from '../../components/RemoveEntryButton';
+import { SessionEntryRow } from '../../components/SessionEntryRow';
 import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -62,6 +62,7 @@ export function PumpingScreen() {
       <Card>
         <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
+        {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
       </Card>
 
       {runningSince != null && (
@@ -132,21 +133,16 @@ export function PumpingScreen() {
               </View>
             </Card>
           ) : (
-            <Card style={styles.row}>
-              <Pressable
-                style={styles.rowText}
-                onPress={() => {
-                  setEditingId(item.id);
-                  setEditAmount(String(item.amountMl));
-                }}
-              >
-                <Text style={type.body}>{formatClock(item.startedAt)}</Text>
-                <Text style={type.caption}>
-                  {t('pumping.row', { duration: formatDuration(item.endedAt - item.startedAt), ml: item.amountMl })}
-                </Text>
-              </Pressable>
-              <RemoveEntryButton onRemove={() => remove(item.id)} />
-            </Card>
+            <SessionEntryRow
+              startedAt={item.startedAt}
+              durationMs={item.endedAt - item.startedAt}
+              detail={t('pumping.row', { ml: item.amountMl })}
+              onPress={() => {
+                setEditingId(item.id);
+                setEditAmount(String(item.amountMl));
+              }}
+              onRemove={() => remove(item.id)}
+            />
           )
         }
       />
@@ -169,7 +165,6 @@ const useStyles = createStyles((colors, type) => ({
   },
   listTitle: { marginTop: spacing.sm },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  rowText: { flex: 1 },
   editInput: {
     flex: 1,
     borderWidth: 1.5,

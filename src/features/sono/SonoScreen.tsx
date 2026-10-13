@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
-import { RemoveEntryButton } from '../../components/RemoveEntryButton';
+import { SessionEntryRow } from '../../components/SessionEntryRow';
 import { spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -34,6 +34,7 @@ export function SonoScreen() {
       <Card style={styles.statCard}>
         <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
+        {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
       </Card>
 
       <BigButton
@@ -53,13 +54,7 @@ export function SonoScreen() {
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.none')}</Text>}
         renderItem={({ item }) => (
-          <Card style={styles.row}>
-            <View>
-              <Text style={type.body}>{formatClock(item.startedAt)}</Text>
-              <Text style={type.caption}>{t('trackers.durationSuffix', { duration: formatDuration(item.endedAt - item.startedAt) })}</Text>
-            </View>
-            <RemoveEntryButton onRemove={() => remove(item.id)} />
-          </Card>
+          <SessionEntryRow startedAt={item.startedAt} durationMs={item.endedAt - item.startedAt} onRemove={() => remove(item.id)} />
         )}
       />
     </SafeAreaView>
@@ -70,5 +65,4 @@ const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   statCard: {},
   listTitle: { marginTop: spacing.sm },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 }));

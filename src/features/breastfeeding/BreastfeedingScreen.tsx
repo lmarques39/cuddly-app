@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
-import { RemoveEntryButton } from '../../components/RemoveEntryButton';
+import { SessionEntryRow } from '../../components/SessionEntryRow';
 import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -65,6 +65,7 @@ export function BreastfeedingScreen() {
           {running != null ? t('breastfeeding.running', { side: t(running.side === 'left' ? 'side.left' : 'side.right') }) : t('breastfeeding.ready')}
         </Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
+        {running != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(running.startedAt) })}</Text>}
       </Card>
 
       <BigButton
@@ -96,13 +97,12 @@ export function BreastfeedingScreen() {
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
-          <Card style={styles.row}>
-            <View>
-              <Text style={type.body}>{formatClock(item.startedAt)} · {t(SIDE_LABEL[item.side])}</Text>
-              <Text style={type.caption}>{formatDuration(item.endedAt - item.startedAt)}</Text>
-            </View>
-            <RemoveEntryButton onRemove={() => remove(item.id)} />
-          </Card>
+          <SessionEntryRow
+            startedAt={item.startedAt}
+            durationMs={item.endedAt - item.startedAt}
+            detail={t(item.side === 'left' ? 'csv.leftBreast' : 'csv.rightBreast')}
+            onRemove={() => remove(item.id)}
+          />
         )}
       />
     </SafeAreaView>
@@ -121,5 +121,4 @@ const useStyles = createStyles((colors, type) => ({
     justifyContent: 'center',
   },
   timerCard: { alignItems: 'center', gap: spacing.xs },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 }));

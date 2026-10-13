@@ -14,7 +14,7 @@ import { usePumping } from '../features/pumping/usePumping';
 import { useSono } from '../features/sono/useSono';
 import { domainColors, fontFamily, radii, spacing } from '../theme/tokens';
 import { createStyles, useTheme } from '../theme/ThemeProvider';
-import { formatClock, formatDuration } from '../utils/time';
+import { formatClock, formatDurationShort } from '../utils/time';
 import { useNow } from '../utils/useNow';
 
 type Kind = 'contraction' | 'breastfeeding' | 'sono' | 'pumping' | 'bottle' | 'diaper' | 'food';
@@ -84,28 +84,28 @@ export function HistoricoScreen() {
         id: e.id,
         kind: 'contraction' as const,
         label: t('history.kinds.contraction'),
-        detail: formatDuration(e.endedAt - e.startedAt),
+        detail: t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) }),
         at: e.startedAt,
       })),
       ...breastfeeding.map((e) => ({
         id: e.id,
         kind: 'breastfeeding' as const,
         label: t('history.breastfeedingSide', { side: t(e.side === 'left' ? 'side.left' : 'side.right') }),
-        detail: formatDuration(e.endedAt - e.startedAt),
+        detail: t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) }),
         at: e.startedAt,
       })),
       ...sono.map((e) => ({
         id: e.id,
         kind: 'sono' as const,
         label: t('history.kinds.sono'),
-        detail: formatDuration(e.endedAt - e.startedAt),
+        detail: t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) }),
         at: e.startedAt,
       })),
       ...pumping.map((e) => ({
         id: e.id,
         kind: 'pumping' as const,
         label: t('history.kinds.pumping'),
-        detail: `${formatDuration(e.endedAt - e.startedAt)} · ${e.amountMl}ml`,
+        detail: `${t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) })} · ${e.amountMl} ml`,
         at: e.startedAt,
       })),
       ...bottle.map((e) => ({

@@ -68,14 +68,14 @@ describe('HistoricoScreen', () => {
 
     await render(<HistoricoScreen />, { wrapper: ActiveSessionsWrapper });
 
-    expect(await screen.findByText('13:00 · 01:30:00')).toBeTruthy();
-    expect(screen.getByText('10:00 · 20:00 · 120ml')).toBeTruthy();
+    expect(await screen.findByText('13:00 · 1 h 30 min de duração')).toBeTruthy();
+    expect(screen.getByText('10:00 · 20 min de duração · 120 ml')).toBeTruthy();
 
     await act(async () => {
       fireEvent.press(screen.getAllByText('Sono')[0]); // the filter chip comes before the timeline row
     });
-    expect(screen.getByText('13:00 · 01:30:00')).toBeTruthy();
-    expect(screen.queryByText('10:00 · 20:00 · 120ml')).toBeNull();
+    expect(screen.getByText('13:00 · 1 h 30 min de duração')).toBeTruthy();
+    expect(screen.queryByText('10:00 · 20 min de duração · 120 ml')).toBeNull();
 
     jest.restoreAllMocks();
   });
@@ -92,7 +92,7 @@ describe('HistoricoScreen', () => {
 
     expect(await screen.findByText('Ontem, 07/10')).toBeTruthy();
     expect(screen.queryByText('Hoje, 08/10')).toBeNull();
-    expect(screen.getByText('23:00 · 03:00:00')).toBeTruthy();
+    expect(screen.getByText('23:00 · 3 h 00 min de duração')).toBeTruthy();
 
     jest.restoreAllMocks();
   });

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
-import { RemoveEntryButton } from '../../components/RemoveEntryButton';
+import { SessionEntryRow } from '../../components/SessionEntryRow';
 import { fontFamily, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -32,6 +32,7 @@ export function ContractionsScreen() {
         <Card style={styles.statCard}>
           <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
           <Text style={type.data}>{formatDuration(elapsed)}</Text>
+          {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
         </Card>
         <Card style={styles.statCard}>
           <Text style={type.caption}>{t('contractions.sinceLast')}</Text>
@@ -64,13 +65,7 @@ export function ContractionsScreen() {
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
-          <Card style={styles.row}>
-            <View>
-              <Text style={type.body}>{formatClock(item.startedAt)}</Text>
-              <Text style={type.caption}>{t('trackers.durationSuffix', { duration: formatDuration(item.endedAt - item.startedAt) })}</Text>
-            </View>
-            <RemoveEntryButton onRemove={() => remove(item.id)} />
-          </Card>
+          <SessionEntryRow startedAt={item.startedAt} durationMs={item.endedAt - item.startedAt} onRemove={() => remove(item.id)} />
         )}
       />
     </SafeAreaView>
@@ -83,5 +78,4 @@ const useStyles = createStyles((colors, type) => ({
   statCard: { flex: 1 },
   alert: { borderWidth: 1.5 },
   listTitle: { marginTop: spacing.sm },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 }));

@@ -1,4 +1,13 @@
-import { parseDayOnly, resolveManualRange } from './time';
+import { formatDurationShort, parseDayOnly, resolveManualRange } from './time';
+
+describe('formatDurationShort', () => {
+  it('reads as a length, never as a clock time (#124)', () => {
+    expect(formatDurationShort(45_000)).toBe('45 s');
+    expect(formatDurationShort(12 * 60_000 + 10_000)).toBe('12 min');
+    expect(formatDurationShort(65 * 60_000)).toBe('1 h 05 min');
+    expect(formatDurationShort(3 * 3600_000)).toBe('3 h 00 min');
+  });
+});
 
 describe('resolveManualRange', () => {
   const day = new Date(2026, 8, 17, 12, 0, 0).getTime(); // 2026-09-17, the chosen day

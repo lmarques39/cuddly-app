@@ -30,6 +30,6 @@ describe('PumpingScreen', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Iniciar extração' })).toBeTruthy();
-    expect(screen.getByText(/150ml/)).toBeTruthy();
+    expect(screen.getByText(/150 ml/)).toBeTruthy();
   });
 });
