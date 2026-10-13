@@ -3,7 +3,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import Constants from 'expo-constants';
+import { Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppearancePicker } from '../../components/AppearancePicker';
 import { LanguagePicker } from '../../components/LanguagePicker';
@@ -18,6 +19,7 @@ import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { signOutOfGoogle } from '../auth/useGoogleSignIn';
 import { useSavedFlash } from '../../utils/useSavedFlash';
 import { usesPassword } from './deleteAccount';
+import { feedbackUrl } from './feedbackLink';
 import { useCurrentMember } from './useCurrentMember';
 
 type Nav = NativeStackNavigationProp<PerfilStackParamList, 'PerfilHub'>;
@@ -31,7 +33,7 @@ const SETTINGS = [
 ] as const satisfies readonly { label: string; route: keyof PerfilStackParamList }[];
 
 export function PerfilScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
   const navigation = useNavigation<Nav>();
@@ -57,90 +59,104 @@ export function PerfilScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>{t('profile.title')}</Text>
+      {/* Scrolls now that the list is longer — on a small phone "Terminar sessão" fell off the bottom. */}
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={type.h1}>{t('profile.title')}</Text>
 
-      <Card style={{ gap: spacing.xs }}>
-        {editingName ? (
-          <View style={{ gap: spacing.sm }}>
-            <TextInput
-              value={nameDraft}
-              onChangeText={setNameDraft}
-              placeholder={t('profile.namePlaceholder')}
-              placeholderTextColor={colors.inkMuted}
-              style={styles.nameInput}
-              autoFocus
-            />
-            <View style={styles.nameEditActions}>
-              <Pressable onPress={saveName} style={styles.smallButton}>
-                <Text style={styles.smallButtonLabel}>{t('common.save')}</Text>
-              </Pressable>
-              <Pressable onPress={() => setEditingName(false)} hitSlop={8}>
-                <Text style={type.caption}>{t('common.cancel')}</Text>
-              </Pressable>
+        <Card style={{ gap: spacing.xs }}>
+          {editingName ? (
+            <View style={{ gap: spacing.sm }}>
+              <TextInput
+                value={nameDraft}
+                onChangeText={setNameDraft}
+                placeholder={t('profile.namePlaceholder')}
+                placeholderTextColor={colors.inkMuted}
+                style={styles.nameInput}
+                autoFocus
+              />
+              <View style={styles.nameEditActions}>
+                <Pressable onPress={saveName} style={styles.smallButton}>
+                  <Text style={styles.smallButtonLabel}>{t('common.save')}</Text>
+                </Pressable>
+                <Pressable onPress={() => setEditingName(false)} hitSlop={8}>
+                  <Text style={type.caption}>{t('common.cancel')}</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        ) : (
-          <Pressable onPress={startEditingName} style={styles.nameRow}>
-            <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>
-              {member?.name || t('profile.addName')}
-            </Text>
-            <Text style={styles.editLink}>{t('common.edit')}</Text>
-          </Pressable>
-        )}
-        <Text style={type.body}>{email ?? t('profile.notSignedIn')}</Text>
-        <Text style={type.caption}>
-          {auth.currentUser && !usesPassword(auth.currentUser) ? t('profile.googleAccount') : t('profile.passwordAccount')}
-        </Text>
-        {showSaved && <Text style={styles.savedText}>{t('profile.savedOk')}</Text>}
-      </Card>
+          ) : (
+            <Pressable onPress={startEditingName} style={styles.nameRow}>
+              <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>
+                {member?.name || t('profile.addName')}
+              </Text>
+              <Text style={styles.editLink}>{t('common.edit')}</Text>
+            </Pressable>
+          )}
+          <Text style={type.body}>{email ?? t('profile.notSignedIn')}</Text>
+          <Text style={type.caption}>
+            {auth.currentUser && !usesPassword(auth.currentUser) ? t('profile.googleAccount') : t('profile.passwordAccount')}
+          </Text>
+          {showSaved && <Text style={styles.savedText}>{t('profile.savedOk')}</Text>}
+        </Card>
 
-      <View style={{ gap: spacing.sm }}>
-        {SETTINGS.map((item) => (
-          <Pressable key={item.route} onPress={() => navigation.navigate(item.route)}>
+        <View style={{ gap: spacing.sm }}>
+          {SETTINGS.map((item) => (
+            <Pressable key={item.route} onPress={() => navigation.navigate(item.route)}>
+              <Card style={styles.row}>
+                <Text style={type.body}>{t(item.label)}</Text>
+                <Text style={type.caption}>›</Text>
+              </Card>
+            </Pressable>
+          ))}
+          {/* Opens the site's form (#132) — testers can report without a GitHub account. */}
+          <Pressable accessibilityRole="link" onPress={() => Linking.openURL(feedbackUrl(i18n.language, Constants.expoConfig?.version))}>
             <Card style={styles.row}>
-              <Text style={type.body}>{t(item.label)}</Text>
-              <Text style={type.caption}>›</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={type.body}>{t('profile.feedback')}</Text>
+                <Text style={type.caption}>{t('profile.feedbackHint')}</Text>
+              </View>
+              <Text style={type.caption}>↗</Text>
             </Card>
           </Pressable>
-        ))}
-      </View>
-
-      <AppearancePicker />
-      <LanguagePicker />
-
-      <Pressable
-        onPress={async () => {
-          await signOutOfGoogle();
-          await signOut(auth);
-        }}
-        style={styles.logoutButton}
-      >
-        <Text style={styles.logoutLabel}>{t('profile.signOut')}</Text>
-      </Pressable>
-
-      {(__DEV__ || process.env.EXPO_PUBLIC_ENABLE_DEV_TOOLS === 'true') && (
-        <View style={{ gap: spacing.sm }}>
-          <Text style={type.caption}>{t('profile.devTools')}</Text>
-          <Pressable onPress={() => seedDemoData()} style={styles.devButton}>
-            <Text style={styles.devLabel}>{t('profile.seedDemo')}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              clearAllLocalData();
-              clearFamilyData();
-            }}
-            style={styles.devButton}
-          >
-            <Text style={styles.devLabel}>{t('profile.clearLocal')}</Text>
-          </Pressable>
         </View>
-      )}
+
+        <AppearancePicker />
+        <LanguagePicker />
+
+        <Pressable
+          onPress={async () => {
+            await signOutOfGoogle();
+            await signOut(auth);
+          }}
+          style={styles.logoutButton}
+        >
+          <Text style={styles.logoutLabel}>{t('profile.signOut')}</Text>
+        </Pressable>
+
+        {(__DEV__ || process.env.EXPO_PUBLIC_ENABLE_DEV_TOOLS === 'true') && (
+          <View style={{ gap: spacing.sm }}>
+            <Text style={type.caption}>{t('profile.devTools')}</Text>
+            <Pressable onPress={() => seedDemoData()} style={styles.devButton}>
+              <Text style={styles.devLabel}>{t('profile.seedDemo')}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                clearAllLocalData();
+                clearFamilyData();
+              }}
+              style={styles.devButton}
+            >
+              <Text style={styles.devLabel}>{t('profile.clearLocal')}</Text>
+            </Pressable>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const useStyles = createStyles((colors, type) => ({
-  screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   logoutButton: {
     minHeight: 52,

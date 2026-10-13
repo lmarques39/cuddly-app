@@ -362,6 +362,8 @@ export const pt = {
     editA11y: "{{food}}, editar",
   },
   profile: {
+    feedback: "Enviar feedback",
+    feedbackHint: "Conta-nos um erro ou uma ideia — abre no navegador",
     title: "Perfil",
     namePlaceholder: "O teu nome",
     addName: "Adicionar o teu nome",

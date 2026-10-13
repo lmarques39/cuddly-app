@@ -363,6 +363,8 @@ export const en: Translations = {
     editA11y: "{{food}}, edit",
   },
   profile: {
+    feedback: "Send feedback",
+    feedbackHint: "Tell us about a bug or an idea — opens in the browser",
     title: "Profile",
     namePlaceholder: "Your name",
     addName: "Add your name",
