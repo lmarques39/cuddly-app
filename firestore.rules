@@ -30,6 +30,32 @@ service cloud.firestore {
       return invite.email == request.auth.token.email && invite.status == 'pending';
     }
 
+    // Testers' feedback from the site's form (#132): anyone may send one —
+    // no account needed — but nobody can read, change or delete it through
+    // the API; it's read in the Firebase console. Fixed fields and sizes
+    // only, so the form can't be used to store anything else.
+    function optionalText(data, field, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    match /feedback/{feedbackId} {
+      allow create: if request.resource.data.keys().hasOnly(['kind', 'area', 'message', 'appVersion', 'device', 'contact', 'lang', 'createdAt']) &&
+        request.resource.data.keys().hasAll(['kind', 'message', 'lang', 'createdAt']) &&
+        request.resource.data.kind in ['bug', 'suggestion', 'other'] &&
+        request.resource.data.lang in ['pt', 'en'] &&
+        request.resource.data.message is string &&
+        request.resource.data.message.size() >= 5 &&
+        request.resource.data.message.size() <= 4000 &&
+        optionalText(request.resource.data, 'area', 100) &&
+        optionalText(request.resource.data, 'appVersion', 40) &&
+        optionalText(request.resource.data, 'device', 100) &&
+        optionalText(request.resource.data, 'contact', 200) &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.createdAt > request.time - duration.value(10, 'm') &&
+        request.resource.data.createdAt < request.time + duration.value(10, 'm');
+      allow read, update, delete: if false;
+    }
+
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }

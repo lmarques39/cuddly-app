@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { collection, collectionGroup, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, collectionGroup, deleteDoc, doc, getDoc, getDocs, query, setDoc, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
 
 let testEnv: RulesTestEnvironment;
@@ -460,5 +460,50 @@ describe('unauthenticated access', () => {
     const anon = testEnv.unauthenticatedContext();
     await assertFails(getDoc(doc(anon.firestore(), 'families', 'famA')));
     await assertFails(setDoc(doc(anon.firestore(), 'families', 'famA'), { createdAt: 1 }));
+  });
+});
+
+describe('feedback from the site (#132)', () => {
+  const valid = () => ({
+    kind: 'bug',
+    area: 'Extração',
+    message: 'O botão terminar não faz nada.',
+    appVersion: '2.0.1',
+    device: 'Pixel 7',
+    lang: 'pt',
+    createdAt: Timestamp.now(),
+  });
+
+  it('lets anyone, signed in or not, send feedback', async () => {
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(addDoc(collection(anon, 'feedback'), valid()));
+    const alice = testEnv.authenticatedContext('alice').firestore();
+    await assertSucceeds(addDoc(collection(alice, 'feedback'), { ...valid(), contact: 'alice@example.com' }));
+  });
+
+  it('never lets it be read, changed or deleted through the API', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'feedback', 'f1'), valid());
+    });
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(anon, 'feedback', 'f1')));
+    await assertFails(getDocs(collection(anon, 'feedback')));
+    await assertFails(setDoc(doc(anon, 'feedback', 'f1'), valid()));
+    await assertFails(deleteDoc(doc(anon, 'feedback', 'f1')));
+    const alice = testEnv.authenticatedContext('alice').firestore();
+    await assertFails(getDoc(doc(alice, 'feedback', 'f1')));
+  });
+
+  it('only accepts the form fields, within their sizes', async () => {
+    const anon = testEnv.unauthenticatedContext().firestore();
+    const send = (data: object) => addDoc(collection(anon, 'feedback'), data);
+    await assertFails(send({ ...valid(), extra: 'x' }));
+    await assertFails(send({ ...valid(), kind: 'spam' }));
+    await assertFails(send({ ...valid(), message: 'oi' }));
+    await assertFails(send({ ...valid(), message: 'x'.repeat(4001) }));
+    await assertFails(send({ ...valid(), contact: 'x'.repeat(201) }));
+    await assertFails(send({ ...valid(), createdAt: Timestamp.fromMillis(Date.now() - 60 * 60 * 1000) }));
+    const { createdAt: _createdAt, ...noDate } = valid();
+    await assertFails(send(noDate));
   });
 });

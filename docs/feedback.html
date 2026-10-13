@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Enviar feedback — Cuddly</title>
+<meta name="description" content="Estás a testar o Cuddly? Conta-nos o que encontraste: erros, sugestões ou qualquer outra coisa." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Karla:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="base.css" />
+<link rel="stylesheet" href="legal.css" />
+<link rel="stylesheet" href="feedback.css" />
+<link rel="alternate" hreflang="pt" href="https://lmarques39.github.io/cuddly-app/feedback.html" />
+<link rel="alternate" hreflang="en" href="https://lmarques39.github.io/cuddly-app/en/feedback.html" />
+<script src="theme.js"></script>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="wordmark" href="index.html">Cuddly<span>.</span></a>
+    <nav class="site">
+      <a href="index.html">Início</a>
+      <a href="privacidade.html">Privacidade</a>
+      <span class="site-controls">
+        <span class="lang-switch"><span aria-current="true">PT</span><a href="en/feedback.html" hreflang="en" lang="en">EN</a></span>
+        <button class="theme-toggle" type="button" aria-label="Mudar tema">☾</button>
+      </span>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap legal">
+  <h1>Enviar feedback</h1>
+  <p>Estás a testar o Cuddly? Conta-nos o que encontraste: algo que não funciona, algo confuso ou uma ideia. Não precisas de conta. Lemos tudo.</p>
+
+  <form id="feedback-form" class="feedback-form" novalidate>
+    <fieldset class="field">
+      <legend>Tipo</legend>
+      <div class="choices">
+        <label><input type="radio" name="kind" value="bug" checked /> Algo não funciona</label>
+        <label><input type="radio" name="kind" value="suggestion" /> Sugestão</label>
+        <label><input type="radio" name="kind" value="other" /> Outro</label>
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label for="area">Onde na app?</label>
+      <select id="area" name="area">
+        <option value="">— Escolhe, se souberes —</option>
+        <option>Início</option>
+        <option>Amamentação</option>
+        <option>Biberão</option>
+        <option>Fraldas</option>
+        <option>Sono</option>
+        <option>Extração</option>
+        <option>Contrações</option>
+        <option>Introdução alimentar</option>
+        <option>Consultas</option>
+        <option>Histórico / Tendências</option>
+        <option>Notificações</option>
+        <option>Perfil / Cuidadores</option>
+        <option>Login / Conta</option>
+        <option>Outro</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="message">O que aconteceu?</label>
+      <p class="hint" id="message-hint">Se for um erro: o que estavas a fazer, o que esperavas e o que aconteceu.</p>
+      <textarea id="message" name="message" maxlength="4000" required aria-describedby="message-hint"></textarea>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label for="appVersion">Versão da app</label>
+        <input id="appVersion" name="appVersion" maxlength="40" placeholder="ex.: 2.0.1" />
+      </div>
+      <div class="field">
+        <label for="device">Telemóvel</label>
+        <input id="device" name="device" maxlength="100" placeholder="ex.: Samsung A54, Android 14" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="contact">Email (opcional)</label>
+      <p class="hint" id="contact-hint">Só se quiseres que te respondamos. Não é usado para mais nada.</p>
+      <input id="contact" name="contact" type="email" maxlength="200" autocomplete="email" aria-describedby="contact-hint" />
+    </div>
+
+    <div class="honeypot" aria-hidden="true">
+      <label for="website">Não preenchas este campo</label>
+      <input id="website" name="website" tabindex="-1" autocomplete="off" />
+    </div>
+
+    <button class="btn btn-primary" type="submit">Enviar feedback</button>
+    <p id="feedback-status" class="form-status" role="status" aria-live="polite"></p>
+  </form>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="links">
+      <a href="index.html">Início</a>
+      <a href="privacidade.html">Privacidade</a>
+      <a href="https://github.com/lmarques39/cuddly-app">GitHub</a>
+    </div>
+    <p>Projeto académico, IEFP UC00507.</p>
+  </div>
+</footer>
+
+<script src="feedback.js"></script>
+</body>
+</html>
