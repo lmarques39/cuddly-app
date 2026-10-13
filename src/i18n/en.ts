@@ -195,6 +195,10 @@ export const en: Translations = {
     months_other: "{{count}} months",
   },
   home: {
+    quickLog: "Quick log",
+    quickStart: "Start",
+    quickOpen: "Add",
+    quickRunning: "Running",
     hello: "Hi, {{name}} 👋",
     helloAnon: "Hi 👋",
     nextAppointment: "Next appointment",

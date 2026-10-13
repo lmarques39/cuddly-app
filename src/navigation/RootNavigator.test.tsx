@@ -157,3 +157,24 @@ it('opening a running timer from another tab keeps the Registar hub underneath, 
   expect(registar?.state?.routes.map((r) => r.name)).toEqual(['RegistarHub', 'Contrações']);
   await AsyncStorage.clear();
 });
+
+it('starts a timer straight from a Início tile and opens it, with the hub to go back to (#128)', async () => {
+  await AsyncStorage.clear(); // no birth date → Grávida mode: just the Contração tile
+  const navigationRef = createNavigationContainerRef();
+  await renderApp(navigationRef);
+
+  await act(async () => {
+    fireEvent.press(await screen.findByRole('button', { name: 'Contração, Iniciar' }));
+  });
+
+  // Already counting — the next tap on the screen's own button stops it.
+  expect(await screen.findByRole('button', { name: 'Parar contração' })).toBeTruthy();
+  const registar = navigationRef.getRootState()?.routes.find((r) => r.name === 'Registar');
+  expect(registar?.state?.routes?.map((r) => r.name)).toEqual(['RegistarHub', 'Contrações']);
+
+  // Going back to Início, the tile now says it's running and only reopens it.
+  await act(async () => {
+    fireEvent.press(screen.getByText('Início'));
+  });
+  expect(await screen.findByRole('button', { name: 'Contração, A decorrer' })).toBeTruthy();
+});

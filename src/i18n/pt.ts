@@ -194,6 +194,10 @@ export const pt = {
     months_other: "{{count}} meses",
   },
   home: {
+    quickLog: "Registo rápido",
+    quickStart: "Iniciar",
+    quickOpen: "Adicionar",
+    quickRunning: "A decorrer",
     hello: "Olá, {{name}} 👋",
     helloAnon: "Olá 👋",
     nextAppointment: "Próxima consulta",

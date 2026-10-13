@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
+import { QuickLogTiles } from '../components/QuickLogTiles';
 import { useAppointments } from '../features/appointments/useAppointments';
 import { useBottle } from '../features/bottle/useBottle';
 import { useBreastfeeding } from '../features/breastfeeding/useBreastfeeding';
@@ -70,7 +71,7 @@ export function HomeScreen() {
   const { member } = useCurrentMember();
   const firstName = member?.name?.trim().split(/\s+/)[0];
   const { entries: contractions } = useContractions();
-  const { entries: breastfeeding } = useBreastfeeding();
+  const { entries: breastfeeding, suggestedSide } = useBreastfeeding();
   const { entries: bottle } = useBottle();
   const { entries: diapers } = useDiapers();
   const { appointments } = useAppointments();
@@ -100,6 +101,9 @@ export function HomeScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={{ gap: spacing.md, paddingBottom: spacing.xl }}>
         <Text style={type.h1}>{firstName ? t('home.hello', { name: firstName }) : t('home.helloAnon')}</Text>
+
+        <Text style={type.caption}>{t('home.quickLog')}</Text>
+        <QuickLogTiles mode={mode} suggestedSide={suggestedSide} />
 
         {mode === 'gravida' ? (
           <>
