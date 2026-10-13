@@ -259,6 +259,7 @@ export const en: Translations = {
     startLabel: "Start",
     durationLabel: "Duration",
     startedAt: "Started at {{time}}",
+    editing: "Editing entry",
   },
   contractions: {
     title: "Contractions",
@@ -310,7 +311,7 @@ export const en: Translations = {
     amountNeeded: "Enter how many ml you pumped to finish.",
     start: "Start pumping",
     finish: "Finish pumping",
-    row: "{{ml}} ml · tap to edit",
+    row: "{{ml}} ml",
   },
   foods: {
     title: "Starting solids",

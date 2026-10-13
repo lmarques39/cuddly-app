@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
+import { OptionPills } from '../../components/OptionPills';
 import { SessionEntryRow } from '../../components/SessionEntryRow';
+import { SessionTimesForm } from '../../components/SessionTimesForm';
 import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -18,7 +20,9 @@ export function BreastfeedingScreen() {
   const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
-  const { todayEntries, todayDurationMs, running, start, stop, addManual, remove, suggestedSide } = useBreastfeeding();
+  const { todayEntries, todayDurationMs, running, start, stop, addManual, remove, update, suggestedSide } = useBreastfeeding();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editSide, setEditSide] = useState<'left' | 'right'>('left');
   const [selectedSide, setSelectedSide] = useState<'left' | 'right'>(suggestedSide);
   const now = useNow(1000, running != null);
 
@@ -97,12 +101,31 @@ export function BreastfeedingScreen() {
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
-          <SessionEntryRow
-            startedAt={item.startedAt}
-            durationMs={item.endedAt - item.startedAt}
-            detail={t(item.side === 'left' ? 'csv.leftBreast' : 'csv.rightBreast')}
-            onRemove={() => remove(item.id)}
-          />
+          editingId === item.id ? (
+            <SessionTimesForm
+              heading={t('trackers.editing')}
+              initial={item}
+              onSave={(startedAt, endedAt) => {
+                update({ ...item, startedAt, endedAt, side: editSide });
+                setEditingId(null);
+              }}
+              onCancel={() => setEditingId(null)}
+              extraFields={
+                <OptionPills options={['left', 'right'] as const} value={editSide} onChange={setEditSide} label={(s) => t(SIDE_LABEL[s])} />
+              }
+            />
+          ) : (
+            <SessionEntryRow
+              startedAt={item.startedAt}
+              durationMs={item.endedAt - item.startedAt}
+              detail={t(item.side === 'left' ? 'csv.leftBreast' : 'csv.rightBreast')}
+              onPress={() => {
+                setEditingId(item.id);
+                setEditSide(item.side);
+              }}
+              onRemove={() => remove(item.id)}
+            />
+          )
         )}
       />
     </SafeAreaView>

@@ -1,15 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
-import { fontFamily, radii, spacing } from '../theme/tokens';
-import { createStyles, useTheme } from '../theme/ThemeProvider';
-import { parseDayOnly, resolveManualRange } from '../utils/time';
-import { useNow } from '../utils/useNow';
-import { Card } from './Card';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-type DayOption = 'today' | 'yesterday' | 'custom';
+import { Pressable, Text } from 'react-native';
+import { fontFamily } from '../theme/tokens';
+import { createStyles } from '../theme/ThemeProvider';
+import { SessionTimesForm } from './SessionTimesForm';
 
 type Props = {
   /** Called with the resolved timestamps once "Guardar" is pressed on a valid range. */
@@ -22,39 +16,13 @@ type Props = {
 
 /**
  * Lets a session be logged after the fact (e.g. the baby fell asleep and the
- * parents only noticed later, so the live timer was never started) — two
- * explicit "HH:MM" times, not a bare duration, since that's what people
- * actually remember (#76), on a day the person picks (not always today).
+ * parents only noticed later, so the live timer was never started), on a
+ * day the person picks (#76). Collapsed to a link until tapped.
  */
 export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Props) {
   const { t } = useTranslation();
-  const { colors, type } = useTheme();
   const styles = useStyles();
   const [open, setOpen] = useState(false);
-  const [dayOption, setDayOption] = useState<DayOption>('today');
-  const [customDate, setCustomDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const now = useNow(60000, open);
-
-  const dayMs = dayOption === 'today' ? now : dayOption === 'yesterday' ? now - DAY_MS : parseDayOnly(customDate, now);
-
-  const range = dayMs != null ? resolveManualRange(dayMs, startTime, endTime) : undefined;
-  const canSave = range != null && range.endedAt > range.startedAt && extraValid;
-
-  const reset = () => {
-    setOpen(false);
-    setDayOption('today');
-    setCustomDate('');
-    setStartTime('');
-    setEndTime('');
-  };
-
-  const save = () => {
-    if (!canSave || range == null) return;
-    onSave(range.startedAt, range.endedAt);
-    reset();
-  };
 
   if (!open) {
     return (
@@ -65,102 +33,19 @@ export function ManualEntryToggle({ onSave, extraFields, extraValid = true }: Pr
   }
 
   return (
-    <Card style={{ gap: spacing.md }}>
-      <Text style={type.caption}>{t('manualEntry.heading')}</Text>
-
-      <View>
-        <Text style={type.caption}>{t('common.day')}</Text>
-        <View style={styles.dayRow}>
-          {(['today', 'yesterday', 'custom'] as DayOption[]).map((option) => (
-            <Pressable
-              key={option}
-              onPress={() => setDayOption(option)}
-              style={[styles.dayPill, dayOption === option && styles.dayPillOn]}
-            >
-              <Text style={[styles.dayPillLabel, dayOption === option && styles.dayPillLabelOn]}>
-                {option === 'today' ? t('common.today') : option === 'yesterday' ? t('common.yesterday') : t('common.otherDay')}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        {dayOption === 'custom' && (
-          <TextInput
-            value={customDate}
-            onChangeText={setCustomDate}
-            placeholder="DD/MM"
-            placeholderTextColor={colors.inkMuted}
-            style={[styles.input, { marginTop: spacing.sm }]}
-          />
-        )}
-      </View>
-
-      <View style={styles.timeRow}>
-        <View style={styles.timeField}>
-          <Text style={type.caption}>{t('common.start')}</Text>
-          <TextInput
-            value={startTime}
-            onChangeText={setStartTime}
-            placeholder="HH:MM"
-            placeholderTextColor={colors.inkMuted}
-            style={styles.input}
-          />
-        </View>
-        <View style={styles.timeField}>
-          <Text style={type.caption}>{t('common.end')}</Text>
-          <TextInput
-            value={endTime}
-            onChangeText={setEndTime}
-            placeholder="HH:MM"
-            placeholderTextColor={colors.inkMuted}
-            style={styles.input}
-          />
-        </View>
-      </View>
-
-      {extraFields}
-
-      <View style={styles.actions}>
-        <Pressable onPress={save} disabled={!canSave} style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}>
-          <Text style={[styles.saveButtonLabel, !canSave && styles.saveButtonLabelDisabled]}>{t('common.save')}</Text>
-        </Pressable>
-        <Pressable onPress={reset} hitSlop={8}>
-          <Text style={type.caption}>{t('common.cancel')}</Text>
-        </Pressable>
-      </View>
-    </Card>
+    <SessionTimesForm
+      heading={t('manualEntry.heading')}
+      onSave={(startedAt, endedAt) => {
+        onSave(startedAt, endedAt);
+        setOpen(false);
+      }}
+      onCancel={() => setOpen(false)}
+      extraFields={extraFields}
+      extraValid={extraValid}
+    />
   );
 }
 
 const useStyles = createStyles((colors, type) => ({
   toggleLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.primary },
-  dayRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
-  dayPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  dayPillOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  dayPillLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: colors.inkSecondary },
-  dayPillLabelOn: { color: colors.primaryInk, fontFamily: fontFamily.bodyBold },
-  timeRow: { flexDirection: 'row', gap: spacing.md },
-  timeField: { flex: 1 },
-  input: {
-    marginTop: spacing.xs,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontFamily: fontFamily.bodyMedium,
-    fontSize: 15,
-    color: colors.ink,
-  },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  saveButton: { backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: 10 },
-  saveButtonDisabled: { backgroundColor: colors.surfaceSunken },
-  saveButtonLabel: { fontFamily: fontFamily.bodyBold, fontSize: 13, color: colors.primaryInk },
-  saveButtonLabelDisabled: { color: colors.inkMuted },
 }));

@@ -34,6 +34,6 @@ describe('PumpingScreen', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Iniciar extração' })).toBeTruthy();
-    expect(screen.getByText('Mama esquerda · 150 ml · toca para editar')).toBeTruthy();
+    expect(screen.getByText('Mama esquerda · 150 ml')).toBeTruthy();
   });
 });

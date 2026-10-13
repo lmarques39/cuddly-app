@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React, { useState } from 'react';
 import { Pressable, Text } from 'react-native';
+import { STORAGE_KEYS } from '../../storage/storage';
 import { SonoScreen } from './SonoScreen';
 import { ActiveSessionsProvider } from '../activeSessions/ActiveSessionsProvider';
 import { ActiveSessionsWrapper } from '../../testUtils/ActiveSessionsWrapper';
@@ -59,5 +60,25 @@ describe('SonoScreen', () => {
       fireEvent.press(screen.getByRole('button', { name: 'Trocar de ecrã' }));
     });
     expect(screen.getByRole('button', { name: 'Terminar sono' })).toBeTruthy();
+  });
+
+  it('corrects a session whose timer was left running (#126)', async () => {
+    const today = new Date();
+    const at = (h: number, m: number) => new Date(today.getFullYear(), today.getMonth(), today.getDate(), h, m).getTime();
+    await AsyncStorage.setItem(STORAGE_KEYS.sono, JSON.stringify([{ id: 's1', startedAt: at(0, 30), endedAt: at(0, 31) }]));
+
+    await render(<SonoScreen />, { wrapper: ActiveSessionsWrapper });
+    await act(async () => {
+      fireEvent.press(await screen.findByRole('button', { name: 'Editar' }));
+    });
+
+    // The form opens on the entry's own times.
+    expect(screen.getByDisplayValue('00:30')).toBeTruthy();
+    await act(async () => fireEvent.changeText(screen.getByDisplayValue('00:31'), '02:00'));
+    await act(async () => fireEvent.press(screen.getByText('Guardar')));
+
+    expect(await screen.findByText('1 h 30 min')).toBeTruthy();
+    const saved = JSON.parse((await AsyncStorage.getItem(STORAGE_KEYS.sono)) ?? '[]');
+    expect(saved).toEqual([{ id: 's1', startedAt: at(0, 30), endedAt: at(2, 0) }]);
   });
 });

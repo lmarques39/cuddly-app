@@ -10,8 +10,9 @@ import { RemoveEntryButton } from './RemoveEntryButton';
 type Props = {
   startedAt: number;
   durationMs: number;
-  /** Whatever else this tracker records — "Mama esquerda", "120 ml · toca para editar". */
+  /** Whatever else this tracker records — "Mama esquerda", "120 ml". */
   detail?: string;
+  /** Opens the editor for this entry (#126). */
   onPress?: () => void;
   onRemove: () => void;
 };
@@ -41,7 +42,14 @@ export function SessionEntryRow({ startedAt, durationMs, detail, onPress, onRemo
         </View>
         {detail ? <Text style={type.caption}>{detail}</Text> : null}
       </Pressable>
-      <RemoveEntryButton onRemove={onRemove} />
+      <View style={styles.actions}>
+        {onPress && (
+          <Pressable onPress={onPress} hitSlop={12} accessibilityRole="button">
+            <Text style={styles.edit}>{t('common.edit')}</Text>
+          </Pressable>
+        )}
+        <RemoveEntryButton onRemove={onRemove} />
+      </View>
     </Card>
   );
 }
@@ -51,5 +59,7 @@ const useStyles = createStyles((colors, type) => ({
   text: { flex: 1, gap: spacing.xs },
   columns: { flexDirection: 'row', gap: spacing.xl },
   label: { fontFamily: fontFamily.bodyMedium, fontSize: 11, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.inkMuted },
+  actions: { alignItems: 'flex-end', gap: spacing.md, marginLeft: spacing.sm },
+  edit: { fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: colors.primary },
   value: { fontFamily: fontFamily.bodyBold, fontSize: 16, color: colors.ink },
 }));

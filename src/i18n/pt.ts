@@ -258,6 +258,7 @@ export const pt = {
     startLabel: "Início",
     durationLabel: "Duração",
     startedAt: "Começou às {{time}}",
+    editing: "A editar registo",
   },
   contractions: {
     title: "Contrações",
@@ -309,7 +310,7 @@ export const pt = {
     amountNeeded: "Indica quantos ml tiraste para terminar.",
     start: "Iniciar extração",
     finish: "Terminar extração",
-    row: "{{ml}} ml · toca para editar",
+    row: "{{ml}} ml",
   },
   foods: {
     title: "Introdução alimentar",

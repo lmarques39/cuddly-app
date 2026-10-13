@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import React from 'react';
+import React, { useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { SessionEntryRow } from '../../components/SessionEntryRow';
+import { SessionTimesForm } from '../../components/SessionTimesForm';
 import { fontFamily, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -16,7 +17,8 @@ export function ContractionsScreen() {
   const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
-  const { entries, runningSince, start, stop, addManual, remove, fiveOneOne } = useContractions();
+  const { entries, runningSince, start, stop, addManual, remove, update, fiveOneOne } = useContractions();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const now = useNow(1000, runningSince != null);
 
   const elapsed = runningSince != null ? now - runningSince : 0;
@@ -65,7 +67,24 @@ export function ContractionsScreen() {
         contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
-          <SessionEntryRow startedAt={item.startedAt} durationMs={item.endedAt - item.startedAt} onRemove={() => remove(item.id)} />
+          editingId === item.id ? (
+            <SessionTimesForm
+              heading={t('trackers.editing')}
+              initial={item}
+              onSave={(startedAt, endedAt) => {
+                update({ ...item, startedAt, endedAt });
+                setEditingId(null);
+              }}
+              onCancel={() => setEditingId(null)}
+            />
+          ) : (
+            <SessionEntryRow
+              startedAt={item.startedAt}
+              durationMs={item.endedAt - item.startedAt}
+              onPress={() => setEditingId(item.id)}
+              onRemove={() => remove(item.id)}
+            />
+          )
         )}
       />
     </SafeAreaView>

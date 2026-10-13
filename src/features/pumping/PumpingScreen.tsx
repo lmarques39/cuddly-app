@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
+import { OptionPills } from '../../components/OptionPills';
 import { SessionEntryRow } from '../../components/SessionEntryRow';
+import { SessionTimesForm } from '../../components/SessionTimesForm';
 import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
@@ -38,6 +40,7 @@ export function PumpingScreen() {
   const [amountMl, setAmountMl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
+  const [editSide, setEditSide] = useState<PumpingSide>('both');
   const [manualAmountMl, setManualAmountMl] = useState('');
 
   const elapsed = runningSince != null ? now - runningSince : 0;
@@ -60,9 +63,8 @@ export function PumpingScreen() {
   const parsedEditAmount = Number(editAmount);
   const canSaveEdit = editAmount.trim().length > 0 && !Number.isNaN(parsedEditAmount) && parsedEditAmount > 0;
 
-  const saveEdit = (entry: (typeof entries)[number]) => {
-    if (!canSaveEdit) return;
-    update({ ...entry, amountMl: parsedEditAmount });
+  const saveEdit = (entry: (typeof entries)[number], startedAt: number, endedAt: number) => {
+    update({ ...entry, startedAt, endedAt, amountMl: parsedEditAmount, side: editSide });
     setEditingId(null);
   };
 
@@ -162,23 +164,29 @@ export function PumpingScreen() {
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.none')}</Text>}
         renderItem={({ item }) =>
           editingId === item.id ? (
-            <Card style={styles.row}>
-              <TextInput
-                value={editAmount}
-                onChangeText={setEditAmount}
-                keyboardType="numeric"
-                autoFocus
-                style={styles.editInput}
-              />
-              <View style={styles.editActions}>
-                <Pressable onPress={() => saveEdit(item)} style={styles.smallButton}>
-                  <Text style={styles.smallButtonLabel}>{t('common.save')}</Text>
-                </Pressable>
-                <Pressable onPress={() => setEditingId(null)} hitSlop={8}>
-                  <Text style={type.caption}>{t('common.cancel')}</Text>
-                </Pressable>
-              </View>
-            </Card>
+            <SessionTimesForm
+              heading={t('trackers.editing')}
+              initial={item}
+              onSave={(startedAt, endedAt) => saveEdit(item, startedAt, endedAt)}
+              onCancel={() => setEditingId(null)}
+              extraValid={canSaveEdit}
+              extraFields={
+                <>
+                  <OptionPills options={SIDES} value={editSide} onChange={setEditSide} label={(s) => t(SIDE_LABEL[s])} />
+                  <View>
+                    <Text style={type.caption}>{t('trackers.amountMl')}</Text>
+                    <TextInput
+                      value={editAmount}
+                      onChangeText={setEditAmount}
+                      placeholder="120"
+                      placeholderTextColor={colors.inkMuted}
+                      keyboardType="numeric"
+                      style={styles.input}
+                    />
+                  </View>
+                </>
+              }
+            />
           ) : (
             <SessionEntryRow
               startedAt={item.startedAt}
@@ -187,6 +195,7 @@ export function PumpingScreen() {
               onPress={() => {
                 setEditingId(item.id);
                 setEditAmount(String(item.amountMl));
+                setEditSide(item.side ?? 'both');
               }}
               onRemove={() => remove(item.id)}
             />
@@ -213,19 +222,4 @@ const useStyles = createStyles((colors, type) => ({
   listTitle: { marginTop: spacing.sm },
   sideRow: { flexDirection: 'row', gap: spacing.sm },
   sideButton: { flex: 1, minHeight: 48, borderRadius: radii.lg, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  editInput: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    fontFamily: fontFamily.bodyMedium,
-    fontSize: 15,
-    color: colors.ink,
-  },
-  editActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginLeft: spacing.sm },
-  smallButton: { backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.md, paddingVertical: 8 },
-  smallButtonLabel: { fontFamily: fontFamily.bodyBold, fontSize: 13, color: colors.primaryInk },
 }));
