@@ -6,7 +6,11 @@ import i18n from '../../i18n';
 import { formatClock } from '../../utils/time';
 import { canFinishWithoutInput, finishSessionOutsideApp } from './finishSession';
 
-export const SESSION_CHANNEL_ID = 'cuddly-active-sessions';
+// v2 (#130): Android won't change a channel's importance or lock-screen
+// visibility once it exists, so the fix needed a new channel; the old one
+// is deleted in setUpSessionNotifications().
+export const SESSION_CHANNEL_ID = 'cuddly-active-sessions-v2';
+const LEGACY_SESSION_CHANNEL_ID = 'cuddly-active-sessions';
 const CATEGORY_WITH_FINISH = 'active-session';
 // Extração can't be finished from the notification — it needs the ml amount.
 const CATEGORY_VIEW_ONLY = 'active-session-view-only';
@@ -38,10 +42,18 @@ export function sessionKindOf(response: Notifications.NotificationResponse): Act
 /** Channel + the Ver/Terminar buttons. Android only — the whole feature is (#101: iOS out of scope). */
 export async function setUpSessionNotifications(): Promise<void> {
   if (Platform.OS !== 'android') return;
+  await Notifications.deleteNotificationChannelAsync(LEGACY_SESSION_CHANNEL_ID).catch(() => {});
   await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
     name: i18n.t('sessionNotification.channel'),
-    // LOW: sits in the shade without sound, vibration or a heads-up banner.
-    importance: Notifications.AndroidImportance.LOW,
+    // DEFAULT, not LOW: Android hides LOW ("silent") notifications from the
+    // lock screen, so with the phone locked the timer seemed to be gone
+    // (#130). Sound and vibration are switched off instead — and DEFAULT
+    // never pops up a heads-up banner.
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: null,
+    enableVibrate: false,
+    vibrationPattern: null,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     showBadge: false,
   });
   await Notifications.setNotificationCategoryAsync(CATEGORY_WITH_FINISH, [

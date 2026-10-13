@@ -66,7 +66,7 @@ export const en: Translations = {
     channel: "Running timers",
     view: "View",
     finish: "Finish",
-    since: "Since {{time}}",
+    since: "Started at {{time}}",
     leftBreast: " (left breast)",
     rightBreast: " (right breast)",
     bothBreasts: " (both breasts)",

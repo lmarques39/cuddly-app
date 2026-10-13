@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 
 /**
  * Live-updating "now" timestamp, ticking every `intervalMs` while `active`.
@@ -11,7 +12,16 @@ export function useNow(intervalMs: number, active = true): number {
   useEffect(() => {
     if (!active) return;
     const id = setInterval(() => setNow(Date.now()), intervalMs);
-    return () => clearInterval(id);
+    // Coming back from a locked screen or another app, catch up at once —
+    // not on the next tick, which for a 30 s/1 min interval left a timer
+    // looking stuck where it was when the phone was locked (#130).
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setNow(Date.now());
+    });
+    return () => {
+      clearInterval(id);
+      subscription.remove();
+    };
   }, [intervalMs, active]);
 
   return now;

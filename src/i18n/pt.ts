@@ -65,7 +65,7 @@ export const pt = {
     channel: "Timers a decorrer",
     view: "Ver",
     finish: "Terminar",
-    since: "Desde as {{time}}",
+    since: "Começou às {{time}}",
     leftBreast: " (mama esquerda)",
     rightBreast: " (mama direita)",
     bothBreasts: " (ambas as mamas)",

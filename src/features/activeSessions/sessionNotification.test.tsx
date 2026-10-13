@@ -9,7 +9,7 @@ import { loadList, STORAGE_KEYS } from '../../storage/storage';
 import { ActiveSession, BreastfeedingEntry } from '../../types/records';
 import { ActiveSessionsProvider, useActiveSession } from './ActiveSessionsProvider';
 import { finishSessionOutsideApp } from './finishSession';
-import { ACTION_FINISH, handleFinishTap } from './sessionNotification';
+import { ACTION_FINISH, handleFinishTap, SESSION_CHANNEL_ID, setUpSessionNotifications } from './sessionNotification';
 
 const mockSchedule = Notifications.scheduleNotificationAsync as jest.Mock;
 const mockDismiss = Notifications.dismissNotificationAsync as jest.Mock;
@@ -123,5 +123,22 @@ describe('ActiveSessionsProvider notifications', () => {
     });
 
     expect(result.current.session).toBeNull();
+  });
+});
+
+describe('setUpSessionNotifications', () => {
+  it('uses a channel that shows on the lock screen, silently, and drops the old hidden one (#130)', async () => {
+    await setUpSessionNotifications();
+
+    expect(Notifications.deleteNotificationChannelAsync).toHaveBeenCalledWith('cuddly-active-sessions');
+    expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+      SESSION_CHANNEL_ID,
+      expect.objectContaining({
+        importance: Notifications.AndroidImportance.DEFAULT,
+        sound: null,
+        enableVibrate: false,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      }),
+    );
   });
 });
