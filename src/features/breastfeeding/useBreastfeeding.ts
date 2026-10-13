@@ -12,7 +12,7 @@ export function useBreastfeeding() {
   // hook — so it survives leaving the screen and the other caregiver sees it.
   const { session, start: startSession, stop: stopSession } = useActiveSession('breastfeeding');
   const running = useMemo(
-    () => (session ? { side: session.side ?? ('left' as const), startedAt: session.startedAt } : null),
+    () => (session ? { side: session.side === 'right' ? ('right' as const) : ('left' as const), startedAt: session.startedAt } : null),
     [session],
   );
 

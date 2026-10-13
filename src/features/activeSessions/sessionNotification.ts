@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { ensureNotificationPermission } from '../../notifications/setup';
-import { ActiveSession, ActiveSessionKind } from '../../types/records';
+import { ActiveSession, ActiveSessionKind, PumpingSide } from '../../types/records';
 import i18n from '../../i18n';
 import { formatClock } from '../../utils/time';
 import { canFinishWithoutInput, finishSessionOutsideApp } from './finishSession';
@@ -12,6 +12,12 @@ const CATEGORY_WITH_FINISH = 'active-session';
 const CATEGORY_VIEW_ONLY = 'active-session-view-only';
 export const ACTION_VIEW = 'view';
 export const ACTION_FINISH = 'finish';
+
+const SIDE_SUFFIX = {
+  left: 'sessionNotification.leftBreast',
+  right: 'sessionNotification.rightBreast',
+  both: 'sessionNotification.bothBreasts',
+} as const satisfies Record<PumpingSide, string>;
 
 const KINDS: ActiveSessionKind[] = ['sono', 'breastfeeding', 'pumping', 'contractions'];
 
@@ -56,7 +62,7 @@ export async function showSessionNotification(session: ActiveSession): Promise<v
   if (Platform.OS !== 'android') return;
   if (!(await ensureNotificationPermission())) return;
 
-  const side = session.side ? i18n.t(session.side === 'left' ? 'sessionNotification.leftBreast' : 'sessionNotification.rightBreast') : '';
+  const side = session.side ? i18n.t(SIDE_SUFFIX[session.side]) : '';
   await Notifications.scheduleNotificationAsync({
     identifier: sessionNotificationId(session.kind),
     content: {

@@ -51,6 +51,7 @@ export const pt = {
     },
     sideShortLeft: "esq.",
     sideShortRight: "dir.",
+    sideShortBoth: "ambas",
     runningOpen: "{{label}} a decorrer, abrir",
   },
   sessionNotification: {
@@ -66,6 +67,7 @@ export const pt = {
     since: "Desde as {{time}}",
     leftBreast: " (mama esquerda)",
     rightBreast: " (mama direita)",
+    bothBreasts: " (ambas as mamas)",
   },
   tabs: {
     home: "Início",
@@ -298,6 +300,13 @@ export const pt = {
   },
   pumping: {
     title: "Extração",
+    side: "Lado",
+    sides: {
+      left: "Esquerda",
+      right: "Direita",
+      both: "Ambas",
+    },
+    amountNeeded: "Indica quantos ml tiraste para terminar.",
     start: "Iniciar extração",
     finish: "Terminar extração",
     row: "{{ml}} ml · toca para editar",
@@ -494,6 +503,7 @@ export const pt = {
     },
     leftBreast: "Mama esquerda",
     rightBreast: "Mama direita",
+    bothBreasts: "Ambas as mamas",
     reactions: {
       nenhuma: "Sem reação",
       ligeira: "Reação ligeira",

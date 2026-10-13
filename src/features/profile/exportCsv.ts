@@ -8,8 +8,7 @@ import {
   DiaperEntry,
   FoodEntry,
   PumpingEntry,
-  SonoEntry,
-} from '../../types/records';
+  SonoEntry, PumpingSide } from '../../types/records';
 
 
 
@@ -41,6 +40,8 @@ function escapeCell(value: string): string {
   return needsQuotes ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
+const CSV_SIDE = { left: 'csv.leftBreast', right: 'csv.rightBreast', both: 'csv.bothBreasts' } as const satisfies Record<PumpingSide, string>;
+
 function list<T>(data: Record<string, unknown>, key: string): T[] {
   return Array.isArray(data[key]) ? (data[key] as T[]) : [];
 }
@@ -63,7 +64,9 @@ export function familyDataToCsv(data: Record<string, unknown>): string {
     ...list<BreastfeedingEntry>(data, 'breastfeeding').map((e) =>
       timed(i18n.t('csv.kinds.breastfeeding'), e, i18n.t(e.side === 'right' ? 'csv.rightBreast' : 'csv.leftBreast')),
     ),
-    ...list<PumpingEntry>(data, 'pumping').map((e) => timed(i18n.t('csv.kinds.pumping'), e, `${e.amountMl} ml`)),
+    ...list<PumpingEntry>(data, 'pumping').map((e) =>
+      timed(i18n.t('csv.kinds.pumping'), e, [`${e.amountMl} ml`, e.side && i18n.t(CSV_SIDE[e.side])].filter(Boolean).join(' · ')),
+    ),
     ...list<BottleEntry>(data, 'bottle').map((e) => ({
       at: e.at,
       cells: [i18n.t('csv.kinds.bottle'), e.at, null, `${e.amountMl} ml · ${i18n.t(`bottleTypes.${e.type}`)}`, ''] as Row['cells'],

@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { auth } from '../../services/firebase';
 import { loadList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
-import { ActiveSession, ActiveSessionKind } from '../../types/records';
+import { ActiveSession, ActiveSessionKind, PumpingSide } from '../../types/records';
 import { cancelBreastfeedingReminder, restartBreastfeedingReminder } from '../notifications/reminderScheduling';
 import { onSessionFinishedOutsideApp } from './finishSession';
 import { dismissSessionNotification, showSessionNotification } from './sessionNotification';
@@ -12,11 +12,11 @@ type Sessions = Partial<Record<ActiveSessionKind, ActiveSession>>;
 const ALL_KINDS: ActiveSessionKind[] = ['sono', 'breastfeeding', 'pumping', 'contractions'];
 
 /** What stop() hands back so the tracker can save the finished entry. */
-export type FinishedSession = { startedAt: number; endedAt: number; side?: 'left' | 'right' };
+export type FinishedSession = { startedAt: number; endedAt: number; side?: PumpingSide };
 
 type ActiveSessionsValue = {
   sessions: Sessions;
-  start: (kind: ActiveSessionKind, side?: 'left' | 'right') => void;
+  start: (kind: ActiveSessionKind, side?: PumpingSide) => void;
   stop: (kind: ActiveSessionKind) => FinishedSession | null;
 };
 
@@ -124,7 +124,7 @@ export function ActiveSessionsProvider({ children }: { children: React.ReactNode
   useEffect(() => () => ALL_KINDS.forEach((kind) => dismissSessionNotification(kind)), []);
 
   const start = useCallback(
-    (kind: ActiveSessionKind, side?: 'left' | 'right') => {
+    (kind: ActiveSessionKind, side?: PumpingSide) => {
       const session: ActiveSession = {
         kind,
         startedAt: Date.now(),
@@ -167,7 +167,7 @@ export function useActiveSession(kind: ActiveSessionKind) {
   const { sessions, start, stop } = useActiveSessions();
   return {
     session: sessions[kind] ?? null,
-    start: useCallback((side?: 'left' | 'right') => start(kind, side), [start, kind]),
+    start: useCallback((side?: PumpingSide) => start(kind, side), [start, kind]),
     stop: useCallback(() => stop(kind), [stop, kind]),
   };
 }

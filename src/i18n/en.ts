@@ -52,6 +52,7 @@ export const en: Translations = {
     },
     sideShortLeft: "L",
     sideShortRight: "R",
+    sideShortBoth: "both",
     runningOpen: "{{label}} running, open",
   },
   sessionNotification: {
@@ -67,6 +68,7 @@ export const en: Translations = {
     since: "Since {{time}}",
     leftBreast: " (left breast)",
     rightBreast: " (right breast)",
+    bothBreasts: " (both breasts)",
   },
   tabs: {
     home: "Home",
@@ -299,6 +301,13 @@ export const en: Translations = {
   },
   pumping: {
     title: "Pumping",
+    side: "Side",
+    sides: {
+      left: "Left",
+      right: "Right",
+      both: "Both",
+    },
+    amountNeeded: "Enter how many ml you pumped to finish.",
     start: "Start pumping",
     finish: "Finish pumping",
     row: "{{ml}} ml · tap to edit",
@@ -495,6 +504,7 @@ export const en: Translations = {
     },
     leftBreast: "Left breast",
     rightBreast: "Right breast",
+    bothBreasts: "Both breasts",
     reactions: {
       nenhuma: "No reaction",
       ligeira: "Mild reaction",

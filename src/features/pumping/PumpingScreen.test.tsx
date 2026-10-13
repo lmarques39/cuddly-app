@@ -7,20 +7,24 @@ import { ActiveSessionsWrapper } from '../../testUtils/ActiveSessionsWrapper';
 describe('PumpingScreen', () => {
   beforeEach(() => AsyncStorage.clear());
 
-  it('does not let stop happen without a valid amount, and records it when given one', async () => {
+  it('asks for the amount instead of silently doing nothing, and records side + amount when given (#125)', async () => {
     await render(<PumpingScreen />, { wrapper: ActiveSessionsWrapper });
 
     expect(await screen.findByText('Ainda sem registos.')).toBeTruthy();
 
     await act(async () => {
+      fireEvent.press(screen.getByRole('radio', { name: 'Esquerda' }));
+    });
+    await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Iniciar extração' }));
     });
 
-    // No amount typed yet — pressing stop should not do anything.
+    // No amount typed yet — the timer keeps going and the screen says why.
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Terminar extração' }));
     });
     expect(screen.getByRole('button', { name: 'Terminar extração' })).toBeTruthy();
+    expect(screen.getByText('Indica quantos ml tiraste para terminar.')).toBeTruthy();
 
     await act(async () => {
       fireEvent.changeText(screen.getByPlaceholderText('120'), '150');
@@ -30,6 +34,6 @@ describe('PumpingScreen', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Iniciar extração' })).toBeTruthy();
-    expect(screen.getByText(/150 ml/)).toBeTruthy();
+    expect(screen.getByText('Mama esquerda · 150 ml · toca para editar')).toBeTruthy();
   });
 });

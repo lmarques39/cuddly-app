@@ -104,7 +104,7 @@ export function HistoricoScreen() {
       ...pumping.map((e) => ({
         id: e.id,
         kind: 'pumping' as const,
-        label: t('history.kinds.pumping'),
+        label: e.side ? `${t('history.kinds.pumping')} · ${t(`pumping.sides.${e.side}`)}` : t('history.kinds.pumping'),
         detail: `${t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) })} · ${e.amountMl} ml`,
         at: e.startedAt,
       })),

@@ -10,16 +10,21 @@ export type SonoEntry = {
   endedAt: number; // epoch ms
 };
 
+export type BreastSide = 'left' | 'right';
+/** Pumping can be one breast or both at once (double pump) — #125. */
+export type PumpingSide = BreastSide | 'both';
+
 export type PumpingEntry = {
   id: string;
   startedAt: number; // epoch ms
   endedAt: number; // epoch ms
   amountMl: number;
+  side?: PumpingSide; // missing on entries from before #125
 };
 
 export type BreastfeedingEntry = {
   id: string;
-  side: 'left' | 'right';
+  side: BreastSide;
   startedAt: number;
   endedAt: number;
 };
@@ -36,7 +41,7 @@ export type ActiveSession = {
   kind: ActiveSessionKind;
   startedAt: number; // epoch ms
   startedBy: string; // uid
-  side?: 'left' | 'right'; // breastfeeding only
+  side?: PumpingSide; // breastfeeding (left/right) and pumping (also both)
 };
 
 export type BottleType = 'breastmilk' | 'formula' | 'mixed';

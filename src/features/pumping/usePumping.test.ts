@@ -29,14 +29,15 @@ describe('usePumping', () => {
     expect(result.current.entries).toEqual([]);
   });
 
-  it('records a pumping session with the amount given to stop()', async () => {
+  it('records a pumping session with its side (#125) and the amount given to stop()', async () => {
     const clock = useControlledClock();
     const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
     const startedAt = Date.now();
-    await act(async () => result.current.start());
+    await act(async () => result.current.start('left'));
     expect(result.current.runningSince).toBe(startedAt);
+    expect(result.current.runningSide).toBe('left');
 
     clock.advance(15 * 60 * 1000); // 15 min session
     await act(async () => result.current.stop(120));
@@ -47,6 +48,7 @@ describe('usePumping', () => {
       startedAt,
       endedAt: startedAt + 15 * 60 * 1000,
       amountMl: 120,
+      side: 'left',
     });
   });
 
@@ -63,7 +65,7 @@ describe('usePumping', () => {
     const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
-    await act(async () => result.current.addManual(1_700_000_000_000, 1_700_000_900_000, 90));
+    await act(async () => result.current.addManual(1_700_000_000_000, 1_700_000_900_000, 90, 'both'));
 
     expect(result.current.runningSince).toBeNull();
     expect(result.current.entries).toHaveLength(1);
@@ -71,6 +73,7 @@ describe('usePumping', () => {
       startedAt: 1_700_000_000_000,
       endedAt: 1_700_000_900_000,
       amountMl: 90,
+      side: 'both',
     });
   });
 
@@ -78,7 +81,7 @@ describe('usePumping', () => {
     const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
-    await act(async () => result.current.start());
+    await act(async () => result.current.start('both'));
     await act(async () => result.current.stop(120));
     const [entry] = result.current.entries;
 
@@ -91,7 +94,7 @@ describe('usePumping', () => {
     const { result } = await renderHook(() => usePumping(), { wrapper: ActiveSessionsWrapper });
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
-    await act(async () => result.current.start());
+    await act(async () => result.current.start('both'));
     await act(async () => result.current.stop(120));
     const [entry] = result.current.entries;
 

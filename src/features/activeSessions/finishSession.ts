@@ -30,7 +30,7 @@ export async function saveFinishedSession<T extends QuickFinishEntry>(
     id: makeId(),
     startedAt: finished.startedAt,
     endedAt: finished.endedAt,
-    ...(kind === 'breastfeeding' ? { side: finished.side ?? 'left' } : {}),
+    ...(kind === 'breastfeeding' ? { side: finished.side === 'right' ? 'right' : 'left' } : {}),
   } as T;
   const list = await addToList<T>(STORAGE_KEYS[kind], entry);
   return { list, synced: syncEntry(kind, entry.id, entry) };

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
@@ -10,7 +10,15 @@ import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
+import { PumpingSide } from '../../types/records';
 import { usePumping } from './usePumping';
+
+const SIDES: PumpingSide[] = ['left', 'right', 'both'];
+const SIDE_LABEL = { left: 'pumping.sides.left', right: 'pumping.sides.right', both: 'pumping.sides.both' } as const satisfies Record<
+  PumpingSide,
+  string
+>;
+const SIDE_DETAIL = { left: 'csv.leftBreast', right: 'csv.rightBreast', both: 'csv.bothBreasts' } as const satisfies Record<PumpingSide, string>;
 
 /**
  * Deliberately simple/unstyled-to-the-Figma UI — no frame exists yet (#45)
@@ -21,7 +29,11 @@ export function PumpingScreen() {
   const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
-  const { entries, runningSince, start, stop, addManual, remove, update } = usePumping();
+  const { entries, runningSince, runningSide, start, stop, addManual, remove, update } = usePumping();
+  const [selectedSide, setSelectedSide] = useState<PumpingSide>('both');
+  const side = runningSide ?? selectedSide;
+  const [showAmountError, setShowAmountError] = useState(false);
+  const amountInputRef = useRef<TextInput>(null);
   const now = useNow(1000, runningSince != null);
   const [amountMl, setAmountMl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -32,10 +44,17 @@ export function PumpingScreen() {
   const parsedAmount = Number(amountMl);
   const canStop = amountMl.trim().length > 0 && !Number.isNaN(parsedAmount) && parsedAmount > 0;
 
+  // "Terminar" is never greyed out (#125) — without the ml it explains
+  // what's missing instead of silently doing nothing.
   const handleStop = () => {
-    if (!canStop) return;
+    if (!canStop) {
+      setShowAmountError(true);
+      amountInputRef.current?.focus();
+      return;
+    }
     stop(parsedAmount);
     setAmountMl('');
+    setShowAmountError(false);
   };
 
   const parsedEditAmount = Number(editAmount);
@@ -51,13 +70,36 @@ export function PumpingScreen() {
   const canSaveManual = manualAmountMl.trim().length > 0 && !Number.isNaN(parsedManualAmount) && parsedManualAmount > 0;
 
   const saveManual = (startedAt: number, endedAt: number) => {
-    addManual(startedAt, endedAt, parsedManualAmount);
+    addManual(startedAt, endedAt, parsedManualAmount, selectedSide);
     setManualAmountMl('');
   };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Text style={type.h1}>{t('pumping.title')}</Text>
+
+      <View style={styles.sideRow} accessibilityRole="radiogroup" accessibilityLabel={t('pumping.side')}>
+        {SIDES.map((s) => (
+          <Pressable
+            key={s}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: side === s, disabled: runningSince != null }}
+            disabled={runningSince != null}
+            onPress={() => setSelectedSide(s)}
+            style={[
+              styles.sideButton,
+              {
+                backgroundColor: side === s ? colors.domain.pumping.bg : colors.surface,
+                borderColor: colors.domain.pumping.bg,
+              },
+            ]}
+          >
+            <Text style={{ fontFamily: fontFamily.bodyBold, color: side === s ? colors.domain.pumping.ink : colors.ink }}>
+              {t(SIDE_LABEL[s])}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
       <Card>
         <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
@@ -69,21 +111,26 @@ export function PumpingScreen() {
         <View>
           <Text style={type.caption}>{t('trackers.amountMl')}</Text>
           <TextInput
+            ref={amountInputRef}
             value={amountMl}
-            onChangeText={setAmountMl}
+            onChangeText={(text) => {
+              setAmountMl(text);
+              setShowAmountError(false);
+            }}
             placeholder="120"
             placeholderTextColor={colors.inkMuted}
             keyboardType="numeric"
-            style={styles.input}
+            style={[styles.input, showAmountError && { borderColor: colors.coral }]}
           />
+          {showAmountError && <Text style={[type.caption, { color: colors.coral }]}>{t('pumping.amountNeeded')}</Text>}
         </View>
       )}
 
       <BigButton
         label={runningSince == null ? t('pumping.start') : t('pumping.finish')}
-        background={runningSince == null || canStop ? colors.domain.pumping.bg : colors.surfaceSunken}
-        foreground={runningSince == null || canStop ? colors.domain.pumping.ink : colors.inkMuted}
-        onPress={runningSince == null ? start : handleStop}
+        background={colors.domain.pumping.bg}
+        foreground={colors.domain.pumping.ink}
+        onPress={runningSince == null ? () => start(selectedSide) : handleStop}
         full
       />
 
@@ -136,7 +183,7 @@ export function PumpingScreen() {
             <SessionEntryRow
               startedAt={item.startedAt}
               durationMs={item.endedAt - item.startedAt}
-              detail={t('pumping.row', { ml: item.amountMl })}
+              detail={[item.side && t(SIDE_DETAIL[item.side]), t('pumping.row', { ml: item.amountMl })].filter(Boolean).join(' · ')}
               onPress={() => {
                 setEditingId(item.id);
                 setEditAmount(String(item.amountMl));
@@ -164,6 +211,8 @@ const useStyles = createStyles((colors, type) => ({
     color: colors.ink,
   },
   listTitle: { marginTop: spacing.sm },
+  sideRow: { flexDirection: 'row', gap: spacing.sm },
+  sideButton: { flex: 1, minHeight: 48, borderRadius: radii.lg, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   editInput: {
     flex: 1,

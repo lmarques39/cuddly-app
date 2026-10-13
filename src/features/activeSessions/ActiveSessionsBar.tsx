@@ -4,7 +4,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { domainColors, fontFamily, spacing } from '../../theme/tokens';
 import { createStyles } from '../../theme/ThemeProvider';
-import { ActiveSessionKind } from '../../types/records';
+import { ActiveSessionKind, PumpingSide } from '../../types/records';
 import { formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { useActiveSessions } from './ActiveSessionsProvider';
@@ -16,6 +16,12 @@ const SESSION_STYLE: Record<ActiveSessionKind, { bg: string; ink: string; icon: 
   pumping: { ...domainColors.pumping, icon: 'water' },
   contractions: { ...domainColors.contractions, icon: 'pulse' },
 };
+
+const SIDE_SHORT = {
+  left: 'sessions.sideShortLeft',
+  right: 'sessions.sideShortRight',
+  both: 'sessions.sideShortBoth',
+} as const satisfies Record<PumpingSide, string>;
 
 const ORDER: ActiveSessionKind[] = ['contractions', 'breastfeeding', 'pumping', 'sono'];
 
@@ -46,7 +52,7 @@ export function ActiveSessionsBar({ onOpen, hideKind }: Props) {
       {running.map((kind) => {
         const { bg, ink, icon } = SESSION_STYLE[kind];
         const side = sessions[kind]?.side;
-        const label = `${t(`sessions.name.${kind}`)}${side ? ` (${side === 'left' ? t('sessions.sideShortLeft') : t('sessions.sideShortRight')})` : ''}`;
+        const label = `${t(`sessions.name.${kind}`)}${side ? ` (${t(SIDE_SHORT[side])})` : ''}`;
         return (
           <Pressable
             key={kind}

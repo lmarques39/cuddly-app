@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { addToList, loadList, makeId, removeFromList, replaceInList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
-import { PumpingEntry } from '../../types/records';
+import { PumpingEntry, PumpingSide } from '../../types/records';
 import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
 
 export function usePumping() {
@@ -10,6 +10,7 @@ export function usePumping() {
   // hook — so it survives leaving the screen and the other caregiver sees it.
   const { session, start: startSession, stop: stopSession } = useActiveSession('pumping');
   const runningSince = session?.startedAt ?? null;
+  const runningSide: PumpingSide | null = session ? (session.side ?? 'both') : null;
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -30,13 +31,19 @@ export function usePumping() {
     });
   }, []);
 
-  const start = useCallback(() => startSession(), [startSession]);
+  const start = useCallback((side: PumpingSide) => startSession(side), [startSession]);
 
   const stop = useCallback(
     async (amountMl: number) => {
       const finished = stopSession();
       if (!finished) return;
-      const entry: PumpingEntry = { id: makeId(), startedAt: finished.startedAt, endedAt: finished.endedAt, amountMl };
+      const entry: PumpingEntry = {
+        id: makeId(),
+        startedAt: finished.startedAt,
+        endedAt: finished.endedAt,
+        amountMl,
+        ...(finished.side ? { side: finished.side } : {}),
+      };
       addToList(STORAGE_KEYS.pumping, entry).then(setEntries);
       syncEntry('pumping', entry.id, entry);
     },
@@ -44,8 +51,8 @@ export function usePumping() {
   );
 
   /** Logs an extraction the timer never ran for. */
-  const addManual = useCallback((startedAt: number, endedAt: number, amountMl: number) => {
-    const entry: PumpingEntry = { id: makeId(), startedAt, endedAt, amountMl };
+  const addManual = useCallback((startedAt: number, endedAt: number, amountMl: number, side: PumpingSide) => {
+    const entry: PumpingEntry = { id: makeId(), startedAt, endedAt, amountMl, side };
     addToList(STORAGE_KEYS.pumping, entry).then(setEntries);
     syncEntry('pumping', entry.id, entry);
   }, []);
@@ -60,5 +67,5 @@ export function usePumping() {
     syncEntry('pumping', updated.id, updated);
   }, []);
 
-  return { entries, runningSince, start, stop, addManual, remove, update, loaded };
+  return { entries, runningSince, runningSide, start, stop, addManual, remove, update, loaded };
 }
