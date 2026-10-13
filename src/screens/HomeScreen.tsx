@@ -112,7 +112,7 @@ export function HomeScreen() {
             </Card>
             <NextAppointmentCard
               appointment={nextAppointment}
-              onPress={() => navigation.navigate('Registar', { screen: 'MarcarConsulta' })}
+              onPress={() => navigation.navigate('Registar', { screen: 'MarcarConsulta', initial: false })}
             />
           </>
         ) : (
@@ -131,7 +131,7 @@ export function HomeScreen() {
 
             <NextAppointmentCard
               appointment={nextAppointment}
-              onPress={() => navigation.navigate('Registar', { screen: 'MarcarConsulta' })}
+              onPress={() => navigation.navigate('Registar', { screen: 'MarcarConsulta', initial: false })}
             />
 
             <Text style={[type.caption, { marginTop: spacing.sm }]}>{t('home.latest')}</Text>

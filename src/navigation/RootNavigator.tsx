@@ -121,7 +121,11 @@ function TabBarWithActiveSessions(props: BottomTabBarProps) {
   const nested = focusedTab.state;
   const focusedScreen = focusedTab.name === 'Registar' && nested?.index != null ? nested.routes[nested.index]?.name : null;
   const hideKind = (Object.keys(SESSION_ROUTE) as ActiveSessionKind[]).find((kind) => SESSION_ROUTE[kind] === focusedScreen) ?? null;
-  const openSession = (kind: ActiveSessionKind) => props.navigation.navigate('Registar', { screen: SESSION_ROUTE[kind] });
+  // initial: false keeps RegistarHub underneath when the Registar stack
+  // hasn't been opened yet — otherwise the timer becomes the stack's only
+  // screen and there's no back button to the list of trackers (#121).
+  const openSession = (kind: ActiveSessionKind) =>
+    props.navigation.navigate('Registar', { screen: SESSION_ROUTE[kind], initial: false });
   // "Ver" on the Android notification (#101) lands in the same place as the bar.
   useSessionNotificationTaps(openSession);
 

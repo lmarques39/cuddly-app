@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDoc } from 'firebase/firestore';
-import { NavigationContainer } from '@react-navigation/native';
+import { createNavigationContainerRef, NavigationContainer } from '@react-navigation/native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { auth } from '../services/firebase';
@@ -17,11 +17,11 @@ beforeEach(() => {
   mockGetDoc.mockResolvedValue({ data: () => ({ familyId: 'famA' }) });
 });
 
-function renderApp() {
+function renderApp(navigationRef?: ReturnType<typeof createNavigationContainerRef>) {
   return render(
     <CurrentMemberProvider>
       <ActiveSessionsWrapper>
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <RootNavigator />
         </NavigationContainer>
       </ActiveSessionsWrapper>
@@ -137,4 +137,23 @@ it('hides Introdução alimentar from the Registar hub during pregnancy', async 
 
   expect(await screen.findByText('Marcar consulta')).toBeTruthy();
   expect(screen.queryByText('Alimento novo')).toBeNull();
+});
+
+it('opening a running timer from another tab keeps the Registar hub underneath, so there is a back button (#121)', async () => {
+  // A contraction already running when the app opens — the Registar stack has never been mounted.
+  await AsyncStorage.setItem(
+    STORAGE_KEYS.activeSessions,
+    JSON.stringify([{ kind: 'contractions', startedAt: Date.now() - 30_000, startedBy: 'alice' }]),
+  );
+  const navigationRef = createNavigationContainerRef();
+  await renderApp(navigationRef);
+
+  await act(async () => {
+    fireEvent.press(await screen.findByRole('button', { name: 'Contração a decorrer, abrir' }));
+  });
+  expect(await screen.findByRole('button', { name: 'Parar contração' })).toBeTruthy();
+
+  const registar = navigationRef.getRootState().routes.find((r) => r.name === 'Registar');
+  expect(registar?.state?.routes.map((r) => r.name)).toEqual(['RegistarHub', 'Contrações']);
+  await AsyncStorage.clear();
 });
