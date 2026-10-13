@@ -7,6 +7,7 @@ import { createStyles } from '../../theme/ThemeProvider';
 import { ActiveSessionKind, PumpingSide } from '../../types/records';
 import { formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
+import { runningElapsedMs } from '../../utils/sessionTime';
 import { useActiveSessions } from './ActiveSessionsProvider';
 
 
@@ -52,7 +53,9 @@ export function ActiveSessionsBar({ onOpen, hideKind }: Props) {
       {running.map((kind) => {
         const { bg, ink, icon } = SESSION_STYLE[kind];
         const side = sessions[kind]?.side;
-        const label = `${t(`sessions.name.${kind}`)}${side ? ` (${t(SIDE_SHORT[side])})` : ''}`;
+        const session = sessions[kind]!;
+        const paused = session.pausedAt != null;
+        const label = `${t(`sessions.name.${kind}`)}${side ? ` (${t(SIDE_SHORT[side])})` : ''}${paused ? ` · ${t('sessions.paused')}` : ''}`;
         return (
           <Pressable
             key={kind}
@@ -61,11 +64,11 @@ export function ActiveSessionsBar({ onOpen, hideKind }: Props) {
             onPress={() => onOpen(kind)}
             style={[styles.chip, { backgroundColor: bg }]}
           >
-            <Ionicons name={icon} size={16} color={ink} />
+            <Ionicons name={paused ? 'pause' : icon} size={16} color={ink} />
             <Text style={[styles.label, { color: ink }]} numberOfLines={1}>
               {label}
             </Text>
-            <Text style={[styles.time, { color: ink }]}>{formatDuration(now - (sessions[kind]?.startedAt ?? now))}</Text>
+            <Text style={[styles.time, { color: ink }]}>{formatDuration(runningElapsedMs(session, now))}</Text>
             <Ionicons name="chevron-forward" size={16} color={ink} />
           </Pressable>
         );

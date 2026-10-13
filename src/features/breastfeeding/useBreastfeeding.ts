@@ -5,12 +5,13 @@ import { BreastfeedingEntry } from '../../types/records';
 import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
 import { saveFinishedSession } from '../activeSessions/finishSession';
 import { restartBreastfeedingReminder } from '../notifications/reminderScheduling';
+import { entryDurationMs } from '../../utils/sessionTime';
 
 export function useBreastfeeding() {
   const [entries, setEntries] = useState<BreastfeedingEntry[]>([]);
   // The running timer lives in ActiveSessionsProvider (#99), not in this
   // hook — so it survives leaving the screen and the other caregiver sees it.
-  const { session, start: startSession, stop: stopSession } = useActiveSession('breastfeeding');
+  const { session, start: startSession, stop: stopSession, pause, resume } = useActiveSession('breastfeeding');
   const running = useMemo(
     () => (session ? { side: session.side === 'right' ? ('right' as const) : ('left' as const), startedAt: session.startedAt } : null),
     [session],
@@ -52,7 +53,7 @@ export function useBreastfeeding() {
 
   const todayEntries = useMemo(() => entries.filter((e) => isToday(e.startedAt)), [entries]);
   const todayDurationMs = useMemo(
-    () => todayEntries.reduce((sum, e) => sum + (e.endedAt - e.startedAt), 0),
+    () => todayEntries.reduce((sum, e) => sum + entryDurationMs(e), 0),
     [todayEntries],
   );
   const suggestedSide: 'left' | 'right' = useMemo(() => {
@@ -65,10 +66,18 @@ export function useBreastfeeding() {
     syncEntry('breastfeeding', id, null);
   }, []);
 
+  /** Picks the latest feed back up as the same one, same side — the time in between counts as a pause (#127). */
+  const continueLast = useCallback(() => {
+    const last = entries[0];
+    if (!last || session) return;
+    startSession(last.side, last);
+    remove(last.id);
+  }, [entries, session, startSession, remove]);
+
   const update = useCallback((updated: BreastfeedingEntry) => {
     replaceInList(STORAGE_KEYS.breastfeeding, updated).then(setEntries);
     syncEntry('breastfeeding', updated.id, updated);
   }, []);
 
-  return { entries, todayEntries, todayDurationMs, running, start, stop, addManual, remove, update, suggestedSide };
+  return { entries, todayEntries, todayDurationMs, session, running, start, stop, pause, resume, continueLast, addManual, remove, update, suggestedSide };
 }

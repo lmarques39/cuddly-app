@@ -16,6 +16,7 @@ import { domainColors, fontFamily, radii, spacing } from '../theme/tokens';
 import { createStyles, useTheme } from '../theme/ThemeProvider';
 import { formatClock, formatDurationShort } from '../utils/time';
 import { useNow } from '../utils/useNow';
+import { entryDurationMs } from '../utils/sessionTime';
 
 type Kind = 'contraction' | 'breastfeeding' | 'sono' | 'pumping' | 'bottle' | 'diaper' | 'food';
 // allDay: only the day is known (a food tried "today"), so no clock time is shown.
@@ -84,28 +85,28 @@ export function HistoricoScreen() {
         id: e.id,
         kind: 'contraction' as const,
         label: t('history.kinds.contraction'),
-        detail: t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) }),
+        detail: t('trackers.durationSuffix', { duration: formatDurationShort(entryDurationMs(e)) }),
         at: e.startedAt,
       })),
       ...breastfeeding.map((e) => ({
         id: e.id,
         kind: 'breastfeeding' as const,
         label: t('history.breastfeedingSide', { side: t(e.side === 'left' ? 'side.left' : 'side.right') }),
-        detail: t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) }),
+        detail: t('trackers.durationSuffix', { duration: formatDurationShort(entryDurationMs(e)) }),
         at: e.startedAt,
       })),
       ...sono.map((e) => ({
         id: e.id,
         kind: 'sono' as const,
         label: t('history.kinds.sono'),
-        detail: t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) }),
+        detail: t('trackers.durationSuffix', { duration: formatDurationShort(entryDurationMs(e)) }),
         at: e.startedAt,
       })),
       ...pumping.map((e) => ({
         id: e.id,
         kind: 'pumping' as const,
         label: e.side ? `${t('history.kinds.pumping')} · ${t(`pumping.sides.${e.side}`)}` : t('history.kinds.pumping'),
-        detail: `${t('trackers.durationSuffix', { duration: formatDurationShort(e.endedAt - e.startedAt) })} · ${e.amountMl} ml`,
+        detail: `${t('trackers.durationSuffix', { duration: formatDurationShort(entryDurationMs(e)) })} · ${e.amountMl} ml`,
         at: e.startedAt,
       })),
       ...bottle.map((e) => ({

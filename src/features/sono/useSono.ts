@@ -9,7 +9,7 @@ export function useSono() {
   const [entries, setEntries] = useState<SonoEntry[]>([]);
   // The running timer lives in ActiveSessionsProvider (#99), not in this
   // hook — so it survives leaving the screen and the other caregiver sees it.
-  const { session, start: startSession, stop: stopSession } = useActiveSession('sono');
+  const { session, start: startSession, stop: stopSession, pause, resume } = useActiveSession('sono');
   const runningSince = session?.startedAt ?? null;
   const [loaded, setLoaded] = useState(false);
 
@@ -52,10 +52,18 @@ export function useSono() {
     syncEntry('sono', id, null);
   }, []);
 
+  /** Picks the latest sleep back up as the same one — the time in between counts as a pause (#127). */
+  const continueLast = useCallback(() => {
+    const last = entries[0];
+    if (!last || session) return;
+    startSession(undefined, last);
+    remove(last.id);
+  }, [entries, session, startSession, remove]);
+
   const update = useCallback((updated: SonoEntry) => {
     replaceInList(STORAGE_KEYS.sono, updated).then(setEntries);
     syncEntry('sono', updated.id, updated);
   }, []);
 
-  return { entries, runningSince, start, stop, addManual, remove, update, loaded };
+  return { entries, session, runningSince, start, stop, pause, resume, continueLast, addManual, remove, update, loaded };
 }

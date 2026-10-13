@@ -11,6 +11,8 @@ import { spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
+import { entryDurationMs, runningElapsedMs, withEditedTimes } from '../../utils/sessionTime';
+import { PauseContinueButton } from '../../components/PauseContinueButton';
 import { useSono } from './useSono';
 
 /**
@@ -23,18 +25,18 @@ export function SonoScreen() {
   const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
-  const { entries, runningSince, start, stop, addManual, remove, update } = useSono();
+  const { entries, session, runningSince, start, stop, pause, resume, continueLast, addManual, remove, update } = useSono();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const now = useNow(1000, runningSince != null);
+  const now = useNow(runningSince != null ? 1000 : 30000);
 
-  const elapsed = runningSince != null ? now - runningSince : 0;
+  const elapsed = session ? runningElapsedMs(session, now) : 0;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Text style={type.h1}>{t('sono.title')}</Text>
 
       <Card style={styles.statCard}>
-        <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
+        <Text style={type.caption}>{session?.pausedAt != null ? t('trackers.paused') : t('trackers.currentDuration')}</Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
         {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
       </Card>
@@ -46,6 +48,8 @@ export function SonoScreen() {
         onPress={runningSince == null ? start : stop}
         full
       />
+
+      <PauseContinueButton session={session} last={entries[0]} now={now} onPause={pause} onResume={resume} onContinue={continueLast} />
 
       {runningSince == null && <ManualEntryToggle onSave={addManual} />}
 
@@ -61,7 +65,7 @@ export function SonoScreen() {
               heading={t('trackers.editing')}
               initial={item}
               onSave={(startedAt, endedAt) => {
-                update({ ...item, startedAt, endedAt });
+                update(withEditedTimes(item, startedAt, endedAt));
                 setEditingId(null);
               }}
               onCancel={() => setEditingId(null)}
@@ -69,7 +73,7 @@ export function SonoScreen() {
           ) : (
             <SessionEntryRow
               startedAt={item.startedAt}
-              durationMs={item.endedAt - item.startedAt}
+              durationMs={entryDurationMs(item)}
               onPress={() => setEditingId(item.id)}
               onRemove={() => remove(item.id)}
             />

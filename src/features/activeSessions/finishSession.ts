@@ -12,6 +12,19 @@ export function canFinishWithoutInput(kind: ActiveSessionKind): kind is QuickFin
   return kind !== 'pumping';
 }
 
+/**
+ * Ends a timer: if it was paused, it ended when it was paused. Shared by
+ * ActiveSessionsProvider.stop() and the notification's "Terminar", so both save the same thing.
+ */
+export function finishedFrom(session: ActiveSession, now: number): FinishedSession {
+  return {
+    startedAt: session.startedAt,
+    endedAt: session.pausedAt ?? now,
+    ...(session.side ? { side: session.side } : {}),
+    ...(session.pausedMs ? { pausedMs: session.pausedMs } : {}),
+  };
+}
+
 type QuickFinishEntry = SonoEntry | BreastfeedingEntry | ContractionEntry;
 
 /**
@@ -31,6 +44,8 @@ export async function saveFinishedSession<T extends QuickFinishEntry>(
     startedAt: finished.startedAt,
     endedAt: finished.endedAt,
     ...(kind === 'breastfeeding' ? { side: finished.side === 'right' ? 'right' : 'left' } : {}),
+    // Contractions aren't paused — a pause there would just be the gap between two.
+    ...(kind !== 'contractions' && finished.pausedMs ? { pausedMs: finished.pausedMs } : {}),
   } as T;
   const list = await addToList<T>(STORAGE_KEYS[kind], entry);
   return { list, synced: syncEntry(kind, entry.id, entry) };
@@ -68,7 +83,7 @@ export async function finishSessionOutsideApp(kind: QuickFinishKind): Promise<bo
   );
   finishedElsewhereListeners.forEach((listener) => listener(kind));
 
-  const finished: FinishedSession = { startedAt: session.startedAt, endedAt: Date.now(), ...(session.side ? { side: session.side } : {}) };
+  const finished: FinishedSession = finishedFrom(session, Date.now());
   const { synced } = await saveFinishedSession(kind, finished);
   // With the app closed there's no ActiveSessionsProvider to do this (#123).
   const reminder = kind === 'breastfeeding' ? restartBreastfeedingReminder(session.startedAt).catch(() => {}) : null;

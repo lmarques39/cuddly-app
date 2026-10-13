@@ -8,7 +8,7 @@ export function usePumping() {
   const [entries, setEntries] = useState<PumpingEntry[]>([]);
   // The running timer lives in ActiveSessionsProvider (#99), not in this
   // hook — so it survives leaving the screen and the other caregiver sees it.
-  const { session, start: startSession, stop: stopSession } = useActiveSession('pumping');
+  const { session, start: startSession, stop: stopSession, pause, resume } = useActiveSession('pumping');
   const runningSince = session?.startedAt ?? null;
   const runningSide: PumpingSide | null = session ? (session.side ?? 'both') : null;
   const [loaded, setLoaded] = useState(false);
@@ -43,6 +43,7 @@ export function usePumping() {
         endedAt: finished.endedAt,
         amountMl,
         ...(finished.side ? { side: finished.side } : {}),
+        ...(finished.pausedMs ? { pausedMs: finished.pausedMs } : {}),
       };
       addToList(STORAGE_KEYS.pumping, entry).then(setEntries);
       syncEntry('pumping', entry.id, entry);
@@ -62,10 +63,23 @@ export function usePumping() {
     syncEntry('pumping', id, null);
   }, []);
 
+  /**
+   * Picks the latest extraction back up as the same one, same side — the
+   * time in between counts as a pause (#127). Returns its ml so the screen
+   * can offer them again when it's finished.
+   */
+  const continueLast = useCallback((): number | null => {
+    const last = entries[0];
+    if (!last || session) return null;
+    startSession(last.side ?? 'both', last);
+    remove(last.id);
+    return last.amountMl;
+  }, [entries, session, startSession, remove]);
+
   const update = useCallback((updated: PumpingEntry) => {
     replaceInList(STORAGE_KEYS.pumping, updated).then(setEntries);
     syncEntry('pumping', updated.id, updated);
   }, []);
 
-  return { entries, runningSince, runningSide, start, stop, addManual, remove, update, loaded };
+  return { entries, session, runningSince, runningSide, pause, resume, continueLast, start, stop, addManual, remove, update, loaded };
 }

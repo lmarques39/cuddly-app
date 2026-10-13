@@ -12,6 +12,8 @@ import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
+import { entryDurationMs, runningElapsedMs, withEditedTimes } from '../../utils/sessionTime';
+import { PauseContinueButton } from '../../components/PauseContinueButton';
 import { useBreastfeeding } from './useBreastfeeding';
 
 const SIDE_LABEL = { left: 'breastfeeding.sides.left', right: 'breastfeeding.sides.right' } as const;
@@ -20,11 +22,12 @@ export function BreastfeedingScreen() {
   const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
-  const { todayEntries, todayDurationMs, running, start, stop, addManual, remove, update, suggestedSide } = useBreastfeeding();
+  const { entries, todayEntries, todayDurationMs, session, running, start, stop, pause, resume, continueLast, addManual, remove, update, suggestedSide } =
+    useBreastfeeding();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editSide, setEditSide] = useState<'left' | 'right'>('left');
   const [selectedSide, setSelectedSide] = useState<'left' | 'right'>(suggestedSide);
-  const now = useNow(1000, running != null);
+  const now = useNow(running != null ? 1000 : 30000);
 
   // Keeps the side toggle following the app's suggestion (e.g. it flips
   // after a feed ends) until the person taps the other side themselves.
@@ -32,7 +35,7 @@ export function BreastfeedingScreen() {
   // but reworking it risks changing that behavior; left as follow-up.
   useEffect(() => setSelectedSide(suggestedSide), [suggestedSide]);
 
-  const elapsed = running != null ? now - running.startedAt : 0;
+  const elapsed = session ? runningElapsedMs(session, now) : 0;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -66,7 +69,11 @@ export function BreastfeedingScreen() {
 
       <Card style={styles.timerCard}>
         <Text style={type.caption}>
-          {running != null ? t('breastfeeding.running', { side: t(running.side === 'left' ? 'side.left' : 'side.right') }) : t('breastfeeding.ready')}
+          {session?.pausedAt != null
+            ? t('trackers.paused')
+            : running != null
+              ? t('breastfeeding.running', { side: t(running.side === 'left' ? 'side.left' : 'side.right') })
+              : t('breastfeeding.ready')}
         </Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
         {running != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(running.startedAt) })}</Text>}
@@ -87,6 +94,8 @@ export function BreastfeedingScreen() {
         full
       />
 
+      <PauseContinueButton session={session} last={entries[0]} now={now} onPause={pause} onResume={resume} onContinue={continueLast} />
+
       {running == null && (
         <ManualEntryToggle onSave={(startedAt, endedAt) => addManual(selectedSide, startedAt, endedAt)} />
       )}
@@ -106,7 +115,7 @@ export function BreastfeedingScreen() {
               heading={t('trackers.editing')}
               initial={item}
               onSave={(startedAt, endedAt) => {
-                update({ ...item, startedAt, endedAt, side: editSide });
+                update({ ...withEditedTimes(item, startedAt, endedAt), side: editSide });
                 setEditingId(null);
               }}
               onCancel={() => setEditingId(null)}
@@ -117,7 +126,7 @@ export function BreastfeedingScreen() {
           ) : (
             <SessionEntryRow
               startedAt={item.startedAt}
-              durationMs={item.endedAt - item.startedAt}
+              durationMs={entryDurationMs(item)}
               detail={t(item.side === 'left' ? 'csv.leftBreast' : 'csv.rightBreast')}
               onPress={() => {
                 setEditingId(item.id);

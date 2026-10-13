@@ -67,7 +67,10 @@ export async function showSessionNotification(session: ActiveSession): Promise<v
     identifier: sessionNotificationId(session.kind),
     content: {
       title: i18n.t(`sessionNotification.title.${session.kind}`),
-      body: i18n.t('sessionNotification.since', { time: formatClock(session.startedAt) }) + side,
+      body:
+        i18n.t('sessionNotification.since', { time: formatClock(session.startedAt) }) +
+        side +
+        (session.pausedAt != null ? i18n.t('sessionNotification.paused') : ''),
       data: { kind: session.kind },
       categoryIdentifier: canFinishWithoutInput(session.kind) ? CATEGORY_WITH_FINISH : CATEGORY_VIEW_ONLY,
       sticky: true,

@@ -53,6 +53,7 @@ export const en: Translations = {
     sideShortLeft: "L",
     sideShortRight: "R",
     sideShortBoth: "both",
+    paused: "paused",
     runningOpen: "{{label}} running, open",
   },
   sessionNotification: {
@@ -69,6 +70,7 @@ export const en: Translations = {
     leftBreast: " (left breast)",
     rightBreast: " (right breast)",
     bothBreasts: " (both breasts)",
+    paused: " · paused",
   },
   tabs: {
     home: "Home",
@@ -260,6 +262,10 @@ export const en: Translations = {
     durationLabel: "Duration",
     startedAt: "Started at {{time}}",
     editing: "Editing entry",
+    pause: "Pause",
+    resume: "Resume",
+    paused: "Paused",
+    continueLast: "Continue the {{time}} session",
   },
   contractions: {
     title: "Contractions",

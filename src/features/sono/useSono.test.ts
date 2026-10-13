@@ -106,4 +106,62 @@ describe('useSono', () => {
     await act(async () => result.current.remove(entry.id));
     expect(result.current.entries).toEqual([]);
   });
+
+  it('leaves a pause out of the saved sleep, and keeps the real start time (#127)', async () => {
+    const clock = useControlledClock();
+    const MIN = 60 * 1000;
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    const startedAt = Date.now();
+    await act(async () => result.current.start());
+    clock.advance(10 * MIN);
+    await act(async () => result.current.pause());
+    expect(result.current.session?.pausedAt).toBe(startedAt + 10 * MIN);
+    clock.advance(5 * MIN);
+    await act(async () => result.current.resume());
+    expect(result.current.session).toMatchObject({ startedAt, pausedMs: 5 * MIN });
+    expect(result.current.session?.pausedAt).toBeUndefined();
+    clock.advance(10 * MIN);
+    await act(async () => result.current.stop());
+
+    expect(result.current.entries[0]).toMatchObject({ startedAt, endedAt: startedAt + 25 * MIN, pausedMs: 5 * MIN });
+  });
+
+  it('a sleep stopped while paused ended when it was paused', async () => {
+    const clock = useControlledClock();
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    const startedAt = Date.now();
+    await act(async () => result.current.start());
+    clock.advance(20 * 60 * 1000);
+    await act(async () => result.current.pause());
+    clock.advance(60 * 60 * 1000); // forgot about it for an hour
+    await act(async () => result.current.stop());
+
+    expect(result.current.entries[0]).toMatchObject({ startedAt, endedAt: startedAt + 20 * 60 * 1000 });
+  });
+
+  it('continues the last sleep as the same one, counting the gap as a pause (#127)', async () => {
+    const clock = useControlledClock();
+    const MIN = 60 * 1000;
+    const { result } = await renderHook(() => useSono(), { wrapper: ActiveSessionsWrapper });
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    const startedAt = Date.now();
+    await act(async () => result.current.start());
+    clock.advance(30 * MIN);
+    await act(async () => result.current.stop());
+    clock.advance(4 * MIN); // woke up briefly
+    await act(async () => result.current.continueLast());
+
+    expect(result.current.entries).toEqual([]);
+    expect(result.current.session).toMatchObject({ startedAt, pausedMs: 4 * MIN });
+
+    clock.advance(60 * MIN);
+    await act(async () => result.current.stop());
+    expect(result.current.entries).toHaveLength(1);
+    expect(result.current.entries[0]).toMatchObject({ startedAt, endedAt: startedAt + 94 * MIN, pausedMs: 4 * MIN });
+  });
 });

@@ -8,6 +8,7 @@ export type SonoEntry = {
   id: string;
   startedAt: number; // epoch ms
   endedAt: number; // epoch ms
+  pausedMs?: number; // time spent paused between start and end (#127) — not part of the duration
 };
 
 export type BreastSide = 'left' | 'right';
@@ -20,6 +21,7 @@ export type PumpingEntry = {
   endedAt: number; // epoch ms
   amountMl: number;
   side?: PumpingSide; // missing on entries from before #125
+  pausedMs?: number; // see SonoEntry
 };
 
 export type BreastfeedingEntry = {
@@ -27,6 +29,7 @@ export type BreastfeedingEntry = {
   side: BreastSide;
   startedAt: number;
   endedAt: number;
+  pausedMs?: number; // see SonoEntry
 };
 
 /** Trackers with a live timer — see ActiveSession. */
@@ -42,6 +45,11 @@ export type ActiveSession = {
   startedAt: number; // epoch ms
   startedBy: string; // uid
   side?: PumpingSide; // breastfeeding (left/right) and pumping (also both)
+  // Pausing (#127): while paused, pausedAt is set and the clock stands still;
+  // resuming folds the gap into pausedMs. startedAt never moves, so it's
+  // still the real start time everything is shown by (#122).
+  pausedAt?: number; // epoch ms
+  pausedMs?: number;
 };
 
 export type BottleType = 'breastmilk' | 'formula' | 'mixed';

@@ -11,6 +11,7 @@ import { fontFamily, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
+import { entryDurationMs, withEditedTimes } from '../../utils/sessionTime';
 import { useContractions } from './useContractions';
 
 export function ContractionsScreen() {
@@ -72,7 +73,7 @@ export function ContractionsScreen() {
               heading={t('trackers.editing')}
               initial={item}
               onSave={(startedAt, endedAt) => {
-                update({ ...item, startedAt, endedAt });
+                update(withEditedTimes(item, startedAt, endedAt));
                 setEditingId(null);
               }}
               onCancel={() => setEditingId(null)}
@@ -80,7 +81,7 @@ export function ContractionsScreen() {
           ) : (
             <SessionEntryRow
               startedAt={item.startedAt}
-              durationMs={item.endedAt - item.startedAt}
+              durationMs={entryDurationMs(item)}
               onPress={() => setEditingId(item.id)}
               onRemove={() => remove(item.id)}
             />

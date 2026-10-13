@@ -52,6 +52,7 @@ export const pt = {
     sideShortLeft: "esq.",
     sideShortRight: "dir.",
     sideShortBoth: "ambas",
+    paused: "em pausa",
     runningOpen: "{{label}} a decorrer, abrir",
   },
   sessionNotification: {
@@ -68,6 +69,7 @@ export const pt = {
     leftBreast: " (mama esquerda)",
     rightBreast: " (mama direita)",
     bothBreasts: " (ambas as mamas)",
+    paused: " · em pausa",
   },
   tabs: {
     home: "Início",
@@ -259,6 +261,10 @@ export const pt = {
     durationLabel: "Duração",
     startedAt: "Começou às {{time}}",
     editing: "A editar registo",
+    pause: "Pausar",
+    resume: "Retomar",
+    paused: "Em pausa",
+    continueLast: "Continuar o registo das {{time}}",
   },
   contractions: {
     title: "Contrações",

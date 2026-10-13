@@ -12,6 +12,8 @@ import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
+import { entryDurationMs, runningElapsedMs, withEditedTimes } from '../../utils/sessionTime';
+import { PauseContinueButton } from '../../components/PauseContinueButton';
 import { PumpingSide } from '../../types/records';
 import { usePumping } from './usePumping';
 
@@ -31,19 +33,19 @@ export function PumpingScreen() {
   const { t } = useTranslation();
   const { colors, type } = useTheme();
   const styles = useStyles();
-  const { entries, runningSince, runningSide, start, stop, addManual, remove, update } = usePumping();
+  const { entries, session, runningSince, runningSide, start, stop, pause, resume, continueLast, addManual, remove, update } = usePumping();
   const [selectedSide, setSelectedSide] = useState<PumpingSide>('both');
   const side = runningSide ?? selectedSide;
   const [showAmountError, setShowAmountError] = useState(false);
   const amountInputRef = useRef<TextInput>(null);
-  const now = useNow(1000, runningSince != null);
+  const now = useNow(runningSince != null ? 1000 : 30000);
   const [amountMl, setAmountMl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [editSide, setEditSide] = useState<PumpingSide>('both');
   const [manualAmountMl, setManualAmountMl] = useState('');
 
-  const elapsed = runningSince != null ? now - runningSince : 0;
+  const elapsed = session ? runningElapsedMs(session, now) : 0;
   const parsedAmount = Number(amountMl);
   const canStop = amountMl.trim().length > 0 && !Number.isNaN(parsedAmount) && parsedAmount > 0;
 
@@ -64,7 +66,7 @@ export function PumpingScreen() {
   const canSaveEdit = editAmount.trim().length > 0 && !Number.isNaN(parsedEditAmount) && parsedEditAmount > 0;
 
   const saveEdit = (entry: (typeof entries)[number], startedAt: number, endedAt: number) => {
-    update({ ...entry, startedAt, endedAt, amountMl: parsedEditAmount, side: editSide });
+    update({ ...withEditedTimes(entry, startedAt, endedAt), amountMl: parsedEditAmount, side: editSide });
     setEditingId(null);
   };
 
@@ -104,7 +106,7 @@ export function PumpingScreen() {
       </View>
 
       <Card>
-        <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
+        <Text style={type.caption}>{session?.pausedAt != null ? t('trackers.paused') : t('trackers.currentDuration')}</Text>
         <Text style={type.data}>{formatDuration(elapsed)}</Text>
         {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
       </Card>
@@ -134,6 +136,19 @@ export function PumpingScreen() {
         foreground={colors.domain.pumping.ink}
         onPress={runningSince == null ? () => start(selectedSide) : handleStop}
         full
+      />
+
+      <PauseContinueButton
+        session={session}
+        last={entries[0]}
+        now={now}
+        onPause={pause}
+        onResume={resume}
+        onContinue={() => {
+          // Offer the ml typed last time again, to add to or keep.
+          const ml = continueLast();
+          if (ml != null) setAmountMl(String(ml));
+        }}
       />
 
       {runningSince == null && (
@@ -190,7 +205,7 @@ export function PumpingScreen() {
           ) : (
             <SessionEntryRow
               startedAt={item.startedAt}
-              durationMs={item.endedAt - item.startedAt}
+              durationMs={entryDurationMs(item)}
               detail={[item.side && t(SIDE_DETAIL[item.side]), t('pumping.row', { ml: item.amountMl })].filter(Boolean).join(' · ')}
               onPress={() => {
                 setEditingId(item.id);

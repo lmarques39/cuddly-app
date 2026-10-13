@@ -4,7 +4,7 @@ import { loadList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { ActiveSession, ActiveSessionKind, PumpingSide } from '../../types/records';
 import { cancelBreastfeedingReminder, restartBreastfeedingReminder } from '../notifications/reminderScheduling';
-import { onSessionFinishedOutsideApp } from './finishSession';
+import { finishedFrom, onSessionFinishedOutsideApp } from './finishSession';
 import { dismissSessionNotification, showSessionNotification } from './sessionNotification';
 
 type Sessions = Partial<Record<ActiveSessionKind, ActiveSession>>;
@@ -12,12 +12,17 @@ type Sessions = Partial<Record<ActiveSessionKind, ActiveSession>>;
 const ALL_KINDS: ActiveSessionKind[] = ['sono', 'breastfeeding', 'pumping', 'contractions'];
 
 /** What stop() hands back so the tracker can save the finished entry. */
-export type FinishedSession = { startedAt: number; endedAt: number; side?: PumpingSide };
+export type FinishedSession = { startedAt: number; endedAt: number; side?: PumpingSide; pausedMs?: number };
+
+/** A finished entry being picked back up ("Continuar", #127). */
+export type ContinuedFrom = { startedAt: number; endedAt: number; pausedMs?: number };
 
 type ActiveSessionsValue = {
   sessions: Sessions;
-  start: (kind: ActiveSessionKind, side?: PumpingSide) => void;
+  start: (kind: ActiveSessionKind, side?: PumpingSide, continuedFrom?: ContinuedFrom) => void;
   stop: (kind: ActiveSessionKind) => FinishedSession | null;
+  pause: (kind: ActiveSessionKind) => void;
+  resume: (kind: ActiveSessionKind) => void;
 };
 
 const ActiveSessionsContext = createContext<ActiveSessionsValue | null>(null);
@@ -93,7 +98,7 @@ export function ActiveSessionsProvider({ children }: { children: React.ReactNode
     ALL_KINDS.forEach((kind) => {
       const session = sessions[kind];
       const shown = notifiedRef.current[kind];
-      const wanted = session ? `${session.startedAt}:${session.side ?? ''}` : undefined;
+      const wanted = session ? `${session.startedAt}:${session.side ?? ''}:${session.pausedAt ?? ''}:${session.pausedMs ?? ''}` : undefined;
       if (wanted === shown) return;
       if (session) {
         notifiedRef.current[kind] = wanted;
@@ -123,18 +128,47 @@ export function ActiveSessionsProvider({ children }: { children: React.ReactNode
   // this family's "a decorrer" notifications.
   useEffect(() => () => ALL_KINDS.forEach((kind) => dismissSessionNotification(kind)), []);
 
-  const start = useCallback(
-    (kind: ActiveSessionKind, side?: PumpingSide) => {
-      const session: ActiveSession = {
-        kind,
-        startedAt: Date.now(),
-        startedBy: auth.currentUser?.uid ?? '',
-        ...(side ? { side } : {}),
-      };
-      apply({ ...sessionsRef.current, [kind]: session });
-      syncEntry('activeSessions', kind, session);
+  const put = useCallback(
+    (session: ActiveSession) => {
+      apply({ ...sessionsRef.current, [session.kind]: session });
+      syncEntry('activeSessions', session.kind, session);
     },
     [apply],
+  );
+
+  const start = useCallback(
+    (kind: ActiveSessionKind, side?: PumpingSide, continuedFrom?: ContinuedFrom) => {
+      const now = Date.now();
+      // Continuing keeps the original start; the break since it ended counts as a pause.
+      const pausedMs = continuedFrom ? (continuedFrom.pausedMs ?? 0) + Math.max(0, now - continuedFrom.endedAt) : 0;
+      put({
+        kind,
+        startedAt: continuedFrom?.startedAt ?? now,
+        startedBy: auth.currentUser?.uid ?? '',
+        ...(side ? { side } : {}),
+        ...(pausedMs ? { pausedMs } : {}),
+      });
+    },
+    [put],
+  );
+
+  const pause = useCallback(
+    (kind: ActiveSessionKind) => {
+      const session = sessionsRef.current[kind];
+      if (!session || session.pausedAt != null) return;
+      put({ ...session, pausedAt: Date.now() });
+    },
+    [put],
+  );
+
+  const resume = useCallback(
+    (kind: ActiveSessionKind) => {
+      const session = sessionsRef.current[kind];
+      if (!session || session.pausedAt == null) return;
+      const { pausedAt, ...rest } = session;
+      put({ ...rest, pausedMs: (session.pausedMs ?? 0) + Math.max(0, Date.now() - pausedAt) });
+    },
+    [put],
   );
 
   const stop = useCallback(
@@ -146,12 +180,12 @@ export function ActiveSessionsProvider({ children }: { children: React.ReactNode
       const { [kind]: _stopped, ...rest } = sessionsRef.current;
       apply(rest);
       syncEntry('activeSessions', kind, null);
-      return { startedAt: session.startedAt, endedAt: Date.now(), ...(session.side ? { side: session.side } : {}) };
+      return finishedFrom(session, Date.now());
     },
     [apply],
   );
 
-  const value = useMemo(() => ({ sessions, start, stop }), [sessions, start, stop]);
+  const value = useMemo(() => ({ sessions, start, stop, pause, resume }), [sessions, start, stop, pause, resume]);
   return <ActiveSessionsContext.Provider value={value}>{children}</ActiveSessionsContext.Provider>;
 }
 
@@ -162,12 +196,14 @@ export function useActiveSessions(): ActiveSessionsValue {
   return ctx;
 }
 
-/** One tracker's timer: { session, start(side?), stop() } — stop() returns the finished times, or null if nothing was running. */
+/** One tracker's timer: { session, start(side?, continuedFrom?), stop(), pause(), resume() } — stop() returns the finished times, or null if nothing was running. */
 export function useActiveSession(kind: ActiveSessionKind) {
-  const { sessions, start, stop } = useActiveSessions();
+  const { sessions, start, stop, pause, resume } = useActiveSessions();
   return {
     session: sessions[kind] ?? null,
-    start: useCallback((side?: PumpingSide) => start(kind, side), [start, kind]),
+    start: useCallback((side?: PumpingSide, continuedFrom?: ContinuedFrom) => start(kind, side, continuedFrom), [start, kind]),
     stop: useCallback(() => stop(kind), [stop, kind]),
+    pause: useCallback(() => pause(kind), [pause, kind]),
+    resume: useCallback(() => resume(kind), [resume, kind]),
   };
 }
