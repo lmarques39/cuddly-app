@@ -2,16 +2,17 @@ import i18n from '../../i18n';
 import { useCallback, useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import { ensureNotificationPermission } from '../../notifications/setup';
-import { loadObject, saveObject, STORAGE_KEYS } from '../../storage/storage';
-import { DEFAULT_NOTIFICATION_PREFERENCES, NotificationPreferences } from '../../types/records';
+import { loadList, loadObject, saveObject, STORAGE_KEYS } from '../../storage/storage';
+import { ActiveSession, BreastfeedingEntry, DEFAULT_NOTIFICATION_PREFERENCES, NotificationPreferences } from '../../types/records';
+import { BREASTFEEDING_REMINDER_ID, cancelBreastfeedingReminder, scheduleBreastfeedingReminder } from './reminderScheduling';
 
-export const BREASTFEEDING_REMINDER_ID = 'breastfeeding-reminder';
+export { BREASTFEEDING_REMINDER_ID };
 export const DAILY_SUMMARY_REMINDER_ID = 'daily-summary-reminder';
 
 /**
- * Loads/saves NotificationPreferences and owns the two reminders that are
- * fully self-contained (breastfeeding interval, daily summary time) — both
- * can be scheduled from the preference alone. The appointment reminder is
+ * Loads/saves NotificationPreferences and (re)schedules the breastfeeding
+ * and daily-summary reminders when they're switched on or off. After that,
+ * the breastfeeding one follows the feeds themselves (reminderScheduling.ts). The appointment reminder is
  * only persisted here: actually scheduling it needs a real appointment date,
  * which lives in useAppointments' own integration (#65), not here.
  */
@@ -36,20 +37,20 @@ export function useNotificationPreferences() {
     }
 
     if (next.breastfeeding.enabled) {
-      await Notifications.scheduleNotificationAsync({
-        identifier: BREASTFEEDING_REMINDER_ID,
-        content: {
-          title: i18n.t('reminders.breastfeedingTitle'),
-          body: i18n.t('reminders.breastfeedingBody', { hours: next.breastfeeding.intervalHours }),
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: next.breastfeeding.intervalHours * 3600,
-          repeats: true,
-        },
-      });
+      // Counts from the last feed's start (#123), not from the moment the
+      // switch was flipped — and waits if a feed is running right now.
+      const [feeds, sessions] = await Promise.all([
+        loadList<BreastfeedingEntry>(STORAGE_KEYS.breastfeeding),
+        loadList<ActiveSession>(STORAGE_KEYS.activeSessions),
+      ]);
+      if (sessions.some((s) => s.kind === 'breastfeeding')) {
+        await cancelBreastfeedingReminder();
+      } else {
+        const lastStart = feeds.reduce((latest, f) => Math.max(latest, f.startedAt), 0);
+        await scheduleBreastfeedingReminder(next.breastfeeding.intervalHours, lastStart || Date.now());
+      }
     } else {
-      await Notifications.cancelScheduledNotificationAsync(BREASTFEEDING_REMINDER_ID);
+      await cancelBreastfeedingReminder();
     }
 
     if (next.dailySummary.enabled) {

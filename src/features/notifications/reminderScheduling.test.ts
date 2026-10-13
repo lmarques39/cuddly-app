@@ -1,12 +1,15 @@
 import * as Notifications from 'expo-notifications';
-import { Appointment } from '../../types/records';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../../storage/storage';
+import { Appointment, DEFAULT_NOTIFICATION_PREFERENCES } from '../../types/records';
 import {
   appointmentReminderId,
+  BREASTFEEDING_REMINDER_ID,
   cancelAppointmentReminder,
-  rescheduleBreastfeedingReminder,
+  restartBreastfeedingReminder,
   scheduleAppointmentReminder,
+  scheduleBreastfeedingReminder,
 } from './reminderScheduling';
-import { BREASTFEEDING_REMINDER_ID } from './useNotificationPreferences';
 
 const mockSchedule = Notifications.scheduleNotificationAsync as jest.Mock;
 const mockCancel = Notifications.cancelScheduledNotificationAsync as jest.Mock;
@@ -15,17 +18,43 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe('rescheduleBreastfeedingReminder', () => {
-  it('cancels the previous one and schedules a fresh one-shot countdown', async () => {
-    await rescheduleBreastfeedingReminder(4);
+describe('scheduleBreastfeedingReminder', () => {
+  it('counts the interval from when the last feed started, not from now (#123)', async () => {
+    const startedAt = Date.now() - 30 * 60 * 1000; // feed began 30 min ago
+
+    await scheduleBreastfeedingReminder(3, startedAt);
 
     expect(mockCancel).toHaveBeenCalledWith(BREASTFEEDING_REMINDER_ID);
-    expect(mockSchedule).toHaveBeenCalledWith(
-      expect.objectContaining({
-        identifier: BREASTFEEDING_REMINDER_ID,
-        trigger: expect.objectContaining({ seconds: 4 * 3600, repeats: false }),
-      }),
+    const { trigger } = mockSchedule.mock.calls[0][0];
+    expect(trigger.repeats).toBe(false);
+    expect(trigger.seconds).toBeGreaterThanOrEqual(2.5 * 3600 - 2);
+    expect(trigger.seconds).toBeLessThanOrEqual(2.5 * 3600);
+  });
+
+  it('never schedules it in the past — a feed logged late fires a minute from now', async () => {
+    await scheduleBreastfeedingReminder(3, Date.now() - 5 * 3600 * 1000);
+
+    expect(mockSchedule.mock.calls[0][0].trigger.seconds).toBe(60);
+  });
+});
+
+describe('restartBreastfeedingReminder', () => {
+  afterEach(() => AsyncStorage.clear());
+
+  it('does nothing while the reminder is switched off', async () => {
+    await restartBreastfeedingReminder(Date.now());
+    expect(mockSchedule).not.toHaveBeenCalled();
+  });
+
+  it('uses the saved interval when it is on', async () => {
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.notificationPreferences,
+      JSON.stringify({ ...DEFAULT_NOTIFICATION_PREFERENCES, breastfeeding: { enabled: true, intervalHours: 2 } }),
     );
+
+    await restartBreastfeedingReminder(Date.now());
+
+    expect(mockSchedule.mock.calls[0][0].trigger.seconds).toBeGreaterThan(2 * 3600 - 5);
   });
 });
 

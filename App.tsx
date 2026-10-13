@@ -33,6 +33,7 @@ import { useBabyProfile } from './src/features/profile/useBabyProfile';
 import { takeAccountDeletionNotice } from './src/features/profile/deleteAccount';
 import { CurrentMemberProvider } from './src/features/profile/useCurrentMember';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { dismissDeliveredRemindersWhenOpened } from './src/features/notifications/reminderScheduling';
 import { initNotifications } from './src/notifications/setup';
 import { auth } from './src/services/firebase';
 import { migrateLocalDataToFirestore } from './src/storage/migrate';
@@ -173,7 +174,13 @@ function AppContent() {
     // every time the connection comes back (#107).
     if (authStep !== 'app' || !user) return;
     flushOutbox();
-    return watchConnectivity();
+    const stopWatchingConnectivity = watchConnectivity();
+    // A "time to feed" reminder that's already been delivered goes away once the app is open (#123).
+    const stopDismissingReminders = dismissDeliveredRemindersWhenOpened();
+    return () => {
+      stopWatchingConnectivity();
+      stopDismissingReminders();
+    };
   }, [authStep, user]);
 
   useEffect(() => {

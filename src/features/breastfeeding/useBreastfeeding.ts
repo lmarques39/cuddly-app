@@ -4,6 +4,7 @@ import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { BreastfeedingEntry } from '../../types/records';
 import { useActiveSession } from '../activeSessions/ActiveSessionsProvider';
 import { saveFinishedSession } from '../activeSessions/finishSession';
+import { restartBreastfeedingReminder } from '../notifications/reminderScheduling';
 
 export function useBreastfeeding() {
   const [entries, setEntries] = useState<BreastfeedingEntry[]>([]);
@@ -41,7 +42,11 @@ export function useBreastfeeding() {
   /** Logs a feed the timer never ran for. */
   const addManual = useCallback((side: 'left' | 'right', startedAt: number, endedAt: number) => {
     const entry: BreastfeedingEntry = { id: makeId(), side, startedAt, endedAt };
-    addToList(STORAGE_KEYS.breastfeeding, entry).then(setEntries);
+    addToList(STORAGE_KEYS.breastfeeding, entry).then((list) => {
+      setEntries(list);
+      // Only a feed newer than every other one moves the reminder (#123).
+      if (list.every((e) => e.startedAt <= startedAt)) restartBreastfeedingReminder(startedAt).catch(() => {});
+    });
     syncEntry('breastfeeding', entry.id, entry);
   }, []);
 

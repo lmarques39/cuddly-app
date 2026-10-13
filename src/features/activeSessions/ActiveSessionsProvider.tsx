@@ -3,6 +3,7 @@ import { auth } from '../../services/firebase';
 import { loadList, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToCollection, syncEntry } from '../../storage/sync';
 import { ActiveSession, ActiveSessionKind } from '../../types/records';
+import { cancelBreastfeedingReminder, restartBreastfeedingReminder } from '../notifications/reminderScheduling';
 import { onSessionFinishedOutsideApp } from './finishSession';
 import { dismissSessionNotification, showSessionNotification } from './sessionNotification';
 
@@ -102,6 +103,20 @@ export function ActiveSessionsProvider({ children }: { children: React.ReactNode
         dismissSessionNotification(kind);
       }
     });
+  }, [sessions, cacheLoaded]);
+
+  // The "time to feed" reminder (#123) pauses while a feed runs — whoever
+  // started it — and counts again from that feed's start once it's over.
+  const feedStartedAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!cacheLoaded) return;
+    const feed = sessions.breastfeeding;
+    if (feed && feedStartedAtRef.current == null) {
+      cancelBreastfeedingReminder().catch(() => {});
+    } else if (!feed && feedStartedAtRef.current != null) {
+      restartBreastfeedingReminder(feedStartedAtRef.current).catch(() => {});
+    }
+    feedStartedAtRef.current = feed?.startedAt ?? null;
   }, [sessions, cacheLoaded]);
 
   // Signing out unmounts this provider — the next account mustn't inherit

@@ -2,6 +2,7 @@ import { auth } from '../../services/firebase';
 import { addToList, loadList, makeId, saveList, STORAGE_KEYS } from '../../storage/storage';
 import { syncEntry } from '../../storage/sync';
 import { ActiveSession, ActiveSessionKind, BreastfeedingEntry, ContractionEntry, SonoEntry } from '../../types/records';
+import { restartBreastfeedingReminder } from '../notifications/reminderScheduling';
 import type { FinishedSession } from './ActiveSessionsProvider';
 
 /** Timers that can be finished with nothing but the times — Extração also needs the ml amount, so it's left out. */
@@ -69,6 +70,8 @@ export async function finishSessionOutsideApp(kind: QuickFinishKind): Promise<bo
 
   const finished: FinishedSession = { startedAt: session.startedAt, endedAt: Date.now(), ...(session.side ? { side: session.side } : {}) };
   const { synced } = await saveFinishedSession(kind, finished);
-  await Promise.all([syncEntry('activeSessions', kind, null), synced]);
+  // With the app closed there's no ActiveSessionsProvider to do this (#123).
+  const reminder = kind === 'breastfeeding' ? restartBreastfeedingReminder(session.startedAt).catch(() => {}) : null;
+  await Promise.all([syncEntry('activeSessions', kind, null), synced, reminder]);
   return true;
 }

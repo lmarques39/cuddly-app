@@ -21,7 +21,7 @@ it('starts with the defaults when nothing is stored yet', async () => {
   expect(result.current.preferences).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
 });
 
-it('schedules a repeating breastfeeding reminder when enabled, using the chosen interval', async () => {
+it('schedules a one-shot breastfeeding reminder when enabled, using the chosen interval', async () => {
   const { result } = await renderHook(() => useNotificationPreferences());
   await waitFor(() => expect(result.current.loaded).toBe(true));
 
@@ -34,7 +34,7 @@ it('schedules a repeating breastfeeding reminder when enabled, using the chosen 
   expect(mockSchedule).toHaveBeenCalledWith(
     expect.objectContaining({
       identifier: BREASTFEEDING_REMINDER_ID,
-      trigger: expect.objectContaining({ seconds: 4 * 3600, repeats: true }),
+      trigger: expect.objectContaining({ seconds: 4 * 3600, repeats: false }),
     }),
   );
 });

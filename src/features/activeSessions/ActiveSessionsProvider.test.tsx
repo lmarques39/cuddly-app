@@ -1,9 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import { getDoc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { auth } from '../../services/firebase';
 import { STORAGE_KEYS } from '../../storage/storage';
+import { DEFAULT_NOTIFICATION_PREFERENCES } from '../../types/records';
+import { BREASTFEEDING_REMINDER_ID } from '../notifications/reminderScheduling';
 import { ActiveSessionsProvider, useActiveSession, useActiveSessions } from './ActiveSessionsProvider';
 
 const mockGetDoc = getDoc as jest.Mock;
@@ -84,6 +87,28 @@ it('restores a running timer from the local cache on a cold start', async () => 
   const { result } = await renderHook(() => useActiveSession('contractions'), { wrapper });
 
   await waitFor(() => expect(result.current.session).toMatchObject({ startedAt: 500 }));
+});
+
+it('holds the feeding reminder while a feed runs — even one the other caregiver started — and restarts it from its start (#123)', async () => {
+  await AsyncStorage.setItem(
+    STORAGE_KEYS.notificationPreferences,
+    JSON.stringify({ ...DEFAULT_NOTIFICATION_PREFERENCES, breastfeeding: { enabled: true, intervalHours: 3 } }),
+  );
+  const schedule = Notifications.scheduleNotificationAsync as jest.Mock;
+  const cancel = Notifications.cancelScheduledNotificationAsync as jest.Mock;
+  await renderHook(() => useActiveSessions(), { wrapper });
+  await waitFor(() => expect(mockOnSnapshot).toHaveBeenCalled());
+
+  const startedAt = Date.now() - 20 * 60 * 1000;
+  await act(async () => pushSnapshot([{ id: 'breastfeeding', data: { kind: 'breastfeeding', startedAt, startedBy: 'bob', side: 'left' } }]));
+  await waitFor(() => expect(cancel).toHaveBeenCalledWith(BREASTFEEDING_REMINDER_ID));
+  const reminder = () => schedule.mock.calls.find(([req]) => req.identifier === BREASTFEEDING_REMINDER_ID);
+  expect(reminder()).toBeUndefined();
+
+  await act(async () => pushSnapshot([]));
+  await waitFor(() => expect(reminder()).toBeDefined());
+  // 3 h from the feed's start, which was 20 min ago.
+  expect(reminder()![0].trigger.seconds).toBeLessThanOrEqual(3 * 3600 - 20 * 60);
 });
 
 it('throws when used outside an ActiveSessionsProvider', async () => {

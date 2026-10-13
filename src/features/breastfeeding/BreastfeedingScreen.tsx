@@ -8,8 +8,6 @@ import { ManualEntryToggle } from '../../components/ManualEntryToggle';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
 import { fontFamily, radii, spacing } from '../../theme/tokens';
 import { createStyles, useTheme } from '../../theme/ThemeProvider';
-import { rescheduleBreastfeedingReminder } from '../notifications/reminderScheduling';
-import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
 import { formatClock, formatDuration } from '../../utils/time';
 import { useNow } from '../../utils/useNow';
 import { useBreastfeeding } from './useBreastfeeding';
@@ -21,7 +19,6 @@ export function BreastfeedingScreen() {
   const { colors, type } = useTheme();
   const styles = useStyles();
   const { todayEntries, todayDurationMs, running, start, stop, addManual, remove, suggestedSide } = useBreastfeeding();
-  const { preferences } = useNotificationPreferences();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right'>(suggestedSide);
   const now = useNow(1000, running != null);
 
@@ -79,10 +76,8 @@ export function BreastfeedingScreen() {
             start(selectedSide);
             return;
           }
+          // The feeding reminder restarts by itself (ActiveSessionsProvider, #123).
           stop();
-          if (preferences.breastfeeding.enabled) {
-            rescheduleBreastfeedingReminder(preferences.breastfeeding.intervalHours);
-          }
         }}
         full
       />
