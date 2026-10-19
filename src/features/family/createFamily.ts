@@ -25,7 +25,7 @@ export async function createFamilyForUser(uid: string, parent: ParentInfo): Prom
 
   await setDoc(doc(db, 'users', uid), { familyId }, { merge: true });
   // getFamilyId() may still hold a family this account used to belong to.
-  resetFamilyIdCache();
+  await resetFamilyIdCache();
 
   return familyId;
 }

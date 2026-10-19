@@ -20,6 +20,9 @@ export const STORAGE_KEYS = {
   // Offline cache of families/{familyId}/activeSessions (#97) — a running
   // timer must still show after a cold start without network.
   activeSessions: '@cuddly/active-sessions',
+  // Offline cache of this account's own members/{uid} — the Home greeting
+  // and Perfil's name field need it without network.
+  currentMember: '@cuddly/current-member',
   // Not wiped by clearAllLocalData() on a new sign-up, unlike babyProfile —
   // this is a device preference ("show me reminders"), not account data,
   // so there's no privacy reason to reset it when the signed-in account changes.
@@ -89,6 +92,7 @@ export function makeId(): string {
 export async function clearAllLocalData(): Promise<void> {
   await Promise.all([
     saveObject(STORAGE_KEYS.babyProfile, null),
+    saveObject(STORAGE_KEYS.currentMember, null),
     saveList(STORAGE_KEYS.contractions, []),
     saveList(STORAGE_KEYS.breastfeeding, []),
     saveList(STORAGE_KEYS.bottle, []),

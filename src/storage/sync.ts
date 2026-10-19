@@ -1,7 +1,7 @@
 import NetInfo from '@react-native-community/netinfo';
 import { collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
-import { loadList, makeId, saveList } from './storage';
+import { loadList, loadObject, makeId, saveList, saveObject } from './storage';
 
 // Every per-family collection of entries — what clearFamilyData() wipes,
 // account deletion (#69) removes and the JSON export (#67) includes.
@@ -21,20 +21,45 @@ export const TRACKER_COLLECTIONS = ['contractions', 'breastfeeding', 'bottle', '
 // (no app restart) must not keep reusing the previous account's family (#86).
 let cachedFamily: { uid: string; familyId: string } | null = null;
 
-/** Exported for one-shot direct-write features (e.g. invites) that need the caller's familyId but aren't trackers. */
+// Also kept on-device, per uid: opening the app without network must still
+// know which family to subscribe to and write to — users/{uid} can't be
+// read offline (the JS SDK has no persistent cache on React Native).
+const FAMILY_ID_KEY_PREFIX = '@cuddly/family-id/';
+
+/**
+ * Exported for one-shot direct-write features (e.g. invites) that need the
+ * caller's familyId but aren't trackers. Never throws: offline with nothing
+ * cached yet, it resolves null and the caller's write stays queued.
+ */
 export async function getFamilyId(): Promise<string | null> {
   const uid = auth.currentUser?.uid;
   if (!uid) return null;
   if (cachedFamily?.uid === uid) return cachedFamily.familyId;
-  const snap = await getDoc(doc(db, 'users', uid));
-  const familyId = (snap.data()?.familyId as string | undefined) ?? null;
+
+  let familyId = await loadObject<string>(FAMILY_ID_KEY_PREFIX + uid);
+  if (!familyId) {
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      familyId = (snap.data()?.familyId as string | undefined) ?? null;
+    } catch {
+      return null; // offline — try again next time
+    }
+    if (familyId) await saveObject(FAMILY_ID_KEY_PREFIX + uid, familyId);
+  }
+  // Signed out (or into another account) while that was loading — don't cache it under the new one.
+  if (auth.currentUser?.uid !== uid) return familyId;
   cachedFamily = familyId ? { uid, familyId } : null;
   return familyId;
 }
 
-/** For when the family itself goes away (account deletion, #69) — the next getFamilyId() re-reads users/{uid}. */
-export function resetFamilyIdCache(): void {
+/**
+ * For when this account's family changes or goes away (a new family, account
+ * deletion #69, removed as a caregiver) — the next getFamilyId() re-reads users/{uid}.
+ */
+export async function resetFamilyIdCache(): Promise<void> {
   cachedFamily = null;
+  const uid = auth.currentUser?.uid;
+  if (uid) await saveObject(FAMILY_ID_KEY_PREFIX + uid, null);
 }
 
 type OutboxEntry = {
@@ -79,9 +104,34 @@ async function writeToFirestore(entry: OutboxEntry): Promise<boolean> {
       await setDoc(ref, entry.payload);
     }
     return true;
-  } catch {
-    return false; // no network (or a real error) — stays in the outbox for flushOutbox() to retry
+  } catch (e) {
+    // Firestore refused it for good (e.g. this account left the family) —
+    // retrying forever would also keep it overlaid on every snapshot.
+    const code = (e as { code?: string }).code;
+    if (code === 'permission-denied' || code === 'invalid-argument') return true;
+    return false; // no network — stays in the outbox for flushOutbox() to retry
   }
+}
+
+/**
+ * Writes still waiting in the outbox win over what Firestore sent: an entry
+ * added, edited or removed offline must not flicker back to the server's
+ * older version when the connection returns, before flushOutbox() lands it.
+ * Applied in queue order, so the latest write per entry wins.
+ */
+async function pendingFor(collectionName: string): Promise<OutboxEntry[]> {
+  const outbox = await loadOutbox();
+  return outbox.filter((e) => e.collectionName === collectionName);
+}
+
+function withPendingWrites<T extends { id: string }>(items: T[], pending: OutboxEntry[]): T[] {
+  if (pending.length === 0) return items;
+  const byId = new Map(items.map((item) => [item.id, item]));
+  for (const write of pending) {
+    if (write.payload === null) byId.delete(write.entryId);
+    else byId.set(write.entryId, { id: write.entryId, ...write.payload } as T);
+  }
+  return [...byId.values()];
 }
 
 /**
@@ -101,13 +151,33 @@ export async function syncEntry(
   if (ok) await removeFromOutbox(outboxId);
 }
 
-/** Retries every entry still queued. Call on app launch and whenever connectivity returns. */
-export async function flushOutbox(): Promise<void> {
-  const pending = await loadOutbox();
-  for (const entry of pending) {
-    const ok = await writeToFirestore(entry);
-    if (ok) await removeFromOutbox(entry.id);
+let flushing: Promise<void> | null = null;
+let flushAgain = false;
+
+/**
+ * Retries every entry still queued, in order. Call on app launch and
+ * whenever connectivity returns. Only one flush runs at a time — NetInfo can
+ * report "connected" several times in a row, and overlapping flushes could
+ * replay a set and a later delete of the same entry out of order.
+ */
+export function flushOutbox(): Promise<void> {
+  if (flushing) {
+    flushAgain = true;
+    return flushing;
   }
+  flushing = (async () => {
+    do {
+      flushAgain = false;
+      const pending = await loadOutbox();
+      for (const entry of pending) {
+        const ok = await writeToFirestore(entry);
+        if (ok) await removeFromOutbox(entry.id);
+      }
+    } while (flushAgain);
+  })().finally(() => {
+    flushing = null;
+  });
+  return flushing;
 }
 
 /**
@@ -134,15 +204,28 @@ export function watchConnectivity(): () => void {
  * with its document id (as `id`) — trackers already store that as a field
  * themselves so this is a no-op for them, but it's what lets a collection
  * like members/{uid}, which has no such field, know which doc is which.
+ *
+ * Offline, nothing is reported: the SDK's in-memory cache is empty after a
+ * cold start, and an empty "from cache" list would wipe the on-device copy
+ * the hooks show meanwhile. Writes still queued in the outbox are overlaid
+ * on what the server sends (see withPendingWrites).
  */
 export function subscribeToCollection<T>(collectionName: string, onChange: (items: T[]) => void): () => void {
   let cancelled = false;
   let unsubscribeSnapshot: (() => void) | null = null;
+  let latest = 0;
 
   getFamilyId().then((familyId) => {
     if (cancelled || !familyId) return;
     unsubscribeSnapshot = onSnapshot(collection(db, 'families', familyId, collectionName), (snap) => {
-      onChange(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as T));
+      if (snap.metadata?.fromCache) return;
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const seq = ++latest;
+      pendingFor(collectionName).then((pending) => {
+        // A newer snapshot may have arrived while the outbox was loading.
+        if (cancelled || seq !== latest) return;
+        onChange(withPendingWrites(items, pending) as T[]);
+      });
     });
   });
 
@@ -203,7 +286,8 @@ export async function readFamilyData(): Promise<Record<string, unknown> | null> 
  * Write with syncEntry(collectionName, entryId, payload) as usual. Calls
  * onChange(null) if the document doesn't exist yet (e.g. nothing synced from
  * this account before); callers should keep whatever the local cache has in
- * that case rather than clearing it.
+ * that case rather than clearing it. Same offline and pending-write rules as
+ * subscribeToCollection.
  */
 export function subscribeToDocument<T>(
   collectionName: string,
@@ -213,10 +297,19 @@ export function subscribeToDocument<T>(
   let cancelled = false;
   let unsubscribeSnapshot: (() => void) | null = null;
 
+  let latest = 0;
+
   getFamilyId().then((familyId) => {
     if (cancelled || !familyId) return;
     unsubscribeSnapshot = onSnapshot(doc(db, 'families', familyId, collectionName, entryId), (snap) => {
-      onChange(snap.exists() ? (snap.data() as T) : null);
+      if (snap.metadata?.fromCache) return;
+      const data = snap.exists() ? (snap.data() as T) : null;
+      const seq = ++latest;
+      pendingFor(collectionName).then((pending) => {
+        if (cancelled || seq !== latest) return;
+        const write = pending.filter((e) => e.entryId === entryId).pop();
+        onChange(write ? (write.payload as T | null) : data);
+      });
     });
   });
 

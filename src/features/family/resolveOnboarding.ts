@@ -1,3 +1,4 @@
+import NetInfo from '@react-native-community/netinfo';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
@@ -13,9 +14,12 @@ export type OnboardingStep = 'registerParent' | 'registerBaby' | 'app';
  *
  * Network trouble is *not* treated as "no family": offline, this returns
  * 'app' like before, so nobody gets pushed through onboarding again just
- * for opening the app without signal.
+ * for opening the app without signal — and without waiting on Firestore
+ * first, which takes several seconds to give up on each read when offline.
  */
 export async function resolveOnboardingStep(uid: string): Promise<OnboardingStep> {
+  const network = await NetInfo.fetch().catch(() => null);
+  if (network?.isConnected === false || network?.isInternetReachable === false) return 'app';
   try {
     const userSnap = await getDoc(doc(db, 'users', uid));
     const familyId = userSnap.data()?.familyId as string | undefined;
