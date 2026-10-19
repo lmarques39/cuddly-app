@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
@@ -28,44 +28,49 @@ export function ContractionsScreen() {
   const lastInterval = entries.length > 0 ? now - entries[0].startedAt : null;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>{t('contractions.title')}</Text>
-
-      <View style={styles.statsRow}>
-        <Card style={styles.statCard}>
-          <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
-          <Text style={type.data}>{formatDuration(elapsed)}</Text>
-          {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
-        </Card>
-        <Card style={styles.statCard}>
-          <Text style={type.caption}>{t('contractions.sinceLast')}</Text>
-          <Text style={type.data}>{lastInterval != null ? formatDuration(lastInterval) : '—'}</Text>
-        </Card>
-      </View>
-
-      <BigButton
-        label={runningSince == null ? t('contractions.start') : t('contractions.stop')}
-        background={colors.domain.contractions.bg}
-        foreground={colors.domain.contractions.ink}
-        onPress={runningSince == null ? start : stop}
-        full
-      />
-
-      {fiveOneOne && (
-        <Card style={[styles.alert, { borderColor: colors.domain.contractions.bg }]}>
-          <Text style={[type.body, { color: colors.domain.contractions.bg, fontFamily: fontFamily.bodyBold }]}>
-            {t('contractions.fiveOneOne')}
-          </Text>
-        </Card>
-      )}
-
-      {runningSince == null && <ManualEntryToggle onSave={addManual} />}
-
-      <Text style={[type.caption, styles.listTitle]}>{t('trackers.history')}</Text>
+    <KeyboardAvoidingScreen style={styles.screen}>
       <FlatList
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={type.h1}>{t('contractions.title')}</Text>
+
+            <View style={styles.statsRow}>
+              <Card style={styles.statCard}>
+                <Text style={type.caption}>{t('trackers.currentDuration')}</Text>
+                <Text style={type.data}>{formatDuration(elapsed)}</Text>
+                {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
+              </Card>
+              <Card style={styles.statCard}>
+                <Text style={type.caption}>{t('contractions.sinceLast')}</Text>
+                <Text style={type.data}>{lastInterval != null ? formatDuration(lastInterval) : '—'}</Text>
+              </Card>
+            </View>
+
+            <BigButton
+              label={runningSince == null ? t('contractions.start') : t('contractions.stop')}
+              background={colors.domain.contractions.bg}
+              foreground={colors.domain.contractions.ink}
+              onPress={runningSince == null ? start : stop}
+              full
+            />
+
+            {fiveOneOne && (
+              <Card style={[styles.alert, { borderColor: colors.domain.contractions.bg }]}>
+                <Text style={[type.body, { color: colors.domain.contractions.bg, fontFamily: fontFamily.bodyBold }]}>
+                  {t('contractions.fiveOneOne')}
+                </Text>
+              </Card>
+            )}
+
+            {runningSince == null && <ManualEntryToggle onSave={addManual} />}
+
+            <Text style={[type.caption, styles.listTitle]}>{t('trackers.history')}</Text>
+          </View>
+        }
         data={entries}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
+        contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
           editingId === item.id ? (
@@ -88,12 +93,15 @@ export function ContractionsScreen() {
           )
         )}
       />
-    </SafeAreaView>
+    </KeyboardAvoidingScreen>
   );
 }
 
 const useStyles = createStyles((colors, type) => ({
-  screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  // The whole screen scrolls as one list, so a row being edited can move up above the keyboard.
+  list: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm },
+  header: { gap: spacing.md },
   statsRow: { flexDirection: 'row', gap: spacing.sm },
   statCard: { flex: 1 },
   alert: { borderWidth: 1.5 },

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import { FlatList, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, Text, View } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
@@ -32,32 +32,37 @@ export function SonoScreen() {
   const elapsed = session ? runningElapsedMs(session, now) : 0;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>{t('sono.title')}</Text>
-
-      <Card style={styles.statCard}>
-        <Text style={type.caption}>{session?.pausedAt != null ? t('trackers.paused') : t('trackers.currentDuration')}</Text>
-        <Text style={type.data}>{formatDuration(elapsed)}</Text>
-        {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
-      </Card>
-
-      <BigButton
-        label={runningSince == null ? t('sono.start') : t('sono.finish')}
-        background={colors.domain.sleep.bg}
-        foreground={colors.domain.sleep.ink}
-        onPress={runningSince == null ? start : stop}
-        full
-      />
-
-      <PauseContinueButton session={session} last={entries[0]} now={now} onPause={pause} onResume={resume} onContinue={continueLast} />
-
-      {runningSince == null && <ManualEntryToggle onSave={addManual} />}
-
-      <Text style={[type.caption, styles.listTitle]}>{t('trackers.latest')}</Text>
+    <KeyboardAvoidingScreen style={styles.screen}>
       <FlatList
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={type.h1}>{t('sono.title')}</Text>
+
+            <Card style={styles.statCard}>
+              <Text style={type.caption}>{session?.pausedAt != null ? t('trackers.paused') : t('trackers.currentDuration')}</Text>
+              <Text style={type.data}>{formatDuration(elapsed)}</Text>
+              {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
+            </Card>
+
+            <BigButton
+              label={runningSince == null ? t('sono.start') : t('sono.finish')}
+              background={colors.domain.sleep.bg}
+              foreground={colors.domain.sleep.ink}
+              onPress={runningSince == null ? start : stop}
+              full
+            />
+
+            <PauseContinueButton session={session} last={entries[0]} now={now} onPause={pause} onResume={resume} onContinue={continueLast} />
+
+            {runningSince == null && <ManualEntryToggle onSave={addManual} />}
+
+            <Text style={[type.caption, styles.listTitle]}>{t('trackers.latest')}</Text>
+          </View>
+        }
         data={entries}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
+        contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.none')}</Text>}
         renderItem={({ item }) => (
           editingId === item.id ? (
@@ -80,12 +85,15 @@ export function SonoScreen() {
           )
         )}
       />
-    </SafeAreaView>
+    </KeyboardAvoidingScreen>
   );
 }
 
 const useStyles = createStyles((colors, type) => ({
-  screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  // The whole screen scrolls as one list, so a row being edited can move up above the keyboard.
+  list: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm },
+  header: { gap: spacing.md },
   statCard: {},
   listTitle: { marginTop: spacing.sm },
 }));

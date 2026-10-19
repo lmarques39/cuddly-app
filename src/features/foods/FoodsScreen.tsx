@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import i18n, { currentLocale } from '../../i18n';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
@@ -141,7 +141,7 @@ export function FoodsScreen() {
   const withoutReaction = entries.filter((e) => e.reaction === 'nenhuma');
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <KeyboardAvoidingScreen style={styles.screen}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={type.h1}>{t('foods.title')}</Text>
 
@@ -296,7 +296,7 @@ export function FoodsScreen() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardAvoidingScreen>
   );
 }
 
