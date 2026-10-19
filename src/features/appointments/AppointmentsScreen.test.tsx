@@ -75,7 +75,7 @@ describe('AppointmentsScreen', () => {
     expect(screen.getByText('Fisioterapia')).toBeTruthy();
 
     await act(async () => {
-      fireEvent.press(screen.getByText('Remover'));
+      fireEvent.press(screen.getByLabelText('Remover'));
     });
 
     // startEdit set the calendar filter to this consulta's day, so the

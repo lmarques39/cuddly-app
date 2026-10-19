@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
+import { IconAction } from '../../components/IconAction';
 import { inviteCaregiver } from '../caregivers/inviteCaregiver';
 import { InviteCaregiverForm } from '../caregivers/InviteCaregiverForm';
 import { removeCaregiver } from '../caregivers/removeCaregiver';
@@ -63,9 +64,7 @@ export function CuidadoresScreen() {
                   <Text style={styles.badgeText}>{t('caregivers.you')}</Text>
                 </View>
               ) : (
-                <Pressable onPress={() => confirmRemove(item.data)} hitSlop={12}>
-                  <Text style={styles.removeLink}>{t('common.remove')}</Text>
-                </Pressable>
+                <IconAction kind="remove" onPress={() => confirmRemove(item.data)} />
               )}
             </Card>
           ) : (
@@ -104,6 +103,5 @@ const useStyles = createStyles((colors, type) => ({
     paddingVertical: 2,
   },
   badgeText: { fontFamily: fontFamily.bodyBold, fontSize: 12, color: colors.creamInk },
-  removeLink: { fontFamily: fontFamily.bodyMedium, fontSize: 13, color: colors.coral },
   footer: { gap: spacing.sm, paddingBottom: spacing.md },
 }));

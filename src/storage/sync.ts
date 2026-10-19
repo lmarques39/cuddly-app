@@ -1,5 +1,5 @@
 import NetInfo from '@react-native-community/netinfo';
-import { collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, setDoc, SnapshotListenOptions } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { loadList, loadObject, makeId, saveList, saveObject } from './storage';
 
@@ -119,6 +119,15 @@ async function writeToFirestore(entry: OutboxEntry): Promise<boolean> {
  * older version when the connection returns, before flushOutbox() lands it.
  * Applied in queue order, so the latest write per entry wins.
  */
+/**
+ * Snapshots served from the SDK's memory cache are skipped (see
+ * subscribeToCollection), so the listener must also hear when the server
+ * confirms them. By default Firestore stays silent if that confirmation
+ * changes no documents, and a member doc or member list already cached by
+ * another read (e.g. the login check) would then never be reported at all.
+ */
+const SERVER_CONFIRMED: SnapshotListenOptions = { includeMetadataChanges: true };
+
 async function pendingFor(collectionName: string): Promise<OutboxEntry[]> {
   const outbox = await loadOutbox();
   return outbox.filter((e) => e.collectionName === collectionName);
@@ -217,7 +226,7 @@ export function subscribeToCollection<T>(collectionName: string, onChange: (item
 
   getFamilyId().then((familyId) => {
     if (cancelled || !familyId) return;
-    unsubscribeSnapshot = onSnapshot(collection(db, 'families', familyId, collectionName), (snap) => {
+    unsubscribeSnapshot = onSnapshot(collection(db, 'families', familyId, collectionName), SERVER_CONFIRMED, (snap) => {
       if (snap.metadata?.fromCache) return;
       const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       const seq = ++latest;
@@ -301,7 +310,7 @@ export function subscribeToDocument<T>(
 
   getFamilyId().then((familyId) => {
     if (cancelled || !familyId) return;
-    unsubscribeSnapshot = onSnapshot(doc(db, 'families', familyId, collectionName, entryId), (snap) => {
+    unsubscribeSnapshot = onSnapshot(doc(db, 'families', familyId, collectionName, entryId), SERVER_CONFIRMED, (snap) => {
       if (snap.metadata?.fromCache) return;
       const data = snap.exists() ? (snap.data() as T) : null;
       const seq = ++latest;

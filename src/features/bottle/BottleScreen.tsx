@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { RemoveEntryButton } from '../../components/RemoveEntryButton';
@@ -34,56 +34,60 @@ export function BottleScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>{t('bottle.title')}</Text>
-
-      <Card style={{ gap: spacing.md }}>
-        <View>
-          <Text style={type.caption}>{t('trackers.amountMl')}</Text>
-          <TextInput
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="number-pad"
-            placeholder="120"
-            placeholderTextColor={colors.inkMuted}
-            style={styles.input}
-          />
-        </View>
-
-        <View style={styles.typeRow}>
-          {(Object.keys(TYPE_LABEL) as BottleType[]).map((bottleType) => (
-            <Pressable
-              key={bottleType}
-              onPress={() => setType(bottleType)}
-              style={[
-                styles.typeChip,
-                { backgroundColor: type_ === bottleType ? colors.domain.bottle.bg : colors.surfaceSunken },
-              ]}
-            >
-              <Text style={{ fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: type_ === bottleType ? colors.domain.bottle.ink : colors.inkSecondary }}>
-                {t(TYPE_LABEL[bottleType])}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <BigButton
-          label={t('bottle.save')}
-          background={canSave ? colors.domain.bottle.bg : colors.surfaceSunken}
-          foreground={canSave ? colors.domain.bottle.ink : colors.inkMuted}
-          onPress={handleSave}
-          full
-        />
-      </Card>
-
-      <Text style={type.caption}>
-        {t('bottle.today', { count: todayEntries.length, ml: todayTotalMl })}
-      </Text>
-
+    <KeyboardAvoidingScreen style={styles.screen}>
       <FlatList
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={type.h1}>{t('bottle.title')}</Text>
+
+            <Card style={{ gap: spacing.md }}>
+              <View>
+                <Text style={type.caption}>{t('trackers.amountMl')}</Text>
+                <TextInput
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="number-pad"
+                  placeholder="120"
+                  placeholderTextColor={colors.inkMuted}
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.typeRow}>
+                {(Object.keys(TYPE_LABEL) as BottleType[]).map((bottleType) => (
+                  <Pressable
+                    key={bottleType}
+                    onPress={() => setType(bottleType)}
+                    style={[
+                      styles.typeChip,
+                      { backgroundColor: type_ === bottleType ? colors.domain.bottle.bg : colors.surfaceSunken },
+                    ]}
+                  >
+                    <Text style={{ fontFamily: fontFamily.bodyMedium, fontSize: 12.5, color: type_ === bottleType ? colors.domain.bottle.ink : colors.inkSecondary }}>
+                      {t(TYPE_LABEL[bottleType])}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <BigButton
+                label={t('bottle.save')}
+                background={canSave ? colors.domain.bottle.bg : colors.surfaceSunken}
+                foreground={canSave ? colors.domain.bottle.ink : colors.inkMuted}
+                onPress={handleSave}
+                full
+              />
+            </Card>
+
+            <Text style={type.caption}>
+              {t('bottle.today', { count: todayEntries.length, ml: todayTotalMl })}
+            </Text>
+          </View>
+        }
         data={todayEntries}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
+        contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.noneToday')}</Text>}
         renderItem={({ item }) => (
           <Card style={styles.row}>
@@ -95,12 +99,15 @@ export function BottleScreen() {
           </Card>
         )}
       />
-    </SafeAreaView>
+    </KeyboardAvoidingScreen>
   );
 }
 
 const useStyles = createStyles((colors, type) => ({
-  screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  // The whole screen scrolls as one list, so a row being edited can move up above the keyboard.
+  list: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm },
+  header: { gap: spacing.md },
   input: {
     borderWidth: 1.5,
     borderColor: colors.border,

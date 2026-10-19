@@ -18,7 +18,7 @@ describe('RemoveEntryButton', () => {
 
     await render(<RemoveEntryButton onRemove={onRemove} />);
     await act(async () => {
-      fireEvent.press(screen.getByText('Remover'));
+      fireEvent.press(screen.getByLabelText('Remover'));
     });
 
     expect(onRemove).toHaveBeenCalledTimes(1);
@@ -30,7 +30,7 @@ describe('RemoveEntryButton', () => {
 
     await render(<RemoveEntryButton onRemove={onRemove} />);
     await act(async () => {
-      fireEvent.press(screen.getByText('Remover'));
+      fireEvent.press(screen.getByLabelText('Remover'));
     });
 
     expect(onRemove).not.toHaveBeenCalled();

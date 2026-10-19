@@ -25,7 +25,7 @@ beforeEach(async () => {
   await AsyncStorage.clear();
   Object.assign(auth, { currentUser: { uid: 'alice' } });
   mockGetDoc.mockResolvedValue({ exists: () => true, data: () => ({ familyId: 'famA' }) });
-  mockOnSnapshot.mockImplementation((_ref, cb) => {
+  mockOnSnapshot.mockImplementation((_ref, _options, cb) => {
     pushSnapshot = (docs) => cb({ docs: docs.map((d) => ({ id: d.id, data: () => d.data })) });
     return () => {};
   });

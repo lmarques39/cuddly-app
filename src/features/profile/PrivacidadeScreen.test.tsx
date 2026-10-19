@@ -22,7 +22,7 @@ const mockOnSnapshot = onSnapshot as jest.Mock;
 const mockGetDoc = getDoc as jest.Mock;
 
 function familyMembers(ids: string[]) {
-  mockOnSnapshot.mockImplementation((ref: { segments: unknown[] }, cb: (snap: unknown) => void) => {
+  mockOnSnapshot.mockImplementation((ref: { segments: unknown[] }, _options: unknown, cb: (snap: unknown) => void) => {
     const isMembers = ref.segments[ref.segments.length - 1] === 'members';
     cb({ docs: (isMembers ? ids : []).map((id) => ({ id, data: () => ({ name: id }) })) });
     return () => {};

@@ -5,10 +5,11 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import Constants from 'expo-constants';
 import { Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import { AppearancePicker } from '../../components/AppearancePicker';
 import { LanguagePicker } from '../../components/LanguagePicker';
 import { Card } from '../../components/Card';
+import { IconAction } from '../../components/IconAction';
 import { seedDemoData } from '../../dev/seedDemoData';
 import { PerfilStackParamList } from '../../navigation/types';
 import { clearAllLocalData } from '../../storage/storage';
@@ -58,9 +59,9 @@ export function PerfilScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <KeyboardAvoidingScreen style={styles.screen}>
       {/* Scrolls now that the list is longer — on a small phone "Terminar sessão" fell off the bottom. */}
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={type.h1}>{t('profile.title')}</Text>
 
         <Card style={{ gap: spacing.xs }}>
@@ -88,7 +89,7 @@ export function PerfilScreen() {
               <Text style={[type.body, { fontFamily: fontFamily.bodyBold }]}>
                 {member?.name || t('profile.addName')}
               </Text>
-              <Text style={styles.editLink}>{t('common.edit')}</Text>
+              <IconAction kind="edit" onPress={startEditingName} />
             </Pressable>
           )}
           <Text style={type.body}>{email ?? t('profile.notSignedIn')}</Text>
@@ -150,7 +151,7 @@ export function PerfilScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardAvoidingScreen>
   );
 }
 
@@ -176,7 +177,6 @@ const useStyles = createStyles((colors, type) => ({
   },
   devLabel: { fontFamily: fontFamily.bodyMedium, fontSize: 13.5, color: colors.inkSecondary },
   nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  editLink: { fontFamily: fontFamily.bodyBold, fontSize: 12.5, color: colors.primary },
   nameInput: {
     borderWidth: 1.5,
     borderColor: colors.border,

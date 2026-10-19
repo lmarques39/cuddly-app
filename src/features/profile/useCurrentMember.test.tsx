@@ -23,7 +23,7 @@ it('starts with no member and not loaded until the subscription reports back', a
 });
 
 it("exposes the caller's own member doc, with the uid merged in as id", async () => {
-  mockOnSnapshot.mockImplementation((_ref, cb) => {
+  mockOnSnapshot.mockImplementation((_ref, _options, cb) => {
     cb({ exists: () => true, data: () => ({ name: 'Alice', role: 'mae', email: 'alice@x.com' }) });
     return () => {};
   });
@@ -35,7 +35,7 @@ it("exposes the caller's own member doc, with the uid merged in as id", async ()
 });
 
 it('updateName writes the full member doc back with just the name changed', async () => {
-  mockOnSnapshot.mockImplementation((_ref, cb) => {
+  mockOnSnapshot.mockImplementation((_ref, _options, cb) => {
     cb({ exists: () => true, data: () => ({ name: 'Alice', role: 'mae', email: 'alice@x.com' }) });
     return () => {};
   });
@@ -52,7 +52,7 @@ it('updateName writes the full member doc back with just the name changed', asyn
 });
 
 it('updateName shows the new name immediately, before the snapshot comes back', async () => {
-  mockOnSnapshot.mockImplementation((_ref, cb) => {
+  mockOnSnapshot.mockImplementation((_ref, _options, cb) => {
     cb({ exists: () => true, data: () => ({ name: 'Alice', role: 'mae', email: 'alice@x.com' }) });
     return () => {};
   });

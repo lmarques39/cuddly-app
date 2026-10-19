@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useRef, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import { BigButton } from '../../components/BigButton';
 import { Card } from '../../components/Card';
 import { ManualEntryToggle } from '../../components/ManualEntryToggle';
@@ -79,103 +79,108 @@ export function PumpingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <Text style={type.h1}>{t('pumping.title')}</Text>
-
-      <View style={styles.sideRow} accessibilityRole="radiogroup" accessibilityLabel={t('pumping.side')}>
-        {SIDES.map((s) => (
-          <Pressable
-            key={s}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: side === s, disabled: runningSince != null }}
-            disabled={runningSince != null}
-            onPress={() => setSelectedSide(s)}
-            style={[
-              styles.sideButton,
-              {
-                backgroundColor: side === s ? colors.domain.pumping.bg : colors.surface,
-                borderColor: colors.domain.pumping.bg,
-              },
-            ]}
-          >
-            <Text style={{ fontFamily: fontFamily.bodyBold, color: side === s ? colors.domain.pumping.ink : colors.ink }}>
-              {t(SIDE_LABEL[s])}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <Card>
-        <Text style={type.caption}>{session?.pausedAt != null ? t('trackers.paused') : t('trackers.currentDuration')}</Text>
-        <Text style={type.data}>{formatDuration(elapsed)}</Text>
-        {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
-      </Card>
-
-      {runningSince != null && (
-        <View>
-          <Text style={type.caption}>{t('trackers.amountMl')}</Text>
-          <TextInput
-            ref={amountInputRef}
-            value={amountMl}
-            onChangeText={(text) => {
-              setAmountMl(text);
-              setShowAmountError(false);
-            }}
-            placeholder="120"
-            placeholderTextColor={colors.inkMuted}
-            keyboardType="numeric"
-            style={[styles.input, showAmountError && { borderColor: colors.coral }]}
-          />
-          {showAmountError && <Text style={[type.caption, { color: colors.coral }]}>{t('pumping.amountNeeded')}</Text>}
-        </View>
-      )}
-
-      <BigButton
-        label={runningSince == null ? t('pumping.start') : t('pumping.finish')}
-        background={colors.domain.pumping.bg}
-        foreground={colors.domain.pumping.ink}
-        onPress={runningSince == null ? () => start(selectedSide) : handleStop}
-        full
-      />
-
-      <PauseContinueButton
-        session={session}
-        last={entries[0]}
-        now={now}
-        onPause={pause}
-        onResume={resume}
-        onContinue={() => {
-          // Offer the ml typed last time again, to add to or keep.
-          const ml = continueLast();
-          if (ml != null) setAmountMl(String(ml));
-        }}
-      />
-
-      {runningSince == null && (
-        <ManualEntryToggle
-          onSave={saveManual}
-          extraValid={canSaveManual}
-          extraFields={
-            <View>
-              <Text style={type.caption}>{t('trackers.amountMl')}</Text>
-              <TextInput
-                value={manualAmountMl}
-                onChangeText={setManualAmountMl}
-                placeholder="120"
-                placeholderTextColor={colors.inkMuted}
-                keyboardType="numeric"
-                style={styles.input}
-              />
-            </View>
-          }
-        />
-      )}
-
-      <Text style={[type.caption, styles.listTitle]}>{t('trackers.latest')}</Text>
+    <KeyboardAvoidingScreen style={styles.screen}>
       <FlatList
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={type.h1}>{t('pumping.title')}</Text>
+
+            <View style={styles.sideRow} accessibilityRole="radiogroup" accessibilityLabel={t('pumping.side')}>
+              {SIDES.map((s) => (
+                <Pressable
+                  key={s}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: side === s, disabled: runningSince != null }}
+                  disabled={runningSince != null}
+                  onPress={() => setSelectedSide(s)}
+                  style={[
+                    styles.sideButton,
+                    {
+                      backgroundColor: side === s ? colors.domain.pumping.bg : colors.surface,
+                      borderColor: colors.domain.pumping.bg,
+                    },
+                  ]}
+                >
+                  <Text style={{ fontFamily: fontFamily.bodyBold, color: side === s ? colors.domain.pumping.ink : colors.ink }}>
+                    {t(SIDE_LABEL[s])}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Card>
+              <Text style={type.caption}>{session?.pausedAt != null ? t('trackers.paused') : t('trackers.currentDuration')}</Text>
+              <Text style={type.data}>{formatDuration(elapsed)}</Text>
+              {runningSince != null && <Text style={type.caption}>{t('trackers.startedAt', { time: formatClock(runningSince) })}</Text>}
+            </Card>
+
+            {runningSince != null && (
+              <View>
+                <Text style={type.caption}>{t('trackers.amountMl')}</Text>
+                <TextInput
+                  ref={amountInputRef}
+                  value={amountMl}
+                  onChangeText={(text) => {
+                    setAmountMl(text);
+                    setShowAmountError(false);
+                  }}
+                  placeholder="120"
+                  placeholderTextColor={colors.inkMuted}
+                  keyboardType="numeric"
+                  style={[styles.input, showAmountError && { borderColor: colors.coral }]}
+                />
+                {showAmountError && <Text style={[type.caption, { color: colors.coral }]}>{t('pumping.amountNeeded')}</Text>}
+              </View>
+            )}
+
+            <BigButton
+              label={runningSince == null ? t('pumping.start') : t('pumping.finish')}
+              background={colors.domain.pumping.bg}
+              foreground={colors.domain.pumping.ink}
+              onPress={runningSince == null ? () => start(selectedSide) : handleStop}
+              full
+            />
+
+            <PauseContinueButton
+              session={session}
+              last={entries[0]}
+              now={now}
+              onPause={pause}
+              onResume={resume}
+              onContinue={() => {
+                // Offer the ml typed last time again, to add to or keep.
+                const ml = continueLast();
+                if (ml != null) setAmountMl(String(ml));
+              }}
+            />
+
+            {runningSince == null && (
+              <ManualEntryToggle
+                onSave={saveManual}
+                extraValid={canSaveManual}
+                extraFields={
+                  <View>
+                    <Text style={type.caption}>{t('trackers.amountMl')}</Text>
+                    <TextInput
+                      value={manualAmountMl}
+                      onChangeText={setManualAmountMl}
+                      placeholder="120"
+                      placeholderTextColor={colors.inkMuted}
+                      keyboardType="numeric"
+                      style={styles.input}
+                    />
+                  </View>
+                }
+              />
+            )}
+
+            <Text style={[type.caption, styles.listTitle]}>{t('trackers.latest')}</Text>
+          </View>
+        }
         data={entries}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
+        contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text style={type.caption}>{t('trackers.none')}</Text>}
         renderItem={({ item }) =>
           editingId === item.id ? (
@@ -217,12 +222,15 @@ export function PumpingScreen() {
           )
         }
       />
-    </SafeAreaView>
+    </KeyboardAvoidingScreen>
   );
 }
 
 const useStyles = createStyles((colors, type) => ({
-  screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  // The whole screen scrolls as one list, so a row being edited can move up above the keyboard.
+  list: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm },
+  header: { gap: spacing.md },
   input: {
     marginTop: spacing.xs,
     borderWidth: 1.5,

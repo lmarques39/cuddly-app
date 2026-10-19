@@ -26,7 +26,7 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 /** Captures the listener subscribeTo*() hands onSnapshot, so a test can push snapshots into it. */
 function captureSnapshotListener() {
   let listener: ((snap: unknown) => void) | null = null;
-  mockOnSnapshot.mockImplementation((_ref, cb) => {
+  mockOnSnapshot.mockImplementation((_ref, _options, cb) => {
     listener = cb;
     return () => {};
   });
@@ -193,6 +193,23 @@ describe('offline-first', () => {
     await flush();
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('still reports data first served from cache once the server confirms it, even with no document changes', async () => {
+    const emit = captureSnapshotListener();
+    const onChange = jest.fn();
+    subscribeToCollection('members', onChange);
+    await flush();
+
+    // Firestore only re-reports a confirmation that changes nothing when asked to.
+    expect(mockOnSnapshot.mock.calls[0][1]).toEqual({ includeMetadataChanges: true });
+    const partner = [{ id: 'bob', data: { name: 'Bob' } }];
+    emit(collectionSnap(partner, true));
+    emit(collectionSnap(partner, false));
+    await flush();
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith([{ id: 'bob', name: 'Bob' }]);
   });
 
   it('merges writes still queued offline into what the server sends when the connection returns', async () => {

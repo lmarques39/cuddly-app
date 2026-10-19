@@ -102,7 +102,7 @@ describe('useFoods', () => {
 
   it('takes Firestore as the source of truth once it arrives', async () => {
     let push: (docs: { id: string; data: object }[]) => void = () => {};
-    mockOnSnapshot.mockImplementation((_ref, cb) => {
+    mockOnSnapshot.mockImplementation((_ref, _options, cb) => {
       push = (docs) => cb({ docs: docs.map((d) => ({ id: d.id, data: () => d.data })) });
       return () => {};
     });
