@@ -1,3 +1,4 @@
+import NetInfo from '@react-native-community/netinfo';
 import { getDoc } from 'firebase/firestore';
 import { resolveOnboardingStep } from './resolveOnboarding';
 
@@ -51,4 +52,10 @@ it('sends an account that never finished the baby step to it', async () => {
 it('lets the app open as usual when Firestore is unreachable, instead of forcing onboarding again', async () => {
   mockGetDoc.mockRejectedValue(Object.assign(new Error('offline'), { code: 'unavailable' }));
   expect(await resolveOnboardingStep('alice')).toBe('app');
+});
+
+it('opens the app straight away without network, without waiting on Firestore', async () => {
+  (NetInfo.fetch as jest.Mock).mockResolvedValueOnce({ isConnected: false, isInternetReachable: false });
+  expect(await resolveOnboardingStep('alice')).toBe('app');
+  expect(mockGetDoc).not.toHaveBeenCalled();
 });

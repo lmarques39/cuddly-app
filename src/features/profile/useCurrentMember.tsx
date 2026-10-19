@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { auth } from '../../services/firebase';
+import { loadObject, saveObject, STORAGE_KEYS } from '../../storage/storage';
 import { subscribeToDocument, syncEntry } from '../../storage/sync';
 import { Member } from '../../types/records';
 
@@ -29,9 +30,20 @@ export function CurrentMemberProvider({ children }: { children: React.ReactNode 
       setLoaded(true);
       return;
     }
-    return subscribeToDocument<Omit<Member, 'id'>>('members', uid, (data) => {
-      setMember(data ? { id: uid, ...data } : null);
+    // Cold-start cache, so the greeting and Perfil work offline too. Only
+    // trusted if it's this account's — the device may have had another.
+    let fromServer = false;
+    loadObject<Member>(STORAGE_KEYS.currentMember).then((cached) => {
+      if (fromServer || cached?.id !== uid) return;
+      setMember(cached);
       setLoaded(true);
+    });
+    return subscribeToDocument<Omit<Member, 'id'>>('members', uid, (data) => {
+      fromServer = true;
+      const next = data ? { id: uid, ...data } : null;
+      setMember(next);
+      setLoaded(true);
+      saveObject(STORAGE_KEYS.currentMember, next);
     });
   }, [uid]);
 
@@ -42,6 +54,7 @@ export function CurrentMemberProvider({ children }: { children: React.ReactNode 
       // Optimistic: every screen sees the new name right away, without
       // waiting on the snapshot round-trip (which is what lagged on Android).
       setMember({ ...member, name });
+      saveObject(STORAGE_KEYS.currentMember, { ...member, name });
       syncEntry('members', uid, { ...rest, name });
     },
     [uid, member],

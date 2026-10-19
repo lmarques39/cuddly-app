@@ -37,7 +37,7 @@ import { dismissDeliveredRemindersWhenOpened } from './src/features/notification
 import { initNotifications } from './src/notifications/setup';
 import { auth } from './src/services/firebase';
 import { migrateLocalDataToFirestore } from './src/storage/migrate';
-import { flushOutbox, watchConnectivity } from './src/storage/sync';
+import { flushOutbox, resetFamilyIdCache, watchConnectivity } from './src/storage/sync';
 import { clearAllLocalData } from './src/storage/storage';
 import { createStyles, ThemeProvider, useTheme } from './src/theme/ThemeProvider';
 
@@ -96,6 +96,7 @@ async function routeExistingUser(uid: string, email: string): Promise<Route> {
   if (step !== 'registerParent') return { step, invite: null };
   // Whatever's cached on this device belonged to a family this account no longer has.
   await clearAllLocalData().catch(() => {});
+  await resetFamilyIdCache().catch(() => {});
   return routeNewUser(email);
 }
 

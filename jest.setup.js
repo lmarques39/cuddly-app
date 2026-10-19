@@ -2,6 +2,11 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
+// The real module needs its native side; the package's own mock reports "online".
+jest.mock('@react-native-community/netinfo', () =>
+  require('@react-native-community/netinfo/jest/netinfo-mock')
+);
+
 // firebase's real SDK is ESM and would hit the network — the __mocks__/firebase/
 // folder replaces app/auth/firestore automatically for every test (Jest's
 // manual-mock convention for node_modules packages, no jest.mock() call

@@ -95,7 +95,7 @@ export async function deleteMyAccount(password?: string): Promise<void> {
 
   await clearOutbox();
   await clearAllLocalData();
-  resetFamilyIdCache();
+  await resetFamilyIdCache();
 
   // Signs the user out too — App.tsx's onAuthStateChanged takes it from here.
   try {

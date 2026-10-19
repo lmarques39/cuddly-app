@@ -1,19 +1,47 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { deleteDoc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { deleteDoc, getDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth } from '../services/firebase';
 import { loadList } from './storage';
-import { clearFamilyData, flushOutbox, getFamilyId, resetFamilyIdCache, syncEntry, TRACKER_COLLECTIONS } from './sync';
+import {
+  clearFamilyData,
+  flushOutbox,
+  getFamilyId,
+  resetFamilyIdCache,
+  subscribeToCollection,
+  subscribeToDocument,
+  syncEntry,
+  TRACKER_COLLECTIONS,
+} from './sync';
 
 const mockGetDoc = getDoc as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
 const mockGetDocs = getDocs as jest.Mock;
 const mockDeleteDoc = deleteDoc as jest.Mock;
+const mockOnSnapshot = onSnapshot as jest.Mock;
 
 const OUTBOX_KEY = '@cuddly/outbox';
+
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+/** Captures the listener subscribeTo*() hands onSnapshot, so a test can push snapshots into it. */
+function captureSnapshotListener() {
+  let listener: ((snap: unknown) => void) | null = null;
+  mockOnSnapshot.mockImplementation((_ref, cb) => {
+    listener = cb;
+    return () => {};
+  });
+  return (snap: unknown) => listener!(snap);
+}
+
+const collectionSnap = (docs: { id: string; data: object }[], fromCache = false) => ({
+  metadata: { fromCache },
+  docs: docs.map((d) => ({ id: d.id, data: () => d.data })),
+});
 
 beforeEach(async () => {
   await AsyncStorage.clear();
   jest.clearAllMocks();
+  await resetFamilyIdCache();
   Object.assign(auth, { currentUser: { uid: 'u1' } });
   mockGetDoc.mockResolvedValue({ data: () => ({ familyId: 'fam1' }) });
 });
@@ -105,5 +133,107 @@ describe('getFamilyId', () => {
     resetFamilyIdCache();
     mockGetDoc.mockResolvedValueOnce({ data: () => ({}) });
     expect(await getFamilyId()).toBeNull();
+  });
+});
+
+describe('offline-first', () => {
+  it('remembers the familyId on-device once read', async () => {
+    expect(await getFamilyId()).toBe('fam1');
+    expect(JSON.parse((await AsyncStorage.getItem('@cuddly/family-id/u1'))!)).toBe('fam1');
+  });
+
+  it('uses the on-device familyId on an offline start, without reading users/{uid}', async () => {
+    await AsyncStorage.setItem('@cuddly/family-id/u1', JSON.stringify('famX'));
+    mockGetDoc.mockRejectedValue(Object.assign(new Error('offline'), { code: 'unavailable' }));
+
+    expect(await getFamilyId()).toBe('famX');
+    expect(mockGetDoc).not.toHaveBeenCalled();
+  });
+
+  it('resolves null instead of throwing when offline with nothing cached, keeping the write queued', async () => {
+    mockGetDoc.mockRejectedValue(Object.assign(new Error('offline'), { code: 'unavailable' }));
+
+    await expect(syncEntry('diapers', 'd1', { id: 'd1', at: 1 })).resolves.toBeUndefined();
+
+    expect(mockSetDoc).not.toHaveBeenCalled();
+    expect(await loadList(OUTBOX_KEY)).toHaveLength(1);
+  });
+
+  it('drops a write Firestore refuses for good instead of retrying it forever', async () => {
+    mockSetDoc.mockRejectedValueOnce(Object.assign(new Error('denied'), { code: 'permission-denied' }));
+
+    await syncEntry('diapers', 'd1', { id: 'd1', at: 1 });
+
+    expect(await loadList(OUTBOX_KEY)).toEqual([]);
+  });
+
+  it('runs one flush at a time, replaying the queue in order', async () => {
+    mockSetDoc.mockRejectedValue(new Error('offline'));
+    mockDeleteDoc.mockRejectedValue(new Error('offline'));
+    await syncEntry('diapers', 'd1', { id: 'd1', at: 1 });
+    await syncEntry('diapers', 'd1', null);
+    mockSetDoc.mockReset().mockResolvedValue(undefined);
+    mockDeleteDoc.mockReset().mockResolvedValue(undefined);
+
+    await Promise.all([flushOutbox(), flushOutbox(), flushOutbox()]);
+
+    expect(mockSetDoc).toHaveBeenCalledTimes(1);
+    expect(mockDeleteDoc).toHaveBeenCalledTimes(1);
+    expect(mockSetDoc.mock.invocationCallOrder[0]).toBeLessThan(mockDeleteDoc.mock.invocationCallOrder[0]);
+    expect(await loadList(OUTBOX_KEY)).toEqual([]);
+  });
+
+  it("ignores Firestore's from-cache snapshots, which would wipe the on-device list after an offline start", async () => {
+    const emit = captureSnapshotListener();
+    const onChange = jest.fn();
+    subscribeToCollection('diapers', onChange);
+    await flush();
+
+    emit(collectionSnap([], true));
+    await flush();
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('merges writes still queued offline into what the server sends when the connection returns', async () => {
+    mockSetDoc.mockRejectedValue(new Error('offline'));
+    mockDeleteDoc.mockRejectedValue(new Error('offline'));
+    await syncEntry('diapers', 'new', { id: 'new', at: 3 }); // added offline
+    await syncEntry('diapers', 'edited', { id: 'edited', at: 2, type: 'xixi' }); // edited offline
+    await syncEntry('diapers', 'gone', null); // removed offline
+    await syncEntry('sono', 'other', { id: 'other' }); // another collection — not merged here
+
+    const emit = captureSnapshotListener();
+    const onChange = jest.fn();
+    subscribeToCollection('diapers', onChange);
+    await flush();
+    emit(
+      collectionSnap([
+        { id: 'edited', data: { id: 'edited', at: 2, type: 'coco' } },
+        { id: 'gone', data: { id: 'gone', at: 1 } },
+        { id: 'fromPartner', data: { id: 'fromPartner', at: 4 } },
+      ]),
+    );
+    await flush();
+
+    expect(onChange).toHaveBeenCalledWith([
+      { id: 'edited', at: 2, type: 'xixi' },
+      { id: 'fromPartner', at: 4 },
+      { id: 'new', at: 3 },
+    ]);
+  });
+
+  it('keeps a document edited offline over the older server copy', async () => {
+    mockSetDoc.mockRejectedValue(new Error('offline'));
+    await syncEntry('profile', 'baby', { name: 'Novo' });
+
+    const emit = captureSnapshotListener();
+    const onChange = jest.fn();
+    subscribeToDocument('profile', 'baby', onChange);
+    await flush();
+    emit({ metadata: { fromCache: false }, exists: () => true, data: () => ({ name: 'Antigo' }) });
+    await flush();
+
+    expect(onChange).toHaveBeenCalledWith({ name: 'Novo' });
   });
 });

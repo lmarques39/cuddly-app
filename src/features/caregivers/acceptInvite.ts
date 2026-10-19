@@ -1,5 +1,6 @@
 import { collectionGroup, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { resetFamilyIdCache } from '../../storage/sync';
 import { Invite } from '../../types/records';
 
 export type PendingInvite = Invite & { familyId: string };
@@ -37,6 +38,8 @@ export async function acceptInvite(invite: PendingInvite, uid: string, name: str
   });
 
   await setDoc(doc(db, 'users', uid), { familyId: invite.familyId }, { merge: true });
+  // A family this account belonged to before may still be cached on-device.
+  await resetFamilyIdCache();
 
   await updateDoc(doc(db, 'families', invite.familyId, 'invites', invite.id), { status: 'accepted' });
 }
