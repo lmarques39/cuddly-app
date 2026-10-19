@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../../components/BigButton';
 import { PasswordField } from '../../components/PasswordField';
@@ -30,8 +30,7 @@ export function LoginScreen({ onLogin, onContinueWithGoogle, onCreateAccount, on
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.content}>
         <View style={styles.brand}>
-          <View style={styles.logoBadge} />
-          <Text style={styles.wordmark}>cuddly</Text>
+          <Image source={require('../../../assets/cuddly-logo.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Cuddly" />
           <Text style={[type.caption, styles.tagline]}>{t('auth.login.tagline')}</Text>
         </View>
 
@@ -104,15 +103,9 @@ const useStyles = createStyles((colors, type) => ({
   screen: { flex: 1, backgroundColor: colors.paper },
   content: { flex: 1, justifyContent: 'center', gap: spacing.xl, paddingHorizontal: spacing.lg },
   brand: { alignItems: 'center', gap: spacing.sm },
-  logoBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: radii.lg,
-    backgroundColor: colors.cream,
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
-  },
-  wordmark: { fontFamily: fontFamily.display, fontSize: 26, color: colors.ink },
+  // The logo carries the "CUDDLY" wordmark itself. Kept at the source's own
+  // size (289×265) or below, since that export is all there is so far.
+  logo: { width: 200, height: 183 },
   tagline: { textAlign: 'center' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   link: { color: colors.primary },
