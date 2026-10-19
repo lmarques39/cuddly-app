@@ -25,7 +25,7 @@ it('starts empty and not loaded before the subscriptions fire', async () => {
 it('exposes members and only pending invites once both subscriptions report back', async () => {
   const listeners: Record<string, (snap: unknown) => void> = {};
   let call = 0;
-  mockOnSnapshot.mockImplementation((_ref, cb) => {
+  mockOnSnapshot.mockImplementation((_ref, _options, cb) => {
     // First subscribeToCollection call in the hook is 'members', second is 'invites'.
     listeners[call === 0 ? 'members' : 'invites'] = cb as (snap: unknown) => void;
     call += 1;

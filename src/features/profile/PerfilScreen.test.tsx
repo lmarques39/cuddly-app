@@ -24,7 +24,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   Object.assign(auth, { currentUser: { uid: 'alice', email: 'alice@x.com' } });
   mockGetDoc.mockResolvedValue({ data: () => ({ familyId: 'famA' }) });
-  mockOnSnapshot.mockImplementation((_ref, cb) => {
+  mockOnSnapshot.mockImplementation((_ref, _options, cb) => {
     cb({ exists: () => true, data: () => ({ name: 'Alice', role: 'mae', email: 'alice@x.com' }) });
     return () => {};
   });
@@ -34,7 +34,7 @@ it("shows the caller's own name with an edit link", async () => {
   await renderPerfil();
 
   expect(await screen.findByText('Alice')).toBeTruthy();
-  expect(screen.getByText('Editar')).toBeTruthy();
+  expect(screen.getByLabelText('Editar')).toBeTruthy();
 });
 
 it('lets the name be edited and saved, showing the success feedback', async () => {
@@ -42,7 +42,7 @@ it('lets the name be edited and saved, showing the success feedback', async () =
   await screen.findByText('Alice');
 
   await act(async () => {
-    fireEvent.press(screen.getByText('Editar'));
+    fireEvent.press(screen.getByLabelText('Editar'));
   });
   await act(async () => {
     fireEvent.changeText(screen.getByPlaceholderText('O teu nome'), 'Alicia');

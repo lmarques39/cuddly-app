@@ -14,11 +14,11 @@ const mockDeleteDoc = deleteDoc as jest.Mock;
 const mockConfirmDestructive = confirmDestructive as jest.MockedFunction<typeof confirmDestructive>;
 
 function fireMembers(list: unknown[]) {
-  mockOnSnapshot.mock.calls[0][1]({ docs: list });
+  mockOnSnapshot.mock.calls[0][2]({ docs: list });
 }
 
 function fireInvites(list: unknown[]) {
-  mockOnSnapshot.mock.calls[1][1]({ docs: list });
+  mockOnSnapshot.mock.calls[1][2]({ docs: list });
 }
 
 beforeEach(() => {
@@ -96,10 +96,10 @@ it('shows "Remover" only for other members, and deletes their member doc after c
     fireInvites([]);
   });
 
-  expect(screen.getAllByText('Remover')).toHaveLength(1); // only for Bob, not for Alice ("Tu")
+  expect(screen.getAllByLabelText('Remover')).toHaveLength(1); // only for Bob, not for Alice ("Tu")
 
   await act(async () => {
-    fireEvent.press(screen.getByText('Remover'));
+    fireEvent.press(screen.getByLabelText('Remover'));
   });
 
   expect(mockDeleteDoc).toHaveBeenCalledTimes(1);
