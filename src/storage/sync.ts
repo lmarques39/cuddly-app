@@ -75,22 +75,52 @@ async function loadOutbox(): Promise<OutboxEntry[]> {
   return loadList<OutboxEntry>(OUTBOX_KEY);
 }
 
+// Every change to the outbox is a read-modify-write of one AsyncStorage key.
+// Two at once (stopping a feed queues the finished entry and the timer's
+// removal together) could each read the old list and the last save would
+// drop the other's change — losing a write, or bringing back one that had
+// already landed. So they run one after another.
+let outboxLock: Promise<unknown> = Promise.resolve();
+
+function changeOutbox<T>(change: (current: OutboxEntry[]) => { next: OutboxEntry[]; result: T }): Promise<T> {
+  const run = outboxLock.then(async () => {
+    const { next, result } = change(await loadOutbox());
+    await saveList(OUTBOX_KEY, next);
+    return result;
+  });
+  outboxLock = run.catch(() => {});
+  return run;
+}
+
 async function pushToOutbox(entry: OutboxEntry): Promise<void> {
-  const current = await loadOutbox();
-  await saveList(OUTBOX_KEY, [...current, entry]);
+  await changeOutbox((current) => ({ next: [...current, entry], result: undefined }));
 }
 
 /** Drops every queued write — for account deletion (#69), so nothing queued offline gets replayed into a deleted family. */
 export async function clearOutbox(): Promise<void> {
-  await saveList(OUTBOX_KEY, []);
+  await changeOutbox(() => ({ next: [], result: undefined }));
 }
 
-async function removeFromOutbox(id: string): Promise<void> {
-  const current = await loadOutbox();
-  await saveList(
-    OUTBOX_KEY,
-    current.filter((e) => e.id !== id),
-  );
+/**
+ * Once a write lands, it and every older write still queued for the same
+ * document are done with: those are out of date, and keeping them would
+ * both overlay them on every snapshot and replay them later over the newer
+ * one — e.g. a feed stopped offline left "delete the running timer"
+ * queued, and the next feed's timer vanished as soon as the server
+ * confirmed it.
+ */
+async function removeFromOutbox(landed: OutboxEntry): Promise<void> {
+  await changeOutbox((current) => {
+    const index = current.findIndex((e) => e.id === landed.id);
+    const next = current.filter(
+      (e, i) => e.id !== landed.id && !(index >= 0 && i < index && e.collectionName === landed.collectionName && e.entryId === landed.entryId),
+    );
+    return { next, result: undefined };
+  });
+}
+
+async function isStillQueued(id: string): Promise<boolean> {
+  return changeOutbox((current) => ({ next: current, result: current.some((e) => e.id === id) }));
 }
 
 async function writeToFirestore(entry: OutboxEntry): Promise<boolean> {
@@ -157,7 +187,7 @@ export async function syncEntry(
   const entry: OutboxEntry = { id: outboxId, collectionName, entryId, payload };
   await pushToOutbox(entry);
   const ok = await writeToFirestore(entry);
-  if (ok) await removeFromOutbox(outboxId);
+  if (ok) await removeFromOutbox(entry);
 }
 
 let flushing: Promise<void> | null = null;
@@ -179,8 +209,11 @@ export function flushOutbox(): Promise<void> {
       flushAgain = false;
       const pending = await loadOutbox();
       for (const entry of pending) {
+        // A newer write to the same document may have landed meanwhile and
+        // retired this one — replaying it now would undo that newer write.
+        if (!(await isStillQueued(entry.id))) continue;
         const ok = await writeToFirestore(entry);
-        if (ok) await removeFromOutbox(entry.id);
+        if (ok) await removeFromOutbox(entry);
       }
     } while (flushAgain);
   })().finally(() => {
