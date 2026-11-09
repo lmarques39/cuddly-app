@@ -240,6 +240,71 @@ describe('offline-first', () => {
     ]);
   });
 
+  it("drops a queued write once a newer write to the same document lands, so it can't undo it", async () => {
+    // A feed stopped offline left "delete the running timer" queued; the next
+    // feed, started online, must not vanish the moment the server confirms it.
+    mockSetDoc.mockResolvedValue(undefined);
+    mockDeleteDoc.mockRejectedValueOnce(new Error('offline'));
+    await syncEntry('activeSessions', 'breastfeeding', null);
+    await syncEntry('activeSessions', 'breastfeeding', { kind: 'breastfeeding', startedAt: 5, side: 'left' });
+
+    expect(await loadList(OUTBOX_KEY)).toEqual([]);
+
+    const emit = captureSnapshotListener();
+    const onChange = jest.fn();
+    subscribeToCollection('activeSessions', onChange);
+    await flush();
+    emit(collectionSnap([{ id: 'breastfeeding', data: { kind: 'breastfeeding', startedAt: 5, side: 'left' } }]));
+    await flush();
+
+    expect(onChange).toHaveBeenLastCalledWith([{ id: 'breastfeeding', kind: 'breastfeeding', startedAt: 5, side: 'left' }]);
+  });
+
+  it('keeps every queued write when several are made at once', async () => {
+    // Stopping a feed queues two writes together (the finished entry and the
+    // timer's removal) — neither may be lost, nor a landed one brought back.
+    mockSetDoc.mockRejectedValue(new Error('offline'));
+    mockDeleteDoc.mockResolvedValue(undefined);
+
+    await Promise.all([
+      syncEntry('activeSessions', 'breastfeeding', null),
+      syncEntry('breastfeeding', 'b1', { id: 'b1' }),
+      syncEntry('breastfeeding', 'b2', { id: 'b2' }),
+    ]);
+
+    const outbox = await loadList<{ entryId: string }>(OUTBOX_KEY);
+    expect(outbox.map((e) => e.entryId).sort()).toEqual(['b1', 'b2']);
+  });
+
+  it('a whole feed cycle offline — start, stop, start again — ends with the new timer running once back online', async () => {
+    mockSetDoc.mockRejectedValue(new Error('offline'));
+    mockDeleteDoc.mockRejectedValue(new Error('offline'));
+    const feed1 = { kind: 'breastfeeding', startedAt: 1, side: 'left' };
+    const feed2 = { kind: 'breastfeeding', startedAt: 9, side: 'right' };
+    await syncEntry('activeSessions', 'breastfeeding', feed1); // Start
+    await Promise.all([
+      syncEntry('activeSessions', 'breastfeeding', null), // Finish…
+      syncEntry('breastfeeding', 'f1', { id: 'f1', side: 'left', startedAt: 1, endedAt: 5 }), // …saves the feed
+    ]);
+    await syncEntry('activeSessions', 'breastfeeding', feed2); // Start the other side
+    expect(await loadList(OUTBOX_KEY)).toHaveLength(4); // nothing lost while offline
+
+    // Back online: the queue replays in order and empties.
+    mockSetDoc.mockReset().mockResolvedValue(undefined);
+    mockDeleteDoc.mockReset().mockResolvedValue(undefined);
+    await flushOutbox();
+    expect(await loadList(OUTBOX_KEY)).toEqual([]);
+    expect(mockSetDoc.mock.calls.at(-1)?.[1]).toEqual(feed2); // the last write is the running timer
+
+    const emit = captureSnapshotListener();
+    const onChange = jest.fn();
+    subscribeToCollection('activeSessions', onChange);
+    await flush();
+    emit(collectionSnap([{ id: 'breastfeeding', data: feed2 }]));
+    await flush();
+    expect(onChange).toHaveBeenLastCalledWith([{ id: 'breastfeeding', ...feed2 }]);
+  });
+
   it('keeps a document edited offline over the older server copy', async () => {
     mockSetDoc.mockRejectedValue(new Error('offline'));
     await syncEntry('profile', 'baby', { name: 'Novo' });
